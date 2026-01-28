@@ -455,6 +455,9 @@ function doPost(e) {
       updatePhone_(b.email, b.phone);
       return ok_();
     }
+    if (p === "userGet") {
+  return getUser_(b.email);
+    }
 
     if (p === "admin") {
       return admin_(b);
@@ -467,6 +470,24 @@ function doPost(e) {
     logErr_("", "", e);
     return err_(e.message);
   }
+}
+
+function getUser_(email) {
+  const sh = ss_().getSheetByName(CFG.USERS);
+  const r = sh.getDataRange().getValues();
+
+  for (let i = 1; i < r.length; i++) {
+    if (r[i][0] === email) {
+      return json_({
+        email: r[i][0],
+        name: r[i][1],
+        phone: r[i][2],
+        role: r[i][5] || "user" // future-proof
+      });
+    }
+  }
+
+  return json_({ email, role: "user" });
 }
 
 function ok_() {
@@ -514,7 +535,8 @@ function upsertUser_(email, name, photo) {
     "",
     avatar,
     now_(),
-    now_()
+    now_(),
+    "user" // default role
   ]);
 }
 

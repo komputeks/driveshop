@@ -1,5 +1,6 @@
 import GoogleProvider from "next-auth/providers/google";
 import type { NextAuthOptions } from "next-auth";
+import { callGas } from "@/lib/core";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -16,21 +17,32 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.sub!;
-        session.user.phone = token.phone as string | undefined;
+  async jwt({ token, user }) {
+
+    // First login
+    if (user?.email) {
+      try {
+        const res = await callGas("/?path=userGet", {
+          email: user.email,
+        });
+
+        token.phone = res.phone || null;
+        token.role = res.role || "user";
+      } catch {
+        token.role = "user";
       }
+    }
 
-      return session;
-    },
-
-    async jwt({ token, user }) {
-      if (user) {
-        token.phone = (user as any).phone;
-      }
-
-      return token;
-    },
+    return token;
   },
+
+  async session({ session, token }) {
+    if (session.user) {
+      session.user.phone = token.phone as string | undefined;
+      session.user.role = token.role as "admin" | "user";
+    }
+
+    return session;
+  },
+},
 };
