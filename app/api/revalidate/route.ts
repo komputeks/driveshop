@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 
 export async function POST(req: NextRequest) {
   try {
+
     const body = await req.json();
 
     if (body.secret !== process.env.NEXTJS_ISR_SECRET) {
@@ -12,15 +13,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Revalidate main pages
+    // Revalidate main routes
     revalidatePath("/");
     revalidatePath("/search");
     revalidatePath("/category");
     revalidatePath("/profile");
     revalidatePath("/admin");
-
-    // Optional: if you use tags later
-    revalidateTag("items");
 
     return NextResponse.json({
       revalidated: true,

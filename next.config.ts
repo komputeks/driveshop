@@ -5,13 +5,12 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
 
   images: {
-    domains: ["lh3.googleusercontent.com"]
-  },
-
-  experimental: {
-    serverActions: {
-      bodySizeLimit: "2mb"
-    }
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com"
+      }
+    ]
   }
 
 };
