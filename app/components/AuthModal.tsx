@@ -2,27 +2,35 @@
 import { signIn, useSession } from "next-auth/react";
 import { useState } from "react";
 
-export default function AuthModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function AuthModal() {
   const { data: session } = useSession();
+  const [open, setOpen] = useState(false);
 
-  if (!open) return null;
-
-  if (session) return <div>Logged in as {session.user?.email}</div>;
+  if (session) return null; // hide modal if already logged in
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-      <div className="bg-white p-6 rounded-lg w-80">
-        <h2 className="text-lg font-bold mb-4">Sign In</h2>
-        <button
-          className="bg-blue-600 text-white w-full py-2 rounded mb-2"
-          onClick={() => signIn("google")}
-        >
-          Sign in with Google
-        </button>
-        <button className="text-gray-500 text-sm" onClick={onClose}>
-          Cancel
-        </button>
-      </div>
-    </div>
+    <>
+      <button onClick={() => setOpen(true)}>Login</button>
+
+      {open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded p-6 w-80">
+            <h2 className="text-xl font-bold mb-4">Sign In</h2>
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded"
+              onClick={() => signIn("google")}
+            >
+              Sign in with Google
+            </button>
+            <button
+              className="mt-4 text-gray-500"
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -1,12 +1,14 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"; // import from lib/auth now
+import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic"; // ensures SSR
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
 
   if (!session) {
-    redirect("/login");
+    redirect("/login"); // fallback to login
   }
 
   return (
