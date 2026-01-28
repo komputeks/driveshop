@@ -1,36 +1,38 @@
 import GoogleProvider from "next-auth/providers/google";
-import { NextAuthOptions } from "next-auth";
-import { callGas } from "@/lib/core";
+import type { NextAuthOptions } from "next-auth";
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET,
+
+  trustHost: true, // ✅ REQUIRED on Vercel / App Router
+
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!
-    })
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
   ],
-  secret: process.env.NEXTAUTH_SECRET!,
-  callbacks: {
-    async session({ session }) {
-      const email = session.user?.email;
-      session.user.role = process.env.ADMIN_EMAILS?.split(",").includes(email!) ? "admin" : "user";
 
-      // Sync to GAS Users sheet
-      if (email) {
-        try {
-          await callGas("/v1/admin/users", {
-            action: "upsert",
-            payload: { email, name: session.user?.name }
-          });
-        } catch (e) {
-          console.error("GAS user sync failed", e);
-        }
+  session: {
+    strategy: "jwt",
+  },
+
+  callbacks: {
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.sub!;
+        session.user.phone = token.phone as string | undefined;
       }
 
       return session;
-    }
+    },
+
+    async jwt({ token, user }) {
+      if (user) {
+        token.phone = (user as any).phone;
+      }
+
+      return token;
+    },
   },
-  pages: {
-    signIn: "/login"
-  }
 };

@@ -10,4 +10,14 @@ declare module "next-auth" {
       role?: "admin" | "user";
     };
   }
+    interface User {
+      phone?: string;
+    }
+  }
+  
+  declare module "next-auth/jwt" {
+    interface JWT {
+      phone?: string;
+    }
+  }
 }
