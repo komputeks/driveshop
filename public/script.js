@@ -97,6 +97,7 @@ function setup_() {
     "email",
     "name",
     "phone",
+    "photo"
     "createdAt",
     "lastLogin"
   ]);
@@ -334,9 +335,10 @@ function scanAll_() {
       if (seen[f.getId()]) continue;
 
       const size = imageSize_(f);
-
+      
       const cat = inferCategory_(f, size.w, size.h);
-
+      moveToCategory_(f, cat);
+      
       const cdn = cdnUrl_(f.getId());
 
       const desc = describeImage_(cdn);
@@ -445,9 +447,9 @@ function doPost(e) {
     }
 
     if (p === "user") {
-      upsertUser_(b.email, b.name);
-      return ok_();
-    }
+  upsertUser_(b.email, b.name, b.photo);
+  return ok_();
+}
 
     if (p === "phone") {
       updatePhone_(b.email, b.phone);
@@ -484,28 +486,38 @@ function json_(o, c) {
 }
 
 
-function upsertUser_(email, name) {
+function upsertUser_(email, name, photo) {
 
   const sh = sheet_(CFG.USERS, []);
   const r = sh.getDataRange().getValues();
+
+  const avatar =
+    photo ||
+    "https://www.gravatar.com/avatar/?d=mp&s=200";
 
   for (let i = 1; i < r.length; i++) {
 
     if (r[i][0] === email) {
 
-      sh.getRange(i + 1, 5).setValue(now_());
+      // update photo + lastLogin
+      sh.getRange(i + 1, 4).setValue(avatar);
+      sh.getRange(i + 1, 6).setValue(now_());
+
       return;
     }
   }
 
+  // new user
   sh.appendRow([
     email,
     name || "",
     "",
+    avatar,
     now_(),
     now_()
   ]);
 }
+
 
 function updatePhone_(email, phone) {
 
@@ -578,6 +590,114 @@ function revalidate_() {
 
 
 /***********************
+ * CATEGORY SYNC
+ ***********************/
+
+function rootFolder_() {
+  return DriveApp.getFolderById(
+    prop_("AUTO_FOLDER_ID")
+  );
+}
+
+
+function ensureCatFolder_(name) {
+
+  const root = rootFolder_();
+
+  const it = root.getFoldersByName(name);
+
+  if (it.hasNext()) return it.next();
+
+  return root.createFolder(name);
+}
+
+
+function listCategories_() {
+
+  const root = rootFolder_();
+  const it = root.getFolders();
+
+  const out = [];
+
+  while (it.hasNext()) {
+    out.push(it.next().getName());
+  }
+
+  return out;
+}
+
+
+function syncCategoryDropdown_() {
+
+  const cats = listCategories_();
+
+  if (!cats.length) return;
+
+  const sh = ss_().getSheetByName(CFG.ITEMS);
+
+  const rule = SpreadsheetApp
+    .newDataValidation()
+    .requireValueInList(cats, true)
+    .build();
+
+  sh.getRange("C2:C")
+    .setDataValidation(rule);
+}
+
+
+function moveToCategory_(file, cat) {
+
+  const folder = ensureCatFolder_(cat);
+
+  const parents = file.getParents();
+
+  while (parents.hasNext()) {
+
+    const p = parents.next();
+
+    if (p.getId() === rootFolder_().getId()) {
+
+      file.moveTo(folder);
+      break;
+    }
+  }
+}
+
+/***********************
+ * SHEET → DRIVE SYNC
+ ***********************/
+
+function onEdit(e) {
+
+  const sh = e.range.getSheet();
+
+  if (sh.getName() !== CFG.ITEMS) return;
+
+  // only Category column
+  if (e.range.getColumn() !== 3) return;
+
+  const row = e.range.getRow();
+
+  if (row < 2) return;
+
+  const id = sh.getRange(row, 1).getValue();
+  const cat = e.value;
+
+  if (!id || !cat) return;
+
+  try {
+
+    const file = DriveApp.getFileById(id);
+
+    moveToCategory_(file, cat);
+
+  } catch (err) {
+
+    logErr_("cat-edit", id, err);
+  }
+}
+
+/***********************
  * BOOTSTRAP
  ***********************/
 
@@ -585,8 +705,10 @@ function bootstrap() {
 
   setup_();
 
-  scanAll_();
+  syncCategoryDropdown_();
 
+  scanAll_();
+  
   ScriptApp.newTrigger("scanAll_")
     .timeBased()
     .everyHours(1)
