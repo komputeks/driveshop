@@ -4,8 +4,6 @@ import type { NextAuthOptions } from "next-auth";
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
 
-  trustHost: true, // ✅ REQUIRED on Vercel / App Router
-
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
