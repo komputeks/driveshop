@@ -13,6 +13,14 @@ function ss_() {
   return SpreadsheetApp.openById("1S815fJlwNQH45OzU0aUmZGjrNtT8021LKK8w2MTMcXY");
   
 }
+  
+  
+  
+/// avata
+
+https://ui-avatars.com/api/?size=128&font-size=0.5&bold=true&rounded=true&name={session.user?.name}&background=random";
+
+
 
 
 // Link
@@ -553,12 +561,12 @@ function doPost(e) {
     if (p === "user") {
   upsertUser_(b.email, b.name, b.photo);
   return ok_();
-}
-
-    if (p === "phone") {
-      updatePhone_(b.email, b.phone);
-      return ok_();
     }
+    
+    if (p === "user/update") {
+  return updateUser_(b);
+    }
+    
     if (p === "userGet") {
   return getUser_(b.email);
     }
@@ -576,24 +584,95 @@ function doPost(e) {
   }
 }
 
+// =================================================
+// GET USER BY EMAIL
+// =================================================
 function getUser_(email) {
-  const sh = ss_().getSheetByName(CFG.USERS);
-  const r = sh.getDataRange().getValues();
 
-  for (let i = 1; i < r.length; i++) {
-    if (r[i][0] === email) {
-      return json_({
-        id: r[i][0],
-        email: r[i][1],
-        name: r[i][2],
-        phone: r[i][3] || "null", // future-proof
-        role: r[i][5] || "user" // future-proof
-      });
+  if (!email) {
+    return json_({ error: "Missing email" });
+  }
+
+  const sh = ss_().getSheetByName(CFG.USERS);
+
+  if (!sh) {
+    return json_({ error: "Users sheet missing" });
+  }
+
+  const rows = sh.getDataRange().getValues();
+
+  if (rows.length < 2) {
+    return json_({ email, role: "user" });
+  }
+
+  const headers = rows[0];
+
+  for (let i = 1; i < rows.length; i++) {
+
+    const row = rows[i];
+
+    if (row[0] === email) {
+
+      const user = {};
+
+      for (let j = 0; j < headers.length; j++) {
+        user[headers[j]] = row[j];
+      }
+
+      // Safety defaults
+      user.role = user.role || "user";
+      user.phone = user.phone || null;
+      user.photo = user.photo || null;
+
+      return json_(user);
+    }
+  }
+
+  // Not found → auto-register minimal profile
+  return json_({
+    email,
+    role: "user",
+    phone: null,
+    photo: null,
+  });
+}
+
+
+
+function getUserByEmail_(email) {
+
+  if (!email) {
+    return json_({ error: "Missing email" });
+  }
+
+  const sh = ss_().getSheetByName(CFG.USERS);
+  const rows = sh.getDataRange().getValues();
+
+  // Find header row
+  const headers = rows[0] || [];
+
+  // Find row matching email
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (row[0] === email) {
+
+      // Map into object
+      const user = {};
+      for (let j = 0; j < headers.length; j++) {
+        user[headers[j]] = row[j];
+      }
+
+      // Provide role if stored (6th column) or default
+      user.role = row[5] || "user";
+
+      return json_(user);
     }
   }
 
   return json_({ email, role: "user" });
 }
+
+
 
 function ok_() {
   return json_({ ok: true });
@@ -643,6 +722,49 @@ function upsertUser_(email, name, photo) {
     now_(),
     "user" // default role
   ]);
+}
+
+
+// =================================================
+// UPDATE USER PROFILE
+// =================================================
+function updateUser_(data) {
+
+  if (!data.email) {
+    return err_("Missing email");
+  }
+
+  const sh = ss_().getSheetByName(CFG.USERS);
+  const rows = sh.getDataRange().getValues();
+
+  const headers = rows[0];
+
+  const emailCol = headers.indexOf("email") + 1;
+  const phoneCol = headers.indexOf("phone") + 1;
+  const nameCol  = headers.indexOf("name") + 1;
+
+  if (!emailCol) return err_("Schema error");
+
+  for (let i = 1; i < rows.length; i++) {
+
+    if (rows[i][emailCol - 1] === data.email) {
+
+      if (phoneCol && data.phone !== undefined) {
+        sh.getRange(i + 1, phoneCol).setValue(data.phone);
+      }
+
+      if (nameCol && data.name !== undefined) {
+        sh.getRange(i + 1, nameCol).setValue(data.name);
+      }
+
+      // update lastLogin
+      sh.getRange(i + 1, 6).setValue(now_());
+
+      return ok_();
+    }
+  }
+
+  return err_("User not found");
 }
 
 
