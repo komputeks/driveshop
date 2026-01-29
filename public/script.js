@@ -535,7 +535,7 @@ function getUser_(email) {
         id: r[i][0],
         email: r[i][1],
         name: r[i][2],
-        phone: r[i][3] || "null" // future-proof
+        phone: r[i][3] || "null", // future-proof
         role: r[i][5] || "user" // future-proof
       });
     }

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import AuthModal from "./AuthModal";
 import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
@@ -27,7 +26,7 @@ export default function Header() {
             </button>
           </>
         ) : (
-          <AuthModal />
+          {user.name}
         )}
       </div>
     </header>
