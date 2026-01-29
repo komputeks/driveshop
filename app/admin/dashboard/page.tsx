@@ -1,31 +1,57 @@
-import { callGas } from "@/lib/core";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  const stats = await callGas("/admin/stats", {});
+
+  const session = await getServerSession(authOptions);
+
+  if (!session || session.user.role !== "admin") {
+    redirect("/");
+  }
 
   return (
-    <div className="p-10">
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+    <div className="pt-20 max-w-6xl mx-auto p-6">
 
-        <Card title="Items" value={stats.items} />
-        <Card title="Events" value={stats.events} />
-        <Card title="Users" value={stats.users} />
-        <Card title="Errors" value={stats.errors} />
+      <h1 className="text-3xl font-bold mb-6">
+        Admin Dashboard
+      </h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <StatCard title="Users" value="—" />
+        <StatCard title="Assets" value="—" />
+        <StatCard title="Events" value="—" />
 
       </div>
+
     </div>
   );
 }
 
-function Card({ title, value }: any) {
+/* -------------------------------- */
+
+function StatCard({
+  title,
+  value,
+}: {
+  title: string;
+  value: string;
+}) {
   return (
-    <div className="bg-white dark:bg-gray-900 p-6 rounded-xl shadow">
-      <p className="text-gray-500">{title}</p>
-      <p className="text-3xl font-bold mt-2">{value}</p>
+    <div className="p-6 rounded-xl border bg-white dark:bg-gray-900 shadow">
+
+      <h3 className="text-sm text-gray-500">
+        {title}
+      </h3>
+
+      <p className="text-3xl font-bold mt-2">
+        {value}
+      </p>
+
     </div>
   );
 }

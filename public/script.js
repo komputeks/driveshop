@@ -18,7 +18,7 @@ function ss_() {
   
 /// avata
 
-https://ui-avatars.com/api/?size=128&font-size=0.5&bold=true&rounded=true&name={session.user?.name}&background=random";
+https://ui-avatars.com/api/?size=128&font-size=0.5&bold=true&rounded=true&name={session.user?.name}&background=random
 
 
 
@@ -570,6 +570,22 @@ function doPost(e) {
     if (p === "userGet") {
   return getUser_(b.email);
     }
+    
+    if (p === "user/activity") {
+      return getUserActivity_(b.email);
+    }
+    
+    if (p === "admin/users") {
+      return adminGetUsers_(e);
+    }
+    
+    if (p === "admin/assets") {
+      return adminGetAssets_(e);
+    }
+    
+    if (p === "admin/events") {
+      return adminGetEvents_(e);
+    }
 
     if (p === "admin") {
       return admin_(b);
@@ -638,39 +654,40 @@ function getUser_(email) {
 }
 
 
+// =================================================
+// USER ACTIVITY
+// =================================================
+function getUserActivity_(email) {
 
-function getUserByEmail_(email) {
+  if (!email) return err_("Missing email");
 
-  if (!email) {
-    return json_({ error: "Missing email" });
-  }
-
-  const sh = ss_().getSheetByName(CFG.USERS);
+  const sh = ss_().getSheetByName(CFG.EVENTS);
   const rows = sh.getDataRange().getValues();
 
-  // Find header row
-  const headers = rows[0] || [];
+  const out = [];
 
-  // Find row matching email
-  for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (row[0] === email) {
+  // newest first
+  for (let i = rows.length - 1; i > 0; i--) {
 
-      // Map into object
-      const user = {};
-      for (let j = 0; j < headers.length; j++) {
-        user[headers[j]] = row[j];
-      }
+    if (rows[i][5] === email) {
 
-      // Provide role if stored (6th column) or default
-      user.role = row[5] || "user";
-
-      return json_(user);
+      out.push({
+        id: rows[i][0],
+        itemId: rows[i][1],
+        type: rows[i][2],
+        value: rows[i][3],
+        page: rows[i][4],
+        at: rows[i][6]
+      });
     }
+
+    // limit
+    if (out.length >= 50) break;
   }
 
-  return json_({ email, role: "user" });
+  return json_({ items: out });
 }
+
 
 
 
@@ -781,6 +798,56 @@ function updatePhone_(email, phone) {
       return;
     }
   }
+}
+
+// ================================
+// Admin Helpers
+// ================================
+
+function adminGetUsers_(e) {
+  return json_(sheetGetAll_(CFG.USERS));
+}
+
+
+function adminGetUsers_(e) {
+  const b = JSON.parse(e.postData.contents || "{}");
+
+  if (!b.email) return err_("no email");
+
+  if (!adminList_().includes(b.email)) {
+    return err_("unauthorized");
+  }
+
+  return json_(sheetGetAll_(CFG.USERS));
+}
+
+
+
+
+function adminGetAssets_(e) {
+    const b = JSON.parse(e.postData.contents || "{}");
+
+  if (!b.email) return err_("no email");
+
+  if (!adminList_().includes(b.email)) {
+    return err_("unauthorized");
+  }
+  
+  return json_(sheetGetAll_(CFG.ITEMS));
+}
+
+
+
+function adminGetEvents_(e) {
+    const b = JSON.parse(e.postData.contents || "{}");
+
+  if (!b.email) return err_("no email");
+
+  if (!adminList_().includes(b.email)) {
+    return err_("unauthorized");
+  }
+  
+  return json_(sheetGetAll_(CFG.EVENTS));
 }
 
 
