@@ -97,7 +97,7 @@ function setup_() {
     "email",
     "name",
     "phone",
-    "photo"
+    "photo",
     "createdAt",
     "lastLogin"
   ]);
@@ -433,6 +433,10 @@ function doPost(e) {
   try {
 
     const b = JSON.parse(e.postData.contents);
+    
+     // 🔐 VERIFY SIGNATURE
+    verifySig_(e,b);
+    
     const p = e.parameter.path || "";
 
     if (p === "event") {
@@ -558,6 +562,8 @@ function updatePhone_(email, phone) {
 
 
 function admin_(b) {
+
+  if (!b.email) return err_("no email");
 
   if (!adminList_().includes(b.email)) {
     return err_("unauthorized");
@@ -718,6 +724,35 @@ function onEdit(e) {
     logErr_("cat-edit", id, err);
   }
 }
+
+
+function verifySig_(e, body) {
+
+  const ts = e.parameter.ts || e.headers["x-ts"];
+  const sig = e.parameter.sig || e.headers["x-sig"];
+
+  if (!ts || !sig) {
+    throw new Error("Missing signature");
+  }
+
+  // Prevent replay (5 min window)
+  const now = Date.now();
+  if (Math.abs(now - Number(ts)) > 5 * 60 * 1000) {
+    throw new Error("Expired request");
+  }
+
+  const secret = prop_("API_SIGNING_SECRET");
+
+  const base = ts + JSON.stringify(body || {});
+
+  const calc = Utilities.computeHmacSha256Signature(base, secret);
+  const hash = calc.map(b => ('0' + (b & 0xff).toString(16)).slice(-2)).join('');
+
+  if (hash !== sig) {
+    throw new Error("Bad signature");
+  }
+}
+
 
 /***********************
  * BOOTSTRAP
