@@ -20,7 +20,7 @@ export function useEvent() {
     }
 
     await fetch(GAS + "?path=event", {
-      method: "PzOST",z
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
