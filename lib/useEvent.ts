@@ -1,44 +1,29 @@
 "use client";
 
 import { useSession, signIn } from "next-auth/react";
-
-const GAS = process.env.NEXT_PUBLIC_GAS_URL!;
+import { sendEvent } from "./api";
 
 export function useEvent() {
   const { data: session } = useSession();
 
   async function send(
-  itemId: string,
-  type: "view" | "like" | "comment",
-  value: string | null = null,
-  pageUrl: string = window.location.href
+    itemId: string,
+    type: "view" | "like" | "comment",
+    value?: string
   ) {
-    // Guest → force login
-    if (!session) {
+    if (!session?.user?.email) {
       signIn("google");
       return;
     }
 
-    await fetch(GAS + "?path=event", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        itemId,
-        type,
-        value,
-        page: window.location.href,
-        email: session.user.email,
-      }),
+    await sendEvent({
+      itemId,
+      type,
+      value: value || "",
+      pageUrl: window.location.href,
+      email: session.user.email,
     });
   }
-  
-  async function comment(itemId: string, text: string) {
-  return send(itemId, "comment", text);
-  }
 
-  return { send, comment };
+  return { send };
 }
-
-

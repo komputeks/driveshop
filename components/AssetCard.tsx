@@ -1,157 +1,57 @@
 "use client";
 
 import { useEvent } from "@/lib/useEvent";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-export default function ItemCard({ item }: any) {
+export default function AssetCard({ item }: any) {
   const { send } = useEvent();
-
-  const viewedRef = useRef(false);
-
+  const ref = useRef<HTMLDivElement>(null);
+  const viewed = useRef(false);
   const [liked, setLiked] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-
-  /* ---------------- AUTO VIEW ---------------- */
 
   useEffect(() => {
-    if (viewedRef.current) return;
+    if (!ref.current) return;
 
-    const el = document.getElementById(`item-${item.id}`);
-    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !viewed.current) {
+        viewed.current = true;
+        send(item.id, "view");
+        obs.disconnect();
+      }
+    });
 
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          viewedRef.current = true;
-          send(item.id, "view");
-          obs.disconnect();
-        }
-      },
-      { threshold: 0.5 }
-    );
-
-    obs.observe(el);
+    obs.observe(ref.current);
 
     return () => obs.disconnect();
-  }, [item.id]);
-
-  /* ---------------- LIKE LOCK ---------------- */
-
-  useEffect(() => {
-    const key = `liked-${item.id}`;
-
-    if (localStorage.getItem(key)) {
-      setLiked(true);
-    }
-  }, [item.id]);
-
-  function handleLike() {
-    const key = `liked-${item.id}`;
-
-    if (localStorage.getItem(key)) return;
-
-    localStorage.setItem(key, "1");
-
-    setLiked(true);
-    send(item.id, "like");
-  }
-
-  /* ---------------- COMMENT ---------------- */
-
-  function handleComment() {
-    if (!text.trim()) return;
-
-    send(item.id, "comment", text);
-
-    setText("");
-    setOpen(false);
-  }
-
-  /* ---------------- UI ---------------- */
+  }, []);
 
   return (
     <div
-      id={`item-${item.id}`}
-      className="rounded-xl overflow-hidden shadow bg-white dark:bg-gray-900"
+      ref={ref}
+      className="rounded-xl shadow bg-white overflow-hidden"
     >
       <img
         src={item.cdnUrl}
-        alt={item.name}
-        loading="lazy"
-        className="w-full h-48 object-cover"
+        className="h-48 w-full object-cover"
       />
 
-      <div className="p-4">
+      <div className="p-3">
+        <h3 className="font-medium truncate">{item.name}</h3>
 
-        <h3 className="font-semibold truncate">
-          {item.name}
-        </h3>
-
-        <div className="flex justify-between mt-3">
-
-          {/* LIKE */}
+        <div className="flex justify-between mt-2 text-sm">
           <button
             disabled={liked}
-            onClick={handleLike}
-            className={liked ? "opacity-50 cursor-not-allowed" : ""}
+            onClick={() => {
+              send(item.id, "like");
+              setLiked(true);
+            }}
           >
             ❤️ {item.likes}
           </button>
 
-          {/* COMMENT */}
-          <button onClick={() => setOpen(true)}>
-            💬
-          </button>
-
-          {/* VIEW (manual fallback) */}
-          <button onClick={() => send(item.id, "view")}>
-            👁 {item.views}
-          </button>
-
+          <span>👁 {item.views}</span>
         </div>
       </div>
-
-      {/* COMMENT MODAL */}
-
-      {open && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
-          <div className="bg-white dark:bg-gray-900 p-5 rounded-xl w-80">
-
-            <h3 className="font-semibold mb-2">
-              Add Comment
-            </h3>
-
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              className="w-full border rounded p-2 text-sm"
-              rows={3}
-            />
-
-            <div className="flex justify-end gap-2 mt-3">
-
-              <button
-                className="text-gray-500"
-                onClick={() => setOpen(false)}
-              >
-                Cancel
-              </button>
-
-              <button
-                className="bg-blue-600 text-white px-3 py-1 rounded"
-                onClick={handleComment}
-              >
-                Send
-              </button>
-
-            </div>
-
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

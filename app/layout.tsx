@@ -31,8 +31,8 @@ export default function RootLayout({
       >
         {/* ✅ Wrap app */}
         <Providers>
-        <Header />
-         {children}
+          <Header />
+          {children}
         </Providers>
       </body>
     </html>
