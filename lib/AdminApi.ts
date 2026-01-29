@@ -30,3 +30,5 @@ export function getAdminAssets(email: string) {
 export function getAdminEvents(email: string) {
   return post("admin/events", email);
 }
+
+
