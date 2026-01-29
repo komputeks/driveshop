@@ -1,38 +1,13 @@
-/*
+/*  
 Project Settings → Script Properties
 
-ADMIN_EMAILS=djxpat254@gmail.com
-AUTO_FOLDER_ID=XXXX
-GEMINI_KEY=XXXX
-NEXTJS_ISR_ENDPOINT=https://yourapp.vercel.app/api/revalidate
-NEXTJS_ISR_SECRET=XXXX
+AUTO_FOLDER_ID=XXXX  
+GEMINI_KEY=XXXX  
+NEXTJS_ISR_ENDPOINT=https://yourapp.vercel.app/api/revalidate  
+NEXTJS_ISR_SECRET=XXXX  
 
-
-// HARD CODE SPREADSHEET ID
-function ss_() {
-  return SpreadsheetApp.openById("1S815fJlwNQH45OzU0aUmZGjrNtT8021LKK8w2MTMcXY");
-  
-}
-  
-  
-  
-/// avata
-
-https://ui-avatars.com/api/?size=128&font-size=0.5&bold=true&rounded=true&name={session.user?.name}&background=random
-
-
-
-
-// Link
-https://raw.githubusercontent.com/komputeks/driveshop/refs/heads/main/public/script.js
-
+SPREADSHEET_URL (optional) — script will auto-create if missing
 */
-
-
-
-/***********************
- * DRIVEHIT V2 CORE
- ***********************/
 
 const CFG = {
   ITEMS: "Items",
@@ -53,59 +28,37 @@ function prop_(k) {
   return v;
 }
 
-/***************/
-// Read SPREADSHEET_URL from script properties or create new one
-
+// Returns existing Sheet or auto-creates one
 function ss_() {
-
   const props = props_();
   let url = props.getProperty("SPREADSHEET_URL");
-
-  // If not set → create new sheet
   if (!url) {
     return createAndSaveSheet_();
   }
-
   try {
-
     const id = extractSheetId_(url);
-
     if (!id) throw new Error("Invalid Sheet URL");
-
     return SpreadsheetApp.openById(id);
-
   } catch (e) {
-
     console.warn("Bad Sheet URL, creating new one:", e);
-
     return createAndSaveSheet_();
   }
 }
 
-// SPREADSHEET ID Extractor
+// Extract sheet id from URL
 function extractSheetId_(url) {
-
   const m = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
-
   return m ? m[1] : null;
 }
 
-// SPREADSHEET AutoCreate
+// Create and save new sheet url
 function createAndSaveSheet_() {
-
-  const ss = SpreadsheetApp.create("DriveHit Database");
-
+  const ss = SpreadsheetApp.create("DriveShop Database");
   const url = ss.getUrl();
-
   props_().setProperty("SPREADSHEET_URL", url);
-
   console.log("New Sheet Created:", url);
-
   return ss;
 }
-
-/***************/
-
 
 function now_() {
   return new Date();
@@ -115,16 +68,11 @@ function uuid_() {
   return Utilities.getUuid();
 }
 
-function adminList_() {
-  return prop_("ADMIN_EMAILS").split(",");
-}
-
 /***********************
  * SCHEMA
  ***********************/
 
 function setup_() {
-
   sheet_(CFG.ITEMS, [
     "id",
     "name",
@@ -183,18 +131,14 @@ function setup_() {
     "category",
     "priority"
   ]);
-  
 }
 
 function sheet_(name, cols) {
-
   let sh = ss_().getSheetByName(name);
-
   if (!sh) {
     sh = ss_().insertSheet(name);
     sh.appendRow(cols);
   }
-
   return sh;
 }
 
@@ -203,7 +147,6 @@ function sheet_(name, cols) {
  ***********************/
 
 function logErr_(job, item, e) {
-
   sheet_(CFG.ERRORS, []).appendRow([
     now_(),
     job || "",
@@ -211,49 +154,8 @@ function logErr_(job, item, e) {
     e.message || e,
     e.stack || ""
   ]);
-
   console.error(e);
 }
-
-
-/***********************
- * JOBS
- ***********************/
-
-function startJob_(type, meta) {
-
-  const id = uuid_();
-
-  sheet_(CFG.JOBS, []).appendRow([
-    id,
-    type,
-    "running",
-    0,
-    JSON.stringify(meta || {}),
-    now_(),
-    now_()
-  ]);
-
-  return id;
-}
-
-function updateJob_(id, status, prog) {
-
-  const sh = ss_().getSheetByName(CFG.JOBS);
-  const r = sh.getDataRange().getValues();
-
-  for (let i = 1; i < r.length; i++) {
-
-    if (r[i][0] === id) {
-
-      sh.getRange(i + 1, 3).setValue(status);
-      sh.getRange(i + 1, 4).setValue(prog || 0);
-      sh.getRange(i + 1, 7).setValue(now_());
-      return;
-    }
-  }
-}
-
 
 /***********************
  * IMAGE UTIL
@@ -264,33 +166,22 @@ function cdnUrl_(id) {
 }
 
 function imageSize_(file) {
-
   try {
-
     const blob = file.getBlob();
     const img = Utilities.newBlob(blob).getBytes();
-
     const info = ImagesService.openImage(img).getSize();
-
-    return {
-      w: info.width,
-      h: info.height
-    };
-
+    return { w: info.width, h: info.height };
   } catch {
     return { w: 0, h: 0 };
   }
 }
-
 
 /***********************
  * GEMINI
  ***********************/
 
 function describeImage_(url) {
-
   const key = prop_("GEMINI_KEY");
-
   const endpoint =
     "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent?key=" +
     key;
@@ -305,148 +196,74 @@ function describeImage_(url) {
   };
 
   try {
-
     const res = UrlFetchApp.fetch(endpoint, {
       method: "post",
       contentType: "application/json",
       payload: JSON.stringify(payload)
     });
-
     const j = JSON.parse(res.getContentText());
-
     return j.candidates?.[0]?.content?.parts?.[0]?.text || "";
-
   } catch {
     return "";
   }
 }
-
 
 /***********************
  * CATEGORIZATION
  ***********************/
 
 function inferCategory_(file, w, h) {
-
   const name = file.getName().toLowerCase();
 
-  // Rules
   if (name.includes("portrait")) return "portrait";
   if (name.includes("landscape")) return "landscape";
 
   if (w > h) return "landscape";
   if (h > w) return "portrait";
 
-  // Sheet rules
   const sh = ss_().getSheetByName(CFG.CATS);
   const rows = sh.getDataRange().getValues();
-
   for (let i = 1; i < rows.length; i++) {
-
     if (name.match(rows[i][0])) {
       return rows[i][1];
     }
   }
-
   return "general";
 }
 
 /***********************
- * CATEGORY FOLDER HELPERS
- ***********************/
-function rootFolder_() {
-  return DriveApp.getFolderById(prop_("AUTO_FOLDER_ID"));
-}
-
-function getCategoryFolders_() {
-  const root = rootFolder_();
-  const it = root.getFolders();
-  const map = {};
-  while (it.hasNext()) {
-    const f = it.next();
-    map[f.getName()] = f;
-  }
-  return { root, map };
-}
-
-function ensureCatFolder_(name) {
-  const { root, map } = getCategoryFolders_();
-  if (map[name]) return map[name];
-  return root.createFolder(name);
-}
-
-function syncCategoryDropdown_() {
-  const cats = Object.keys(getCategoryFolders_().map);
-  if (!cats.length) return;
-  const sh = ss_().getSheetByName(CFG.ITEMS);
-  const rule = SpreadsheetApp
-    .newDataValidation()
-    .requireValueInList(cats, true)
-    .build();
-  sh.getRange("C2:C").setDataValidation(rule);
-}
-
-
-function moveToCategory_(file, cat) {
-  const folder = ensureCatFolder_(cat);
-  const parents = file.getParents();
-  while (parents.hasNext()) {
-    const p = parents.next();
-    if (p.getId() === rootFolder_().getId()) {
-      p.removeFile(file);
-    }
-  }
-  folder.addFile(file);
-}
-
-/***********************
- * SCAN
+ * DRIVE → SHEET SYNC
  ***********************/
 
 function index_() {
-
   const sh = ss_().getSheetByName(CFG.ITEMS);
   const r = sh.getDataRange().getValues();
-
   const map = {};
-
   for (let i = 1; i < r.length; i++) {
     map[r[i][0]] = true;
   }
-
   return map;
 }
 
-
 function scanAll_() {
-
   const job = startJob_("scan");
-
   try {
-
     const seen = index_();
     const sh = ss_().getSheetByName(CFG.ITEMS);
-
     const out = [];
-
     const root = DriveApp.getFolderById(prop_("AUTO_FOLDER_ID"));
     const files = root.getFiles();
 
     while (files.hasNext()) {
-
       const f = files.next();
-
       if (!f.getMimeType().startsWith("image/")) continue;
-
       if (seen[f.getId()]) continue;
 
       const size = imageSize_(f);
-      
       const cat = inferCategory_(f, size.w, size.h);
       moveToCategory_(f, cat);
-      
-      const cdn = cdnUrl_(f.getId());
 
+      const cdn = cdnUrl_(f.getId());
       const desc = describeImage_(cdn);
 
       out.push([
@@ -467,23 +284,13 @@ function scanAll_() {
     }
 
     if (out.length) {
-
-      sh.getRange(
-        sh.getLastRow() + 1,
-        1,
-        out.length,
-        out[0].length
-      ).setValues(out);
+      sh.getRange(sh.getLastRow() + 1, 1, out.length, out[0].length).setValues(out);
     }
-    
+
     syncCategoryDropdown_();
-
     updateJob_(job, "done", 100);
-
     revalidate_();
-
   } catch (e) {
-
     logErr_(job, "", e);
     updateJob_(job, "fail");
   }
@@ -494,7 +301,6 @@ function scanAll_() {
  ***********************/
 
 function addEvent_(itemId, type, val, page, email) {
-
   sheet_(CFG.EVENTS, []).appendRow([
     uuid_(),
     itemId,
@@ -504,119 +310,63 @@ function addEvent_(itemId, type, val, page, email) {
     email || "",
     now_()
   ]);
-
   bumpStats_(itemId, type);
 }
 
 function bumpStats_(id, type) {
-
   const sh = ss_().getSheetByName(CFG.ITEMS);
   const r = sh.getDataRange().getValues();
-
   for (let i = 1; i < r.length; i++) {
-
     if (r[i][0] === id) {
-
       const col =
         type === "view" ? 11 :
         type === "like" ? 12 :
         13;
-
       const cell = sh.getRange(i + 1, col);
-
       cell.setValue((cell.getValue() || 0) + 1);
-
       return;
     }
   }
 }
-
 
 /***********************
  * API
  ***********************/
 
 function doPost(e) {
-
   try {
-
     const b = JSON.parse(e.postData.contents);
-    
-     // 🔐 VERIFY SIGNATURE
-    verifySig_(e,b);
-    
+    verifySig_(e, b);
+
     const p = e.parameter.path || "";
 
     if (p === "event") {
-      addEvent_(
-        b.itemId,
-        b.type,
-        b.value,
-        b.page,
-        b.email
-      );
+      addEvent_(b.itemId, b.type, b.value, b.page, b.email);
       return ok_();
     }
 
     if (p === "user") {
-  upsertUser_(b.email, b.name, b.photo);
-  return ok_();
+      upsertUser_(b.email, b.name, b.photo);
+      return ok_();
     }
-    
-    if (p === "user/update") {
-  return updateUser_(b);
+
+    if (p === "phone") {
+      updatePhone_(b.email, b.phone);
+      return ok_();
     }
-    
+
     if (p === "userGet") {
-  return getUser_(b.email);
-    }
-    
-    if (p === "user/activity") {
-      return getUserActivity_(b.email);
-    }
-    
-    if (p === "admin/users") {
-      return adminGetUsers_(e);
-    }
-    
-    if (p === "admin/assets") {
-      return adminGetAssets_(e);
-    }
-    
-    if (p === "admin/events") {
-      return adminGetEvents_(e);
+      return getUser_(b.email);
     }
 
-    if (p === "admin") {
-      return admin_(b);
-    }
-
-    if (p === "admin/user/ban") {
-      return adminBanUser_(e);
-    }
-    
-    if (p === "admin/user/unban") {
-      return adminUnbanUser_(e);
-    }
-    
-    if (p === "admin/asset/hide") {
-      return adminHideAsset_(e);
-    }
-    
-    if (p === "admin/asset/show") {
-      return adminShowAsset_(e);
-    }
-
-    
     return err_("404");
-
   } catch (e) {
-
     logErr_("", "", e);
     return err_(e.message);
   }
 }
 
+/* … rest unchanged … */
 // =================================================
 // GET USER BY EMAIL
 // =================================================
@@ -816,191 +566,6 @@ function updatePhone_(email, phone) {
     }
   }
 }
-
-// ================================
-// Admin Helpers
-// ================================
-
-function adminGetUsers_(e) {
-  return json_(sheetGetAll_(CFG.USERS));
-}
-
-
-function adminGetUsers_(e) {
-  const b = JSON.parse(e.postData.contents || "{}");
-
-  if (!b.email) return err_("no email");
-
-  if (!adminList_().includes(b.email)) {
-    return err_("unauthorized");
-  }
-
-  return json_(sheetGetAll_(CFG.USERS));
-}
-
-
-
-
-function adminGetAssets_(e) {
-    const b = JSON.parse(e.postData.contents || "{}");
-
-  if (!b.email) return err_("no email");
-
-  if (!adminList_().includes(b.email)) {
-    return err_("unauthorized");
-  }
-  
-  return json_(sheetGetAll_(CFG.ITEMS));
-}
-
-
-
-function adminGetEvents_(e) {
-    const b = JSON.parse(e.postData.contents || "{}");
-
-  if (!b.email) return err_("no email");
-
-  if (!adminList_().includes(b.email)) {
-    return err_("unauthorized");
-  }
-  
-  return json_(sheetGetAll_(CFG.EVENTS));
-}
-
-
-function admin_(b) {
-
-  if (!b.email) return err_("no email");
-
-  if (!adminList_().includes(b.email)) {
-    return err_("unauthorized");
-  }
-
-  if (b.action === "scan") {
-    scanAll_();
-    return ok_();
-  }
-
-  if (b.action === "stats") {
-
-    return json_({
-      items: count_(CFG.ITEMS),
-      events: count_(CFG.EVENTS),
-      users: count_(CFG.USERS),
-      errors: count_(CFG.ERRORS)
-    });
-  }
-
-  return err_("bad action");
-}
-
-function count_(n) {
-  return Math.max(
-    0,
-    ss_().getSheetByName(n).getLastRow() - 1
-  );
-}
-
-/* ============ MODERATION LOGIC ============ */
-
-function adminBanUser_(e) {
-  adminGuard_(e);
-
-  const { email } = e.data;
-
-  const sh = ss_().getSheetByName(CFG.USERS);
-
-  const rows = sh.getDataRange().getValues();
-
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0] === email) {
-      sh.getRange(i + 1, 5).setValue("banned"); // status col
-      logAdmin_("ban_user", email);
-      return ok_();
-    }
-  }
-
-  return err_("user not found");
-}
-
-function adminUnbanUser_(e) {
-  adminGuard_(e);
-
-  const { email } = e.data;
-
-  const sh = ss_().getSheetByName(CFG.USERS);
-
-  const rows = sh.getDataRange().getValues();
-
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0] === email) {
-      sh.getRange(i + 1, 5).setValue("active");
-      logAdmin_("unban_user", email);
-      return ok_();
-    }
-  }
-
-  return err_("user not found");
-}
-
-/* ================= ASSETS ================= */
-
-function adminHideAsset_(e) {
-  adminGuard_(e);
-
-  const { id } = e.data;
-
-  const sh = ss_().getSheetByName(CFG.ITEMS);
-
-  const rows = sh.getDataRange().getValues();
-
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0] === id) {
-      sh.getRange(i + 1, 7).setValue("hidden");
-      logAdmin_("hide_asset", id);
-      return ok_();
-    }
-  }
-
-  return err_("asset not found");
-}
-
-function adminShowAsset_(e) {
-  adminGuard_(e);
-
-  const { id } = e.data;
-
-  const sh = ss_().getSheetByName(CFG.ITEMS);
-
-  const rows = sh.getDataRange().getValues();
-
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0] === id) {
-      sh.getRange(i + 1, 7).setValue("published");
-      logAdmin_("show_asset", id);
-      return ok_();
-    }
-  }
-
-  return err_("asset not found");
-}
-
-/* ================= LOG ================= */
-
-function logAdmin_(action, target) {
-  ss_()
-    .getSheetByName(CFG.EVENTS)
-    .appendRow([
-      uid_(),
-      "admin",
-      action,
-      target,
-      "",
-      Session.getActiveUser().getEmail(),
-      now_(),
-    ]);
-}
-
 
 
 /***********************
