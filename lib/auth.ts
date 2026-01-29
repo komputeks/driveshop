@@ -41,11 +41,10 @@ export const authOptions: NextAuthOptions = {
     /* ---------------- SESSION ---------------- */
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.uid as string;
+        session.user.id = token.sub as string; // ✅ use token.sub
         session.user.role = token.role as "admin" | "user";
         session.user.phone = token.phone as string | null;
       }
-
       return session;
     },
   },
