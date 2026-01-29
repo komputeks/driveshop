@@ -30,7 +30,7 @@ const CFG = {
   USERS: "Users",
   JOBS: "Jobs",
   ERRORS: "Errors",
-  CATS: "Categories"
+  CATS: "Categories",
 };
 
 function props_() {
@@ -125,6 +125,7 @@ function setup_() {
     "category",
     "priority"
   ]);
+  
 }
 
 function sheet_(name, cols) {
@@ -515,7 +516,7 @@ function doPost(e) {
     if (p === "admin") {
       return admin_(b);
     }
-
+    
     return err_("404");
 
   } catch (e) {
