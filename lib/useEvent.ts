@@ -8,10 +8,10 @@ export function useEvent() {
   const { data: session } = useSession();
 
   async function send(
-    itemId: string,
-    type: "view" | "like" | "comment",
-    value?: string,
-    page: window.location.href
+  itemId: string,
+  type: "view" | "like" | "comment",
+  value: string | null = null,
+  pageUrl: string = window.location.href
   ) {
     // Guest → force login
     if (!session) {
@@ -20,7 +20,7 @@ export function useEvent() {
     }
 
     await fetch(GAS + "?path=event", {
-      method: "POST",
+      method: "PzOST",z
       headers: {
         "Content-Type": "application/json",
       },
