@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import AuthModal from "@/components/AuthModal";
 import { Providers } from "./providers"; // ✅ ADD THIS
 
 const geistSans = Geist({
@@ -31,7 +30,6 @@ export default function RootLayout({
       >
         {/* ✅ Wrap app */}
         <Providers>
-          <AuthModal />
          {children}
         </Providers>
       </body>
