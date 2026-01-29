@@ -10,7 +10,8 @@ export function useEvent() {
   async function send(
     itemId: string,
     type: "view" | "like" | "comment",
-    value?: string
+    value?: string,
+    page: window.location.href
   ) {
     // Guest → force login
     if (!session) {
@@ -27,10 +28,15 @@ export function useEvent() {
         itemId,
         type,
         value,
+        page: window.location.href,
         email: session.user.email,
       }),
     });
   }
+  
+  async function comment(itemId: string, text: string) {
+  return send(itemId, "comment", text);
+  }
 
-  return { send };
+  return { send, comment };
 }

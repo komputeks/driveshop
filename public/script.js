@@ -15,6 +15,8 @@ function ss_() {
 }
 
 
+// Link
+https://raw.githubusercontent.com/komputeks/driveshop/refs/heads/main/public/script.js
 
 */
 
@@ -43,12 +45,60 @@ function prop_(k) {
   return v;
 }
 
+/***************/
+// Read SPREADSHEET_URL from script properties or create new one
 
-// HARD CODE SPREADSHEET ID
 function ss_() {
-  return SpreadsheetApp.openById("1S815fJlwNQH45OzU0aUmZGjrNtT8021LKK8w2MTMcXY");
-  
+
+  const props = props_();
+  let url = props.getProperty("SPREADSHEET_URL");
+
+  // If not set → create new sheet
+  if (!url) {
+    return createAndSaveSheet_();
+  }
+
+  try {
+
+    const id = extractSheetId_(url);
+
+    if (!id) throw new Error("Invalid Sheet URL");
+
+    return SpreadsheetApp.openById(id);
+
+  } catch (e) {
+
+    console.warn("Bad Sheet URL, creating new one:", e);
+
+    return createAndSaveSheet_();
+  }
 }
+
+// SPREADSHEET ID Extractor
+function extractSheetId_(url) {
+
+  const m = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+
+  return m ? m[1] : null;
+}
+
+// SPREADSHEET AutoCreate
+function createAndSaveSheet_() {
+
+  const ss = SpreadsheetApp.create("DriveHit Database");
+
+  const url = ss.getUrl();
+
+  props_().setProperty("SPREADSHEET_URL", url);
+
+  console.log("New Sheet Created:", url);
+
+  return ss;
+}
+
+/***************/
+
+
 function now_() {
   return new Date();
 }
