@@ -17,32 +17,36 @@ export const authOptions: NextAuthOptions = {
   },
 
   callbacks: {
-  async jwt({ token, user }) {
+    /* ---------------- JWT ---------------- */
+    async jwt({ token, user }) {
+      // First login
+      if (user?.email) {
+        try {
+          // Ask GAS who this user is
+          const res = await callGas("/user/get", {
+            email: user.email,
+          });
 
-    // First login
-    if (user?.email) {
-      try {
-        const res = await callGas("/?path=userGet", {
-          email: user.email,
-        });
-
-        token.phone = res.phone || null;
-        token.role = res.role || "user";
-      } catch {
-        token.role = "user";
+          token.role = res?.role || "user";
+          token.phone = res?.phone || null;
+          token.uid = res?.id || null;
+        } catch {
+          token.role = "user";
+        }
       }
-    }
 
-    return token;
+      return token;
+    },
+
+    /* ---------------- SESSION ---------------- */
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.uid as string;
+        session.user.role = token.role as "admin" | "user";
+        session.user.phone = token.phone as string | null;
+      }
+
+      return session;
+    },
   },
-
-  async session({ session, token }) {
-    if (session.user) {
-      session.user.phone = token.phone as string | undefined;
-      session.user.role = token.role as "admin" | "user";
-    }
-
-    return session;
-  },
-},
 };

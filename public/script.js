@@ -292,6 +292,53 @@ function inferCategory_(file, w, h) {
   return "general";
 }
 
+/***********************
+ * CATEGORY FOLDER HELPERS
+ ***********************/
+function rootFolder_() {
+  return DriveApp.getFolderById(prop_("AUTO_FOLDER_ID"));
+}
+
+function getCategoryFolders_() {
+  const root = rootFolder_();
+  const it = root.getFolders();
+  const map = {};
+  while (it.hasNext()) {
+    const f = it.next();
+    map[f.getName()] = f;
+  }
+  return { root, map };
+}
+
+function ensureCatFolder_(name) {
+  const { root, map } = getCategoryFolders_();
+  if (map[name]) return map[name];
+  return root.createFolder(name);
+}
+
+function syncCategoryDropdown_() {
+  const cats = Object.keys(getCategoryFolders_().map);
+  if (!cats.length) return;
+  const sh = ss_().getSheetByName(CFG.ITEMS);
+  const rule = SpreadsheetApp
+    .newDataValidation()
+    .requireValueInList(cats, true)
+    .build();
+  sh.getRange("C2:C").setDataValidation(rule);
+}
+
+
+function moveToCategory_(file, cat) {
+  const folder = ensureCatFolder_(cat);
+  const parents = file.getParents();
+  while (parents.hasNext()) {
+    const p = parents.next();
+    if (p.getId() === rootFolder_().getId()) {
+      p.removeFile(file);
+    }
+  }
+  folder.addFile(file);
+}
 
 /***********************
  * SCAN
@@ -369,6 +416,8 @@ function scanAll_() {
         out[0].length
       ).setValues(out);
     }
+    
+    syncCategoryDropdown_();
 
     updateJob_(job, "done", 100);
 
@@ -483,9 +532,10 @@ function getUser_(email) {
   for (let i = 1; i < r.length; i++) {
     if (r[i][0] === email) {
       return json_({
-        email: r[i][0],
-        name: r[i][1],
-        phone: r[i][2],
+        id: r[i][0],
+        email: r[i][1],
+        name: r[i][2],
+        phone: r[i][3] || "null" // future-proof
         role: r[i][5] || "user" // future-proof
       });
     }
@@ -750,6 +800,33 @@ function verifySig_(e, body) {
 
   if (hash !== sig) {
     throw new Error("Bad signature");
+  }
+}
+
+
+/***********************
+ * SHEET → DRIVE SYNC
+ ***********************/
+function onEdit(e) {
+  const sh = e.range.getSheet();
+  if (sh.getName() !== CFG.ITEMS) return;
+
+  // Only category column (3rd in Items)
+  if (e.range.getColumn() !== 3) return;
+
+  const row = e.range.getRow();
+  if (row < 2) return;
+
+  const id = sh.getRange(row, 1).getValue();
+  const cat = e.value;
+
+  if (!id || !cat) return;
+
+  try {
+    const file = DriveApp.getFileById(id);
+    moveToCategory_(file, cat);
+  } catch (err) {
+    logErr_("cat-edit", id, err);
   }
 }
 
