@@ -4,30 +4,64 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 
 export default function Header() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   return (
-    <header className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-md z-40 flex justify-between items-center px-6 py-3">
-      <Link href="/" className="text-2xl font-bold text-gray-900 dark:text-white">
-        DriveHit
+    <header className="w-full h-14 border-b bg-white dark:bg-gray-900 flex items-center justify-between px-6">
+      
+      {/* Left: Logo */}
+      <Link
+        href="/"
+        className="font-bold text-lg text-gray-900 dark:text-white"
+      >
+        DriveShop
       </Link>
 
+      {/* Right: User */}
       <div className="flex items-center gap-4">
-        <Link href="/search" className="text-gray-700 dark:text-gray-200">Search</Link>
 
-        {session ? (
+        {status === "loading" && (
+          <span className="text-sm text-gray-500">Loading...</span>
+        )}
+
+        {status === "unauthenticated" && (
+          <Link
+            href="/login"
+            className="text-blue-600 hover:underline text-sm"
+          >
+            Login
+          </Link>
+        )}
+
+        {status === "authenticated" && session?.user && (
           <>
-            <Link href="/profile" className="text-gray-700 dark:text-gray-200">{session.user?.name}</Link>
+            {/* Profile Link */}
+            <Link
+              href="/profile"
+              className="text-sm font-medium text-gray-800 dark:text-gray-200 hover:underline"
+            >
+              {session.user.name || "Profile"}
+            </Link>
+
+            {/* Avatar */}
+            {session.user.image && (
+              <img
+                src={session.user.image}
+                alt="avatar"
+                className="w-8 h-8 rounded-full border"
+              />
+            )}
+
+            {/* Logout */}
             <button
               onClick={() => signOut()}
-              className="bg-red-500 text-white px-3 py-1 rounded"
+              className="text-xs text-red-500 hover:underline"
             >
-              Sign Out
+              Logout
             </button>
           </>
-        ) : (
-          {user.name}
         )}
+
       </div>
     </header>
   );
