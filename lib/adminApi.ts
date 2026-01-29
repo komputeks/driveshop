@@ -32,3 +32,21 @@ export function getAdminEvents(email: string) {
 }
 
 
+/* ============ MODERATION ============ */
+
+export function banUser(email: string, admin: string) {
+  return post("admin/user/ban", admin, { email });
+}
+
+export function unbanUser(email: string, admin: string) {
+  return post("admin/user/unban", admin, { email });
+}
+
+export function hideAsset(id: string, admin: string) {
+  return post("admin/asset/hide", admin, { id });
+}
+
+export function showAsset(id: string, admin: string) {
+  return post("admin/asset/show", admin, { id });
+}
+

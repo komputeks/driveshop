@@ -590,6 +590,23 @@ function doPost(e) {
     if (p === "admin") {
       return admin_(b);
     }
+
+    if (p === "admin/user/ban") {
+      return adminBanUser_(e);
+    }
+    
+    if (p === "admin/user/unban") {
+      return adminUnbanUser_(e);
+    }
+    
+    if (p === "admin/asset/hide") {
+      return adminHideAsset_(e);
+    }
+    
+    if (p === "admin/asset/show") {
+      return adminShowAsset_(e);
+    }
+
     
     return err_("404");
 
@@ -883,6 +900,107 @@ function count_(n) {
     ss_().getSheetByName(n).getLastRow() - 1
   );
 }
+
+/* ============ MODERATION LOGIC ============ */
+
+function adminBanUser_(e) {
+  adminGuard_(e);
+
+  const { email } = e.data;
+
+  const sh = ss_().getSheetByName(CFG.USERS);
+
+  const rows = sh.getDataRange().getValues();
+
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === email) {
+      sh.getRange(i + 1, 5).setValue("banned"); // status col
+      logAdmin_("ban_user", email);
+      return ok_();
+    }
+  }
+
+  return err_("user not found");
+}
+
+function adminUnbanUser_(e) {
+  adminGuard_(e);
+
+  const { email } = e.data;
+
+  const sh = ss_().getSheetByName(CFG.USERS);
+
+  const rows = sh.getDataRange().getValues();
+
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === email) {
+      sh.getRange(i + 1, 5).setValue("active");
+      logAdmin_("unban_user", email);
+      return ok_();
+    }
+  }
+
+  return err_("user not found");
+}
+
+/* ================= ASSETS ================= */
+
+function adminHideAsset_(e) {
+  adminGuard_(e);
+
+  const { id } = e.data;
+
+  const sh = ss_().getSheetByName(CFG.ITEMS);
+
+  const rows = sh.getDataRange().getValues();
+
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === id) {
+      sh.getRange(i + 1, 7).setValue("hidden");
+      logAdmin_("hide_asset", id);
+      return ok_();
+    }
+  }
+
+  return err_("asset not found");
+}
+
+function adminShowAsset_(e) {
+  adminGuard_(e);
+
+  const { id } = e.data;
+
+  const sh = ss_().getSheetByName(CFG.ITEMS);
+
+  const rows = sh.getDataRange().getValues();
+
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === id) {
+      sh.getRange(i + 1, 7).setValue("published");
+      logAdmin_("show_asset", id);
+      return ok_();
+    }
+  }
+
+  return err_("asset not found");
+}
+
+/* ================= LOG ================= */
+
+function logAdmin_(action, target) {
+  ss_()
+    .getSheetByName(CFG.EVENTS)
+    .appendRow([
+      uid_(),
+      "admin",
+      action,
+      target,
+      "",
+      Session.getActiveUser().getEmail(),
+      now_(),
+    ]);
+}
+
 
 
 /***********************
