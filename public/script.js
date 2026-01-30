@@ -382,6 +382,10 @@ function doPost(e) {
     if (p === "user/activity") {
       return getUserActivity_(b.email);
     }
+    
+    if (path === "user/dashboard") {
+      return getUserDashboard_(b.email);
+    }
 
     return err_("404");
   } catch (e) {
@@ -437,6 +441,108 @@ function getUser_(email) {
     photo: null
   });
 }
+
+
+function getUserDashboard_(email) {
+
+  if (!email) return err_("Missing email");
+
+  const cache = CacheService.getUserCache();
+  const key = "dash_" + email;
+
+  const cached = cache.get(key);
+  if (cached) return JSON.parse(cached);
+
+  const ss = ss_();
+
+  const evSh = ss.getSheetByName(CFG.EVENTS);
+  const itSh = ss.getSheetByName(CFG.ITEMS);
+  const usSh = ss.getSheetByName(CFG.USERS);
+
+  if (!evSh || !itSh || !usSh) {
+    return err_("Missing sheets");
+  }
+
+  /* Load data */
+  const evRows = evSh.getDataRange().getValues();
+  const itRows = itSh.getDataRange().getValues();
+  const usRows = usSh.getDataRange().getValues();
+
+  /* Build item map */
+  const items = {};
+
+  for (let i = 1; i < itRows.length; i++) {
+    items[itRows[i][0]] = {
+      id: itRows[i][0],
+      title: itRows[i][1],
+      url: "/item/" + itRows[i][0]
+    };
+  }
+
+  /* Find user */
+  let user = null;
+
+  for (let i = 1; i < usRows.length; i++) {
+    if (usRows[i][0] === email) {
+      user = {
+        email,
+        name: usRows[i][1],
+        phone: usRows[i][2]
+      };
+      break;
+    }
+  }
+
+  if (!user) {
+    user = { email, name: "", phone: "" };
+  }
+
+  /* Activity */
+  const likes = {};
+  const comments = [];
+
+  for (let i = evRows.length - 1; i > 0; i--) {
+
+    const r = evRows[i];
+
+    if (r[5] !== email) continue;
+
+    const itemId = r[1];
+    const type = r[2];
+
+    /* Likes */
+    if (type === "like") {
+      if (!likes[itemId] && items[itemId]) {
+        likes[itemId] = items[itemId];
+      }
+    }
+
+    /* Comments */
+    if (type === "comment" && items[itemId]) {
+      comments.push({
+        item: items[itemId],
+        text: r[3],
+        at: r[6]
+      });
+    }
+
+    if (
+      Object.keys(likes).length >= 50 &&
+      comments.length >= 50
+    ) break;
+  }
+
+  const data = json_({
+    user,
+    likes: Object.values(likes),
+    comments
+  });
+
+  cache.put(key, JSON.stringify(data), 300);
+
+  return data;
+}
+
 
 // =================================================
 // USER ACTIVITY
@@ -566,6 +672,10 @@ function updateUser_(data) {
   if (!data.email) {
     return err_("Missing email");
   }
+  
+  CacheService
+  .getUserCache()
+  .remove("dash_" + email);
 
   const sh = ss_().getSheetByName(CFG.USERS);
   const rows = sh.getDataRange().getValues();
