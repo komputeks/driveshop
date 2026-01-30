@@ -517,64 +517,60 @@ function doPost(e) {
 }
 
 
-/***********************
+/*************************************************
+ * RESPONSE HELPERS
+ *************************************************/
+function json_(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function ok_() {
+  return json_({ ok: true });
+}
+
+function err_(msg) {
+  return json_({
+    ok: false,
+    error: msg
+  });
+}
+
+
+/*************************************************
  * GET HANDLER (PUBLIC API)
- ***********************/
+ *************************************************/
+
 function doGet(e) {
+
   try {
 
     const p = e.parameter.path || "";
 
-    // Items listing (homepage, search, category)
+    // Homepage / search / category
     if (p === "items") {
       return getItems_(e);
     }
 
     // Health check
     if (p === "ping") {
-      return json_({ ok: true, time: now_() });
+      return json_({
+        ok: true,
+        time: now_()
+      });
     }
 
-    return err_("404");
+    return err_("Not found");
 
   } catch (e) {
 
     logErr_("get", "", e);
-    return err_(e.message);
+
+    return err_(e.message || "Server error");
 
   }
 }
-
-
-
-/***********************
- * GET HANDLER (PUBLIC API)
- ***********************/
-function doGet(e) {
-  try {
-
-    const p = e.parameter.path || "";
-
-    // Items listing (homepage, search, category)
-    if (p === "items") {
-      return getItems_(e);
-    }
-
-    // Health check
-    if (p === "ping") {
-      return json_({ ok: true, time: now_() });
-    }
-
-    return err_("404");
-
-  } catch (e) {
-
-    logErr_("get", "", e);
-    return err_(e.message);
-
-  }
-}
-
 
 /*************************************************
  * ITEMS
