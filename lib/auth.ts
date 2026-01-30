@@ -16,8 +16,5 @@ export const authOptions: NextAuthOptions = {
       // Keep default session (name, email, image)
       return session;
     },
-  session: {
-    strategy: "jwt",
-    },
   },
 };
