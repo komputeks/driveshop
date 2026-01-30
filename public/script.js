@@ -13,7 +13,6 @@ const CFG = {
   ITEMS: "Items",
   EVENTS: "Events",
   USERS: "Users",
-  JOBS: "Jobs",
   ERRORS: "Errors",
   CATS: "Categories",
 };
@@ -106,16 +105,6 @@ function setup_() {
     "photo",
     "createdAt",
     "lastLogin"
-  ]);
-
-  sheet_(CFG.JOBS, [
-    "id",
-    "type",
-    "status",
-    "progress",
-    "meta",
-    "createdAt",
-    "updatedAt"
   ]);
 
   sheet_(CFG.ERRORS, [
@@ -246,20 +235,25 @@ function index_() {
 }
 
 function scanAll_() {
-  const job = startJob_("scan");
+
   try {
+
     const seen = index_();
     const sh = ss_().getSheetByName(CFG.ITEMS);
     const out = [];
+
     const root = DriveApp.getFolderById(prop_("AUTO_FOLDER_ID"));
     const files = root.getFiles();
 
     while (files.hasNext()) {
+
       const f = files.next();
+
       if (!f.getMimeType().startsWith("image/")) continue;
       if (seen[f.getId()]) continue;
 
       const size = imageSize_(f);
+
       const cat = inferCategory_(f, size.w, size.h);
       moveToCategory_(f, cat);
 
@@ -284,15 +278,22 @@ function scanAll_() {
     }
 
     if (out.length) {
-      sh.getRange(sh.getLastRow() + 1, 1, out.length, out[0].length).setValues(out);
+      sh.getRange(
+        sh.getLastRow() + 1,
+        1,
+        out.length,
+        out[0].length
+      ).setValues(out);
     }
 
     syncCategoryDropdown_();
-    updateJob_(job, "done", 100);
+
     revalidate_();
+
   } catch (e) {
-    logErr_(job, "", e);
-    updateJob_(job, "fail");
+
+    logErr_("scan", "", e);
+
   }
 }
 
@@ -339,9 +340,29 @@ function doPost(e) {
     verifySig_(e, b);
 
     const p = e.parameter.path || "";
-
+    
+    
     if (p === "event") {
       addEvent_(b.itemId, b.type, b.value, b.page, b.email);
+      return ok_();
+    }
+    
+    if (p === "event/batch") {
+    
+      if (!Array.isArray(b.items)) {
+        return err_("Bad batch");
+      }
+    
+      b.items.forEach(e => {
+        addEvent_(
+          e.itemId,
+          e.type,
+          e.value,
+          e.page,
+          e.email
+        );
+      });
+    
       return ok_();
     }
 
@@ -350,13 +371,16 @@ function doPost(e) {
       return ok_();
     }
 
-    if (p === "phone") {
-      updatePhone_(b.email, b.phone);
-      return ok_();
+    if (p === "user/update") {
+      return updateUser_(b);
     }
 
-    if (p === "userGet") {
+    if (p === "user/get") {
       return getUser_(b.email);
+    }
+    
+    if (p === "user/activity") {
+      return getUserActivity_(b.email);
     }
 
     return err_("404");
@@ -366,7 +390,6 @@ function doPost(e) {
   }
 }
 
-/* … rest unchanged … */
 // =================================================
 // GET USER BY EMAIL
 // =================================================
@@ -385,16 +408,14 @@ function getUser_(email) {
   const rows = sh.getDataRange().getValues();
 
   if (rows.length < 2) {
-    return json_({ email, role: "user" });
+    return json_({ email });
   }
 
   const headers = rows[0];
 
   for (let i = 1; i < rows.length; i++) {
 
-    const row = rows[i];
-
-    if (row[0] === email) {
+    if (rows[i][0] === email) {
 
       const user = {};
 
@@ -402,8 +423,6 @@ function getUser_(email) {
         user[headers[j]] = row[j];
       }
 
-      // Safety defaults
-      user.role = user.role || "user";
       user.phone = user.phone || null;
       user.photo = user.photo || null;
 
@@ -411,15 +430,13 @@ function getUser_(email) {
     }
   }
 
-  // Not found → auto-register minimal profile
+  // auto-register
   return json_({
     email,
-    role: "user",
     phone: null,
-    photo: null,
+    photo: null
   });
 }
-
 
 // =================================================
 // USER ACTIVITY
@@ -428,33 +445,66 @@ function getUserActivity_(email) {
 
   if (!email) return err_("Missing email");
 
-  const sh = ss_().getSheetByName(CFG.EVENTS);
-  const rows = sh.getDataRange().getValues();
+  const evSh = ss_().getSheetByName(CFG.EVENTS);
+  const itSh = ss_().getSheetByName(CFG.ITEMS);
 
-  const out = [];
+  const evRows = evSh.getDataRange().getValues();
+  const itRows = itSh.getDataRange().getValues();
+
+  // Build item map
+  const items = {};
+
+  for (let i = 1; i < itRows.length; i++) {
+
+    items[itRows[i][0]] = {
+      id: itRows[i][0],
+      name: itRows[i][1],
+      url: "/item/" + itRows[i][0]
+    };
+  }
+
+  const likes = {};
+  const comments = [];
 
   // newest first
-  for (let i = rows.length - 1; i > 0; i--) {
+  for (let i = evRows.length - 1; i > 0; i--) {
 
-    if (rows[i][5] === email) {
+    const row = evRows[i];
 
-      out.push({
-        id: rows[i][0],
-        itemId: rows[i][1],
-        type: rows[i][2],
-        value: rows[i][3],
-        page: rows[i][4],
-        at: rows[i][6]
+    if (row[5] !== email) continue;
+
+    const itemId = row[1];
+    const type = row[2];
+
+    // Likes → favorites
+    if (type === "like") {
+
+      if (!likes[itemId]) {
+        likes[itemId] = items[itemId];
+      }
+    }
+
+    // Comments
+    if (type === "comment") {
+
+      comments.push({
+        item: items[itemId],
+        text: row[3],
+        at: row[6]
       });
     }
 
-    // limit
-    if (out.length >= 50) break;
+    if (
+      Object.keys(likes).length >= 50 &&
+      comments.length >= 50
+    ) break;
   }
 
-  return json_({ items: out });
+  return json_({
+    likes: Object.values(likes),
+    comments
+  });
 }
-
 
 
 
@@ -503,8 +553,7 @@ function upsertUser_(email, name, photo) {
     "",
     avatar,
     now_(),
-    now_(),
-    "user" // default role
+    now_()
   ]);
 }
 
@@ -549,22 +598,6 @@ function updateUser_(data) {
   }
 
   return err_("User not found");
-}
-
-
-function updatePhone_(email, phone) {
-
-  const sh = ss_().getSheetByName(CFG.USERS);
-  const r = sh.getDataRange().getValues();
-
-  for (let i = 1; i < r.length; i++) {
-
-    if (r[i][0] === email) {
-
-      sh.getRange(i + 1, 3).setValue(phone);
-      return;
-    }
-  }
 }
 
 
@@ -664,39 +697,6 @@ function moveToCategory_(file, cat) {
   }
 }
 
-/***********************
- * SHEET → DRIVE SYNC
- ***********************/
-
-function onEdit(e) {
-
-  const sh = e.range.getSheet();
-
-  if (sh.getName() !== CFG.ITEMS) return;
-
-  // only Category column
-  if (e.range.getColumn() !== 3) return;
-
-  const row = e.range.getRow();
-
-  if (row < 2) return;
-
-  const id = sh.getRange(row, 1).getValue();
-  const cat = e.value;
-
-  if (!id || !cat) return;
-
-  try {
-
-    const file = DriveApp.getFileById(id);
-
-    moveToCategory_(file, cat);
-
-  } catch (err) {
-
-    logErr_("cat-edit", id, err);
-  }
-}
 
 
 function verifySig_(e, body) {
