@@ -11,10 +11,29 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
 
+  session: {
+    strategy: "jwt",
+  },
+
   callbacks: {
-    async session({ session }) {
-      // Keep default session (name, email, image)
+    async session({ session, token }) {
+      if (session.user && token.email) {
+        session.user.email = token.email as string;
+      }
+
       return session;
     },
+
+    async jwt({ token, account, profile }) {
+      if (profile?.email) {
+        token.email = profile.email;
+      }
+
+      return token;
+    },
+  },
+
+  pages: {
+    signIn: "/login",
   },
 };

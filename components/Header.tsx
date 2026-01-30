@@ -6,7 +6,7 @@ import SearchBar from "./SearchBar";
 
 export default function Header() {
 
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
 
   return (
     <header className="fixed top-0 w-full bg-white border-b z-50">
@@ -27,7 +27,7 @@ export default function Header() {
         {/* User */}
         <div className="flex items-center gap-4">
 
-          {!session && (
+          {status === "unauthenticated" && (
             <Link
               href="/login"
               className="font-medium"
@@ -36,7 +36,7 @@ export default function Header() {
             </Link>
           )}
 
-          {session && (
+          {status === "authenticated" && (
             <>
               <Link
                 href="/dashboard"

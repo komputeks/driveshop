@@ -19,4 +19,3 @@ export function getUserActivity(email: string) {
 export function getDashboard(email: string) {
   return callGas("user/dashboard", { email });
 }
-

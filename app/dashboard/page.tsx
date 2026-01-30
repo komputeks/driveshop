@@ -1,24 +1,53 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
 
   const session = await getServerSession(authOptions);
 
-  if (!session) {
-    return <p className="p-10">Not logged in</p>;
+  if (!session?.user?.email) {
+    redirect("/login");
   }
 
-  const url = new URL(process.env.NEXT_PUBLIC_GAS_URL!);
+  const API = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+  if (!API) {
+    return (
+      <p className="p-10 text-red-600">
+        API not configured
+      </p>
+    );
+  }
+
+  const url = new URL(API);
 
   url.searchParams.set("path", "user/dashboard");
-  url.searchParams.set("email", session.user!.email!);
+  url.searchParams.set("email", session.user.email);
 
   const res = await fetch(url.toString(), {
     cache: "no-store",
   });
 
+  if (!res.ok) {
+    return (
+      <p className="p-10 text-red-600">
+        Failed to load dashboard
+      </p>
+    );
+  }
+
   const data = await res.json();
+
+  if (!data?.user) {
+    return (
+      <p className="p-10 text-red-600">
+        Invalid dashboard data
+      </p>
+    );
+  }
 
   return (
     <main className="pt-20 max-w-5xl mx-auto p-6">
@@ -27,13 +56,12 @@ export default async function Dashboard() {
         Dashboard
       </h1>
 
-      {/* Profile */}
       <div className="bg-white p-6 rounded shadow mb-8">
 
         <div className="flex items-center gap-4">
 
           <img
-            src={session.user?.image || ""}
+            src={session.user.image || ""}
             className="w-20 h-20 rounded-full"
           />
 
@@ -52,60 +80,6 @@ export default async function Dashboard() {
         </div>
 
       </div>
-
-      {/* Favorites */}
-      <section className="mb-8">
-
-        <h2 className="font-semibold mb-3">
-          Favorites
-        </h2>
-
-        <ul className="space-y-2">
-
-          {data.likes.map((i: any) => (
-            <li key={i.id}>
-              <a
-                href={i.url}
-                className="text-blue-600"
-              >
-                {i.title}
-              </a>
-            </li>
-          ))}
-
-        </ul>
-
-      </section>
-
-      {/* Comments */}
-      <section>
-
-        <h2 className="font-semibold mb-3">
-          Comments
-        </h2>
-
-        <ul className="space-y-3">
-
-          {data.comments.map((c: any, i: number) => (
-            <li key={i}>
-
-              <a
-                href={c.item.url}
-                className="text-blue-600"
-              >
-                {c.item.title}
-              </a>
-
-              <p className="text-sm text-gray-600">
-                {c.text}
-              </p>
-
-            </li>
-          ))}
-
-        </ul>
-
-      </section>
 
     </main>
   );
