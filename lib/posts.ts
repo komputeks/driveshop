@@ -1,5 +1,3 @@
-// lib/api.ts
-
 export function getApiUrl() {
 
   const url = process.env.NEXT_PUBLIC_API_BASE_URL;

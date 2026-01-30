@@ -455,17 +455,35 @@ function bumpStats_(id, type) {
  *************************************************/
 
 function doPost(e) {
-
   try {
-
-    const b = JSON.parse(e.postData.contents);
-
-    verifySig_(e, b);
+    const b = JSON.parse(e.postData.contents || "{}");
 
     const p = e.parameter.path || "";
 
+    if (p === "items") {
+      return getItems_(e);
+    }
+
     if (p === "event") {
       addEvent_(b.itemId, b.type, b.value, b.page, b.email);
+      return ok_();
+    }
+
+    if (p === "event/batch") {
+      if (!Array.isArray(b.items)) {
+        return err_("Bad batch");
+      }
+
+      b.items.forEach(e => {
+        addEvent_(
+          e.itemId,
+          e.type,
+          e.value,
+          e.page,
+          e.email
+        );
+      });
+
       return ok_();
     }
 
@@ -473,23 +491,27 @@ function doPost(e) {
       upsertUser_(b.email, b.name, b.photo);
       return ok_();
     }
-    
-    if (p === "items") return getItems_(b.parameter);
 
-    if (p === "user/update") return updateUser_(b);
+    if (p === "user/update") {
+      return updateUser_(b);
+    }
 
-    if (p === "user/get") return getUser_(b.email);
+    if (p === "user/get") {
+      return getUser_(b.email);
+    }
 
-    if (p === "user/activity") return getUserActivity_(b.email);
+    if (p === "user/activity") {
+      return getUserActivity_(b.email);
+    }
 
-    if (p === "user/dashboard") return getUserDashboard_(b.email);
+    if (p === "user/dashboard") {
+      return getUserDashboard_(b.email);
+    }
 
     return err_("404");
 
   } catch (e) {
-
     logErr_("api", "", e);
-
     return err_(e.message);
   }
 }
@@ -498,24 +520,21 @@ function doPost(e) {
  * ITEMS
  *************************************************/
 
-function getItems_(q) {
+function getItems_(e) {
+
+  const q = e.parameter.q || "";
+  const cat = e.parameter.cat || "";
 
   const sh = ss_().getSheetByName(CFG.ITEMS);
   const rows = sh.getDataRange().getValues();
 
   const out = [];
 
-  const search = (q.q || "").toLowerCase();
-  const cat = q.cat || "";
-
   for (let i = 1; i < rows.length; i++) {
 
     const r = rows[i];
 
-    if (search && !r[1].toLowerCase().includes(search)) continue;
-    if (cat && r[2] !== cat) continue;
-
-    out.push({
+    const item = {
       id: r[0],
       name: r[1],
       category: r[2],
@@ -524,13 +543,29 @@ function getItems_(q) {
       height: r[5],
       size: r[6],
       description: r[7],
+      createdAt: r[8],
+      updatedAt: r[9],
       views: r[10],
       likes: r[11],
-      comments: r[12]
-    });
+      comments: r[12],
+    };
+
+    // Search filter
+    if (q && !item.name.toLowerCase().includes(q.toLowerCase())) {
+      continue;
+    }
+
+    // Category filter
+    if (cat && item.category !== cat) {
+      continue;
+    }
+
+    out.push(item);
   }
 
-  return json_({ items: out });
+  return json_({
+    items: out
+  });
 }
 
 /*************************************************

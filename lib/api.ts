@@ -5,13 +5,18 @@ export function sendEvent(data: any) {
 }
 
 export function getUser(email: string) {
-  return callGas("userGet", { email });
+  return callGas("user/get", { email });
 }
 
 export function updateUser(data: any) {
-  return callGas("user", data);
+  return callGas("user/update", data);
 }
 
 export function getUserActivity(email: string) {
   return callGas("user/activity", { email });
 }
+
+export function getDashboard(email: string) {
+  return callGas("user/dashboard", { email });
+}
+
