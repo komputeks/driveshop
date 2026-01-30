@@ -2,10 +2,10 @@
 
 export function getApiUrl() {
 
-  const url = process.env.NEXT_PUBLIC_GAS_URL;
+  const url = process.enNEXT_PUBLIC_API_BASE_URL;
 
   if (!url) {
-    console.error("❌ Missing NEXT_PUBLIC_GAS_URL");
+    console.error("❌ Missing NEXT_PUBLIC_API_BASE_URL");
     return null;
   }
 

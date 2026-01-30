@@ -1,4 +1,4 @@
-const GAS = process.env.NEXT_PUBLIC_GAS_URL!;
+const GAS = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
 let queue: any[] = [];
 let timer: any = null;

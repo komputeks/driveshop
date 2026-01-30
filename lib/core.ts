@@ -1,4 +1,4 @@
-const GAS = process.env.NEXT_PUBLIC_GAS_URL!;
+const GAS = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
 export async function callGas(path: string, body: any) {
   const res = await fetch(GAS + "?path=" + path, {
