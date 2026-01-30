@@ -3,7 +3,37 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
-import { Search, ChevronDown } from "lucide-react";
+
+
+function SearchIcon({ className = "" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="M21 21l-4.3-4.3" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ className = "" }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
 
 export default function Header() {
   const { data: session } = useSession();
@@ -67,13 +97,11 @@ export default function Header() {
 
           <div className="relative w-full">
 
-            <Search
-              size={16}
-              className="
-                absolute left-3 top-1/2 -translate-y-1/2
-                text-gray-400
-              "
-            />
+            <SearchIcon className="
+  w-4 h-4
+  absolute left-3 top-1/2 -translate-y-1/2
+  text-gray-400
+"/>
 
             <input
               placeholder="Search assets, categories..."
@@ -150,13 +178,13 @@ export default function Header() {
                   {session.user?.name?.split(" ")[0]}
                 </span>
 
-                <ChevronDown
-                  size={16}
-                  className={`
-                    transition
-                    ${open ? "rotate-180" : ""}
-                  `}
-                />
+                <ChevronIcon
+  className={`
+    w-4 h-4
+    transition
+    ${open ? "rotate-180" : ""}
+  `}
+/>
               </button>
 
 
