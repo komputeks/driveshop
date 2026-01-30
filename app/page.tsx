@@ -1,14 +1,9 @@
 import AssetCard from "@/components/AssetCard";
 import { fetchItems } from "@/lib/posts";
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams?: {
-    q?: string;
-    cat?: string;
-  };
-}) {
+export const dynamic = "force-dynamic"; // ✅ important
+
+export default async function Home({ searchParams }: any) {
 
   const data = await fetchItems({
     q: searchParams?.q,
@@ -22,12 +17,6 @@ export default async function Home({
         Gallery
       </h1>
 
-      {data.items.length === 0 && (
-        <p className="text-gray-500">
-          No items found
-        </p>
-      )}
-
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
 
         {data.items.map((item: any) => (
@@ -35,6 +24,7 @@ export default async function Home({
         ))}
 
       </div>
+
     </main>
   );
 }
