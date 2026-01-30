@@ -46,10 +46,10 @@ export default function AssetCard({ item }: any) {
               setLiked(true);
             }}
           >
-            ❤️ {item.likes}
+            ❤️ {item.likes || 0 }
           </button>
 
-          <span>👁 {item.views}</span>
+          <span>👁 {item.views || 0 }</span>
         </div>
       </div>
     </div>
