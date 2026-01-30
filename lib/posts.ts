@@ -2,7 +2,7 @@
 
 export function getApiUrl() {
 
-  const url = process.enNEXT_PUBLIC_API_BASE_URL;
+  const url = process.NEXT_PUBLIC_API_BASE_URL;
 
   if (!url) {
     console.error("❌ Missing NEXT_PUBLIC_API_BASE_URL");
