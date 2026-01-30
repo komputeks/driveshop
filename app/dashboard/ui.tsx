@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
 import { getUser, updateUser } from "@/lib/user";
+import Activity from "./Activity";
 
 export default function DashboardClient({
   email,
