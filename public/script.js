@@ -115,13 +115,6 @@ function setup_() {
     "stack"
   ]);
 
-  sheet_(CFG.CATS, [
-    "pattern",
-    "category",
-    "priority"
-  ]);
-}
-
 function sheet_(name, cols) {
   let sh = ss_().getSheetByName(name);
   if (!sh) {
@@ -878,7 +871,8 @@ function bootstrap() {
   
   ScriptApp.newTrigger("scanAll_")
     .timeBased()
-    .everyHours(1)
+    .everyHours()
+    .everyMinutes(15)
     .create();
 }
 
