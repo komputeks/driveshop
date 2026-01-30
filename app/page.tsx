@@ -1,7 +1,7 @@
 import AssetCard from "@/components/AssetCard";
 import { fetchItems } from "@/lib/posts";
 
-export const dynamic = "force-dynamic"; // ✅ important
+export const dynamic = "force-dynamic";
 
 export default async function Home({ searchParams }: any) {
 
@@ -16,6 +16,18 @@ export default async function Home({ searchParams }: any) {
       <h1 className="text-3xl font-bold mb-6">
         Gallery
       </h1>
+
+      {data.error && (
+        <div className="mb-6 p-4 bg-red-50 text-red-600 rounded">
+          {data.error}
+        </div>
+      )}
+
+      {data.items.length === 0 && (
+        <p className="text-gray-500">
+          No items found.
+        </p>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
 
