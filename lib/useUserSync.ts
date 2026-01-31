@@ -1,5 +1,4 @@
 // lib/useUserSync.ts
-// 💥 Ultimate: debounced + batched + retry + queued + persistent + offline-aware
 "use client";
 
 import { useSession } from "next-auth/react";
@@ -18,7 +17,6 @@ const retry = async <T>(
     return await fn();
   } catch (err) {
     if (retries > 0) {
-      console.warn(`Retrying... attempts left: ${retries}`, err);
       await new Promise((res) => setTimeout(res, delay));
       return retry(fn, retries - 1, delay);
     }
@@ -44,15 +42,14 @@ const saveQueue = (queue: Array<{ email: string; name: string; image: string }>)
 };
 
 export function useUserSync() {
-  const { data: session, status } = useSession();
-
+  const { data: session, status } = useSession() || {};
   const lastSyncedUser = useRef<{ email: string; name: string; image: string } | null>(null);
-  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const pendingUser = useRef<{ email: string; name: string; image: string } | null>(null);
-
+  const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const queue = useRef(loadQueue());
   const processingQueue = useRef(false);
 
+  // Process the persistent queue
   const processQueue = async () => {
     if (processingQueue.current || !navigator.onLine) return;
     processingQueue.current = true;
@@ -60,31 +57,30 @@ export function useUserSync() {
     while (queue.current.length > 0 && navigator.onLine) {
       const userToSync = queue.current[0];
       try {
-        await retry(() => callGAS("user", userToSync), 3, 500);
+        await retry(() => callGAS("user", userToSync));
         console.log("✅ Queued user synced to GAS:", userToSync);
         queue.current.shift();
         saveQueue(queue.current);
       } catch (err) {
-        console.error("❌ Failed to sync queued user, will retry later", err);
-        break; // stop processing queue to retry later
+        console.error("❌ Failed to sync queued user, retrying later", err);
+        break;
       }
     }
 
     processingQueue.current = false;
   };
 
+  // Watch for session changes and sync user
   useEffect(() => {
     if (status !== "authenticated") return;
-
     const user = session?.user;
     if (!user) return;
 
-    // ⚡ TypeScript-safe defaults to fix null | string issue
     const email = user.email ?? "";
     const name = user.name ?? "";
     const image = user.image ?? "";
 
-    // Skip if nothing changed
+    // Skip if user didn’t change
     if (
       lastSyncedUser.current &&
       lastSyncedUser.current.email === email &&
@@ -97,20 +93,18 @@ export function useUserSync() {
     pendingUser.current = { email, name, image };
 
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
-
     debounceTimeout.current = setTimeout(async () => {
       if (!pendingUser.current) return;
 
       const userToSync = pendingUser.current;
       pendingUser.current = null;
-
       lastSyncedUser.current = userToSync;
 
       try {
-        await retry(() => callGAS("user", userToSync), 3, 500);
+        await retry(() => callGAS("user", userToSync));
         console.log("✅ User synced to GAS:", userToSync);
       } catch (err) {
-        console.error("❌ User sync failed, added to persistent queue", err);
+        console.error("❌ User sync failed, added to queue", err);
         queue.current.push(userToSync);
         saveQueue(queue.current);
       } finally {
@@ -125,10 +119,7 @@ export function useUserSync() {
 
   // Retry queue every 5s if online
   useEffect(() => {
-    const interval = setInterval(() => {
-      processQueue();
-    }, 5000);
-
+    const interval = setInterval(processQueue, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -138,7 +129,6 @@ export function useUserSync() {
       console.log("🌐 Browser online, processing user sync queue...");
       processQueue();
     };
-
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
   }, []);
