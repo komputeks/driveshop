@@ -4,7 +4,6 @@ export const dynamic = "force-dynamic";
 
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Providers from "@/app/providers";
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
@@ -20,7 +19,6 @@ export default function Dashboard() {
   const user = session.user!;
 
   return (
-    <Providers>
       <main className="min-h-screen p-8 max-w-3xl mx-auto">
         <div className="bg-glass backdrop-blur-xl rounded-2xl p-6 shadow-xl">
           <div className="flex items-center gap-4 mb-6">
@@ -38,6 +36,5 @@ export default function Dashboard() {
           </button>
         </div>
       </main>
-    </Providers>
   );
 }
