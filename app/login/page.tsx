@@ -1,9 +1,11 @@
 "use client";
 
+import Providers from "../providers";
 import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   return (
+    <Providers>
     <main className="min-h-screen flex items-center justify-center">
       <div className="bg-glass backdrop-blur-xl p-8 rounded-2xl shadow-xl text-center w-[320px]">
         <h1 className="text-2xl font-bold mb-6">
@@ -18,5 +20,7 @@ export default function LoginPage() {
         </button>
       </div>
     </main>
+    </Providers>
+
   );
 }
