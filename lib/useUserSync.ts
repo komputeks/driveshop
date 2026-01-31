@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { callGAS } from "./callGAS";
+import { callGAS } from "./api";
 
 export function useUserSync() {
   const { data: session, status } = useSession();
