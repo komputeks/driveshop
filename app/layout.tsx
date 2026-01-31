@@ -1,7 +1,6 @@
 // app/layout.tsx
 import "./globals.css";
-import AuthProvider from "@/components/SessionProvider";
-import SyncWrapper from "@/components/SyncWrapper";
+import { PfoviProviders } from "./providers";
 
 export default function RootLayout({
   children,
@@ -11,9 +10,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          <SyncWrapper>{children}</SyncWrapper>
-        </AuthProvider>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
