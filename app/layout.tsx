@@ -1,6 +1,6 @@
 // app/layout.tsx
 import "./globals.css";
-import { PfoviProviders } from "./providers";
+import { Providers } from "./providers";
 
 export default function RootLayout({
   children,
