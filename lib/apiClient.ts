@@ -26,3 +26,4 @@ export async function updateProfile(data: any) {
     body: JSON.stringify(data),
   });
 }
+
