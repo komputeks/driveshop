@@ -1,7 +1,15 @@
-// app/layout.tsx
-
 import "./globals.css";
 import AuthProvider from "@/components/SessionProvider";
+import { useUserSync } from "@/lib/useUserSync";
+
+function SyncWrapper({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  useUserSync();
+  return <>{children}</>;
+}
 
 export default function RootLayout({
   children,
@@ -12,7 +20,9 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
-          {children}
+          <SyncWrapper>
+            {children}
+          </SyncWrapper>
         </AuthProvider>
       </body>
     </html>
