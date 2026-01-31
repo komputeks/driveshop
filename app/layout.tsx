@@ -1,6 +1,6 @@
 import "./globals.css";
 import AuthProvider from "@/components/SessionProvider";
-import { useUserSync } from "@/lib/useUserSync";
+import { ClientUserSyncWrapper } from "@/components/ClientUserSyncWrapper";
 
 function SyncWrapper({
   children,
@@ -20,9 +20,8 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AuthProvider>
-          <SyncWrapper>
+        <ClientUserSyncWrapper />
             {children}
-          </SyncWrapper>
         </AuthProvider>
       </body>
     </html>
