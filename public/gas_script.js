@@ -884,3 +884,21 @@ function bootstrap() {
     .create();
 
 }
+
+
+
+function testRevalidate() {
+  const url = PropertiesService.getScriptProperties()
+    .getProperty("NEXTJS_ISR_ENDPOINT");
+
+  const secret = PropertiesService.getScriptProperties()
+    .getProperty("NEXTJS_ISR_SECRET");
+
+  const res = UrlFetchApp.fetch(url, {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({ secret }),
+  });
+
+  Logger.log(res.getContentText());
+}
