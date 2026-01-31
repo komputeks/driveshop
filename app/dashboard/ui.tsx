@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { signOut } from "next-auth/react";
-import { getDashboard } from "@/lib/dashboard";
+import { fetchDashboard, updateProfile } from "@/lib/apiClient";
 
 export default function DashboardClient({
   email,
@@ -18,7 +18,7 @@ export default function DashboardClient({
   }, []);
 
   async function load() {
-    const d = await getDashboard(email);
+    const d = await fetchDashboard(email);
     setData(d);
   }
 
@@ -26,13 +26,10 @@ export default function DashboardClient({
 
     setSaving(true);
 
-    await fetch("/api/user/update", {
-      method: "POST",
-      body: JSON.stringify({
-        email,
-        name: data.user.name,
-        phone: data.user.phone,
-      }),
+    await updateProfile({
+      email,
+      name: data.user.name,
+      phone: data.user.phone,
     });
 
     setSaving(false);

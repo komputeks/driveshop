@@ -1,16 +1,7 @@
 const GAS = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
-let cache: any = null;
-let last = 0;
-
-export async function getUser(email: string) {
-  const now = Date.now();
-
-  if (cache && now - last < 60_000) {
-    return cache;
-  }
-
-  const res = await fetch(GAS + "?path=user/get", {
+export async function fetchDashboard(email: string) {
+  const res = await fetch(GAS + "?path=user/dashboard", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -19,15 +10,14 @@ export async function getUser(email: string) {
     cache: "no-store",
   });
 
-  const data = await res.json();
+  if (!res.ok) {
+    throw new Error("Dashboard fetch failed");
+  }
 
-  cache = data;
-  last = now;
-
-  return data;
+  return res.json();
 }
 
-export async function updateUser(data: any) {
+export async function updateProfile(data: any) {
   return fetch(GAS + "?path=user/update", {
     method: "POST",
     headers: {
