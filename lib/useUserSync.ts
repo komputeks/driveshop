@@ -2,40 +2,26 @@
 
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { callGAS } from "@/lib/api";
+import { callGAS } from "./callGAS";
 
-/**
- * Syncs authenticated user with Google Apps Script backend.
- *
- * - Runs only after login is ready
- * - Runs only once per session
- * - Prevents duplicate inserts
- * - Prevents undefined crashes
- * - Keeps Users sheet in sync
- */
 export function useUserSync() {
   const { data: session, status } = useSession();
 
-  // Prevent double sync (important for React strict mode)
-  const hasSynced = useRef(false);
+  // Prevent double sync
+  const synced = useRef(false);
 
   useEffect(() => {
-    // Wait until auth is fully loaded
+    // Wait until auth is ready
     if (status !== "authenticated") return;
 
-    // Already synced → stop
-    if (hasSynced.current) return;
+    // Extra safety
+    if (!session?.user?.email) return;
 
-    // Safety check
-    if (!session?.user?.email) {
-      console.warn("User session incomplete, skipping sync");
-      return;
-    }
+    if (synced.current) return;
 
-    // Mark as synced BEFORE calling API
-    hasSynced.current = true;
+    synced.current = true;
 
-    async function syncUser() {
+    async function sync() {
       try {
         await callGAS("user", {
           email: session.user.email,
@@ -43,12 +29,13 @@ export function useUserSync() {
           photo: session.user.image || "",
         });
 
-        console.log("User synced successfully");
+        console.log("✅ User synced to GAS");
       } catch (err) {
-        console.error("User sync failed:", err);
+        console.error("❌ User sync failed:", err);
+        synced.current = false;
       }
     }
 
-    syncUser();
+    sync();
   }, [session, status]);
 }
