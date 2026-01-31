@@ -517,7 +517,10 @@ function doPost(e) {
     }
 
     if (p === "user") {
-      upsertUser_(b.email, b.name, b.photo);
+      const email = b.email;
+      const name = b.name;
+      const photo = b.photo || b.image || "";
+      upsertUser_(email, name, photo);
       return ok_();
     }
 
@@ -657,60 +660,30 @@ function getItems_(e) {
 function ensureUser_(profile) {
   if (!profile || !profile.email) return null;
 
-  const sh = sheet_(CFG.USERS, [
-    "email",
-    "name",
-    "phone",
-    "photo",
-    "createdAt",
-    "lastLogin",
-  ]);
-
+  const sh = sheet_(CFG.USERS, ["email","name","phone","photo","createdAt","lastLogin"]);
   const rows = sh.getDataRange().getValues();
-  
-  const email = String(profile.email || "")
-  .toLowerCase()
-  .trim();
+
+  const email = String(profile.email).toLowerCase().trim();
   if (!email.includes("@")) return null;
-  
-  const avatar =
-    profile.photo ||
-    "https://www.gravatar.com/avatar/?d=mp&s=200";
+
+  const avatar = profile.photo || "https://www.gravatar.com/avatar/?d=mp&s=200";
 
   for (let i = 1; i < rows.length; i++) {
     if (rows[i][0] === email) {
-
-      // Update
-      sh.getRange(i + 1, 2).setValue(profile.name || rows[i][1]);
-      sh.getRange(i + 1, 4).setValue(avatar);
-      sh.getRange(i + 1, 6).setValue(now_());
-
-      return {
-        email,
-        name: profile.name,
-        phone: rows[i][2],
-        photo: avatar,
-      };
+      // update
+      sh.getRange(i+1,2).setValue(profile.name || rows[i][1]);
+      sh.getRange(i+1,4).setValue(avatar);
+      sh.getRange(i+1,6).setValue(now_());
+      return { email, name: profile.name, phone: rows[i][2], photo: avatar };
     }
   }
 
-  // New user
-  sh.appendRow([
-    email,
-    profile.name || "",
-    "",
-    avatar,
-    now_(),
-    now_(),
-  ]);
-
-  return {
-    email,
-    name: profile.name,
-    phone: "",
-    photo: avatar,
-  };
+  // new user
+  sh.appendRow([email, profile.name||"", "", avatar, now_(), now_()]);
+  return { email, name: profile.name, phone: "", photo: avatar };
 }
+
+
 
 
 function getUser_(email) {

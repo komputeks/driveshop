@@ -17,6 +17,7 @@ const retry = async <T>(
     return await fn();
   } catch (err) {
     if (retries > 0) {
+      console.warn(`Retrying... attempts left: ${retries}`, err);
       await new Promise((res) => setTimeout(res, delay));
       return retry(fn, retries - 1, delay);
     }
@@ -25,7 +26,7 @@ const retry = async <T>(
 };
 
 // Load queue from localStorage
-const loadQueue = (): Array<{ email: string; name: string; image: string }> => {
+const loadQueue = (): Array<{ email: string; name: string; photo: string }> => {
   if (typeof window === "undefined") return [];
   try {
     const data = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -36,15 +37,15 @@ const loadQueue = (): Array<{ email: string; name: string; image: string }> => {
 };
 
 // Save queue to localStorage
-const saveQueue = (queue: Array<{ email: string; name: string; image: string }>) => {
+const saveQueue = (queue: Array<{ email: string; name: string; photo: string }>) => {
   if (typeof window === "undefined") return;
   localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(queue));
 };
 
 export function useUserSync() {
   const { data: session, status } = useSession() || {};
-  const lastSyncedUser = useRef<{ email: string; name: string; image: string } | null>(null);
-  const pendingUser = useRef<{ email: string; name: string; image: string } | null>(null);
+  const lastSyncedUser = useRef<{ email: string; name: string; photo: string } | null>(null);
+  const pendingUser = useRef<{ email: string; name: string; photo: string } | null>(null);
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const queue = useRef(loadQueue());
   const processingQueue = useRef(false);
@@ -62,8 +63,8 @@ export function useUserSync() {
         queue.current.shift();
         saveQueue(queue.current);
       } catch (err) {
-        console.error("❌ Failed to sync queued user, retrying later", err);
-        break;
+        console.error("❌ Failed to sync queued user, will retry later", err);
+        break; // stop processing queue to retry later
       }
     }
 
@@ -74,23 +75,23 @@ export function useUserSync() {
   useEffect(() => {
     if (status !== "authenticated") return;
     const user = session?.user;
-    if (!user) return;
+    if (!user || !user.email) return;
 
-    const email = user.email ?? "";
-    const name = user.name ?? "";
-    const image = user.image ?? "";
+    const email = user.email;
+    const name = user.name || "";
+    const photo = user.image || ""; // ✅ send as "photo" to match GAS
 
     // Skip if user didn’t change
     if (
       lastSyncedUser.current &&
       lastSyncedUser.current.email === email &&
       lastSyncedUser.current.name === name &&
-      lastSyncedUser.current.image === image
+      lastSyncedUser.current.photo === photo
     ) {
       return;
     }
 
-    pendingUser.current = { email, name, image };
+    pendingUser.current = { email, name, photo };
 
     if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
     debounceTimeout.current = setTimeout(async () => {
@@ -101,7 +102,7 @@ export function useUserSync() {
       lastSyncedUser.current = userToSync;
 
       try {
-        await retry(() => callGAS("user", userToSync));
+        await retry(() => callGAS("user", userToSync), 3, 500);
         console.log("✅ User synced to GAS:", userToSync);
       } catch (err) {
         console.error("❌ User sync failed, added to queue", err);
