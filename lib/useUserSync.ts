@@ -1,6 +1,5 @@
 // lib/useUserSync.ts
 // 💥 Ultimate: debounced + batched + retry + queued + persistent + offline-aware
-
 "use client";
 
 import { useSession } from "next-auth/react";
@@ -80,8 +79,12 @@ export function useUserSync() {
     const user = session?.user;
     if (!user) return;
 
-    const { email = "", name = "", image = "" } = user;
+    // ⚡ TypeScript-safe defaults to fix null | string issue
+    const email = user.email ?? "";
+    const name = user.name ?? "";
+    const image = user.image ?? "";
 
+    // Skip if nothing changed
     if (
       lastSyncedUser.current &&
       lastSyncedUser.current.email === email &&
@@ -129,7 +132,7 @@ export function useUserSync() {
     return () => clearInterval(interval);
   }, []);
 
-  // Listen to browser coming online
+  // Retry queue when browser comes online
   useEffect(() => {
     const handleOnline = () => {
       console.log("🌐 Browser online, processing user sync queue...");
@@ -137,8 +140,6 @@ export function useUserSync() {
     };
 
     window.addEventListener("online", handleOnline);
-    return () => {
-      window.removeEventListener("online", handleOnline);
-    };
+    return () => window.removeEventListener("online", handleOnline);
   }, []);
 }
