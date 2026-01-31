@@ -1,10 +1,7 @@
-import "./globals.css";
-import { SessionProvider } from "next-auth/react";
+// app/layout.tsx
 
-export const metadata = {
-  title: "DriveShop",
-  description: "Premium Drive Gallery",
-};
+import "./globals.css";
+import AuthProvider from "@/components/SessionProvider";
 
 export default function RootLayout({
   children,
@@ -14,9 +11,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <SessionProvider>
+        <AuthProvider>
           {children}
-        </SessionProvider>
+        </AuthProvider>
       </body>
     </html>
   );
