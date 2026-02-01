@@ -1,33 +1,37 @@
-import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { NextResponse } from "next/server";
+import { callGAS } from "@/lib/api";
 
-const GAS_URL = process.env.NEXTJS_PUBLIC_API_BASE_URL!;
+export async function GET(req: Request) {
+  const session = await auth();
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-
-    const res = await fetch(GAS_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-      cache: "no-store",
-    });
-
-    const text = await res.text();
-
-    return new NextResponse(text, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-  } catch (err: any) {
-    return NextResponse.json(
-      { ok: false, error: err.message },
-      { status: 500 }
-    );
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { searchParams } = new URL(req.url);
+  const email = searchParams.get("email");
+
+  const res = await callGAS("user/get", { email });
+
+  return NextResponse.json(res);
+}
+
+export async function POST(req: Request) {
+  const session = await auth();
+
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json();
+
+  await callGAS("user/upsert", {
+    email: session.user.email,
+    name: body.name,
+    phone: body.phone,
+    photo: session.user.image || "",
+  });
+
+  return NextResponse.json({ ok: true });
 }
