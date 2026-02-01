@@ -26,7 +26,7 @@ export default function DashboardPage() {
     async function load() {
       try {
         // Ensure user exists
-        await callAPI("user/upsert", {
+        await callGAS("user/upsert", {
           email,
           name: session.user?.name || "",
           photo: session.user?.image || "",
