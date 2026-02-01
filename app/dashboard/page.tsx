@@ -23,18 +23,22 @@ export default function Dashboard() {
 
   const [saving, setSaving] = useState(false);
 
+  // ✅ Extract email safely
+  const email = session?.user?.email || null;
+
   // Load profile
   useEffect(() => {
-    if (!session?.user?.email) return;
+    if (!email) return;
 
     async function load() {
       setLoading(true);
 
       const res = await fetch("/api/user-profile", {
         method: "POST",
-        body: JSON.stringify({
-          email: session.user!.email,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
       });
 
       const data = await res.json();
@@ -42,21 +46,21 @@ export default function Dashboard() {
       if (data.ok) {
         const u = data.user.user;
 
-        setName(u.name || "");
-        setPhone(u.phone || "");
+        setName(u?.name || "");
+        setPhone(u?.phone || "");
 
-        setActivity(data.activity.items || []);
+        setActivity(data.activity?.items || []);
       }
 
       setLoading(false);
     }
 
     load();
-  }, [session]);
+  }, [email]);
 
   // Save profile
   async function saveProfile() {
-    if (!session?.user?.email) return;
+    if (!email) return;
 
     setSaving(true);
 
@@ -66,7 +70,7 @@ export default function Dashboard() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        email: session.user.email,
+        email,
         name,
         phone,
       }),
@@ -75,15 +79,17 @@ export default function Dashboard() {
     setSaving(false);
   }
 
+  // Loading screen
   if (status === "loading" || loading) {
     return (
-      <div className="h-screen flex items-center justify-center">
+      <div className="h-screen flex items-center justify-center text-white">
         Loading...
       </div>
     );
   }
 
-  if (!session) return null;
+  // Not logged in
+  if (!session || !email) return null;
 
   const user = session.user;
 
@@ -94,15 +100,18 @@ export default function Dashboard() {
       <div className="max-w-5xl mx-auto flex items-center justify-between mb-8">
 
         <div className="flex items-center gap-4">
-          <img
-            src={user.image || ""}
-            className="w-16 h-16 rounded-full border"
-          />
+          {user.image && (
+            <img
+              src={user.image}
+              className="w-16 h-16 rounded-full border"
+            />
+          )}
 
           <div>
             <h1 className="text-xl font-bold">
-              {user.email}
+              {email}
             </h1>
+
             <p className="text-sm opacity-70">
               User Dashboard
             </p>
@@ -122,7 +131,7 @@ export default function Dashboard() {
       <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
 
         {/* Profile */}
-        <div className="md:col-span-1 bg-white/5 rounded-xl p-6 backdrop-blur">
+        <div className="md:col-span-1 bg-white/5 rounded-xl p-6 backdrop-blur rounded-2xl">
 
           <h2 className="font-semibold mb-4">
             Profile
@@ -135,7 +144,7 @@ export default function Dashboard() {
           <input
             value={name}
             onChange={e => setName(e.target.value)}
-            className="w-full mb-4 px-3 py-2 rounded bg-black/40"
+            className="w-full mb-4 px-3 py-2 rounded bg-black/40 outline-none focus:ring-2 focus:ring-blue-600"
           />
 
           <label className="block text-sm mb-1">
@@ -145,13 +154,13 @@ export default function Dashboard() {
           <input
             value={phone}
             onChange={e => setPhone(e.target.value)}
-            className="w-full mb-4 px-3 py-2 rounded bg-black/40"
+            className="w-full mb-4 px-3 py-2 rounded bg-black/40 outline-none focus:ring-2 focus:ring-blue-600"
           />
 
           <button
             onClick={saveProfile}
             disabled={saving}
-            className="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded font-medium"
+            className="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded font-medium transition"
           >
             {saving ? "Saving..." : "Save Changes"}
           </button>
@@ -159,7 +168,7 @@ export default function Dashboard() {
         </div>
 
         {/* Activity */}
-        <div className="md:col-span-2 bg-white/5 rounded-xl p-6 backdrop-blur">
+        <div className="md:col-span-2 bg-white/5 rounded-xl p-6 backdrop-blur rounded-2xl">
 
           <h2 className="font-semibold mb-4">
             Recent Activity
@@ -171,12 +180,12 @@ export default function Dashboard() {
             </p>
           )}
 
-          <div className="space-y-3 max-h-[500px] overflow-auto">
+          <div className="space-y-3 max-h-[500px] overflow-auto pr-2">
 
             {activity.map(a => (
               <div
                 key={a.id}
-                className="flex items-center justify-between bg-black/30 rounded p-3"
+                className="flex items-center justify-between bg-black/30 rounded-lg p-3 hover:bg-black/40 transition"
               >
 
                 <div>
