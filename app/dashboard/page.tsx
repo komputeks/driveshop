@@ -33,7 +33,7 @@ export default function DashboardPage() {
         });
 
         // Fetch user
-        const res = await callAPI("user/get", { email });
+        const res = await callGAS("user/get", { email });
 
         if (res.ok) {
           setUser(res.user);
