@@ -545,13 +545,16 @@ function doPost(e) {
 }
 
 
+
+
 /*************************************************
  * RESPONSE HELPERS
  *************************************************/
 function json_(obj) {
-  return ContentService
+  const out = ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+
 }
 
 function ok_() {
@@ -580,6 +583,9 @@ function doGet(e) {
     if (p === "items") {
       return getItems_(e);
     }
+    if (p === "user") {
+      return getUser_(e.parameter.email);
+    }
 
     // Health check
     if (p === "ping") {
@@ -599,6 +605,17 @@ function doGet(e) {
 
   }
 }
+
+
+function json_(obj) {
+  const out = ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+
+  return cors_(out);
+}
+
+
 
 /*************************************************
  * ITEMS
@@ -774,6 +791,48 @@ function updateUser_(data) {
   return err_("User not found");
 }
 
+
+
+function upsertUser_(email, name, photo) {
+  if (!email) {
+    throw new Error("Missing email");
+  }
+
+  const sh = sheet_(CFG.USERS, [
+    "email",
+    "name",
+    "phone",
+    "photo",
+    "createdAt",
+    "lastLogin",
+  ]);
+
+  const rows = sh.getDataRange().getValues();
+
+  const cleanEmail = String(email).toLowerCase().trim();
+  const avatar =
+    photo || "https://www.gravatar.com/avatar/?d=mp&s=200";
+
+  // Update if exists
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === cleanEmail) {
+      sh.getRange(i + 1, 2).setValue(name || rows[i][1]);
+      sh.getRange(i + 1, 4).setValue(avatar);
+      sh.getRange(i + 1, 6).setValue(now_());
+      return;
+    }
+  }
+
+  // Insert new
+  sh.appendRow([
+    cleanEmail,
+    name || "",
+    "",
+    avatar,
+    now_(),
+    now_(),
+  ]);
+}
 
 /*************************************************
  * ISR

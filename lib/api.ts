@@ -14,6 +14,7 @@ export async function callGAS(
   const url = new URL(GAS_URL);
   url.searchParams.set("path", path);
 
+  console.log("Calling GAS:", url.toString(), data);
   const res = await fetch(url.toString(), {
     method: "POST",
     headers: {
