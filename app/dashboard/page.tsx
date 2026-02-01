@@ -18,18 +18,25 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Wait until auth is ready
     if (status !== "authenticated") return;
-    if (!session?.user?.email) return;
+    if (!session) return;
 
-    const email = session.user.email;
+    const authUser = session.user;
+
+    if (!authUser?.email) return;
+
+    const email = authUser.email;
+    const name = authUser.name ?? "";
+    const photo = authUser.image ?? "";
 
     async function load() {
       try {
         // Ensure user exists
         await callGAS("user/upsert", {
           email,
-          name: session.user?.name || "",
-          photo: session.user?.image || "",
+          name,
+          photo,
         });
 
         // Fetch user
@@ -38,11 +45,11 @@ export default function DashboardPage() {
         if (res.ok) {
           setUser(res.user);
         } else {
-          console.error(res.error);
+          console.error("GAS error:", res);
         }
 
-      } catch (e) {
-        console.error(e);
+      } catch (err) {
+        console.error("Dashboard load failed:", err);
       } finally {
         setLoading(false);
       }
@@ -52,13 +59,25 @@ export default function DashboardPage() {
 
   }, [status, session]);
 
+  /* ---------------- Loading states ---------------- */
+
   if (status === "loading" || loading) {
-    return <div className="p-10">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   if (!user) {
-    return <div className="p-10 text-red-500">Failed to load user</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-500">
+        Failed to load user
+      </div>
+    );
   }
+
+  /* ---------------- UI ---------------- */
 
   return (
     <div className="max-w-4xl mx-auto p-8">
@@ -67,6 +86,7 @@ export default function DashboardPage() {
         Dashboard
       </h1>
 
+      {/* Profile Card */}
       <div className="bg-white/5 backdrop-blur rounded-xl p-6 shadow mb-8">
 
         <div className="flex items-center gap-6">
@@ -75,14 +95,15 @@ export default function DashboardPage() {
             <img
               src={user.photo}
               className="w-20 h-20 rounded-full border"
-              alt=""
+              alt="Avatar"
             />
           )}
 
           <div>
             <p className="text-xl font-semibold">
-              {user.name}
+              {user.name || "Unnamed User"}
             </p>
+
             <p className="opacity-70">
               {user.email}
             </p>
@@ -92,6 +113,7 @@ export default function DashboardPage() {
 
       </div>
 
+      {/* Profile Info */}
       <div className="bg-white/5 backdrop-blur rounded-xl p-6 shadow space-y-4">
 
         <h2 className="text-lg font-semibold mb-4">
@@ -99,7 +121,10 @@ export default function DashboardPage() {
         </h2>
 
         <div>
-          <label className="block mb-1 text-sm">Name</label>
+          <label className="block mb-1 text-sm">
+            Name
+          </label>
+
           <input
             className="w-full p-2 rounded bg-black/20 border"
             value={user.name}
@@ -108,10 +133,13 @@ export default function DashboardPage() {
         </div>
 
         <div>
-          <label className="block mb-1 text-sm">Phone</label>
+          <label className="block mb-1 text-sm">
+            Phone
+          </label>
+
           <input
             className="w-full p-2 rounded bg-black/20 border"
-            value={user.phone}
+            value={user.phone || ""}
             readOnly
           />
         </div>
