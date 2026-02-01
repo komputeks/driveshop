@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { callGAS } from "@/lib/api";
+import callGAS from "@/lib/api";
 
 type User = {
   email: string;
