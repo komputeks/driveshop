@@ -1,8 +1,8 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { callGAS } from "@/lib/api";
 
 /* ---------------- Types ---------------- */
@@ -10,37 +10,30 @@ import { callGAS } from "@/lib/api";
 type UserData = {
   email: string;
   name: string;
-  phone: string;
-  photo: string;
+  phone?: string;
+  photo?: string;
 };
 
 type Activity = {
   id: string;
-  itemId: string;
   type: string;
   value: string;
-  pageUrl: string;
-  createdAt: string;
+  date: string;
 };
 
-/* ---------------- Page ---------------- */
+/* ---------------- Component ---------------- */
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [user, setUser] = useState<UserData | null>(null);
-  const [activities, setActivities] = useState<Activity[]>([]);
-
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-  });
+  const [user, setUser] = useState<UserData | null>(null);
+  const [activity, setActivity] = useState<Activity[]>([]);
 
-  const [saving, setSaving] = useState(false);
+  const [formName, setFormName] = useState("");
+  const [formPhone, setFormPhone] = useState("");
 
   /* ---------------- Auth Guard ---------------- */
 
@@ -50,7 +43,7 @@ export default function DashboardPage() {
     }
   }, [status, router]);
 
-  /* ---------------- Load Data ---------------- */
+  /* ---------------- Fetch Data ---------------- */
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -58,298 +51,211 @@ export default function DashboardPage() {
 
     const email = session.user.email;
 
-    async function load() {
+    const load = async () => {
       try {
-        setLoading(true);
-        setError("");
+        /* Fetch user */
 
-        /* Try get user */
         const resUser = await callGAS("user/get", { email });
 
-        console.log("USER GET:", resUser);
-
-        let finalUser: UserData | null = null;
-
-        /* If user exists */
         if (resUser?.ok && resUser.user) {
-          finalUser = resUser.user;
-        }
-
-        /* If user missing → create */
-        if (!finalUser) {
-          console.warn("User not found. Creating...");
+          setUser(resUser.user);
+          setFormName(resUser.user.name || "");
+          setFormPhone(resUser.user.phone || "");
+        } else {
+          /* Create if missing */
 
           const createRes = await callGAS("user", {
             email,
-            name: session.user.name || "",
-            photo: session.user.image || "",
+            name: session.user?.name || "",
+            photo: session.user?.image || "",
           });
 
-          console.log("USER CREATE:", createRes);
-
           if (createRes?.ok) {
-            finalUser = {
-              email,
-              name: session.user.name || "",
-              phone: "",
-              photo: session.user.image || "",
-            };
+            setUser(createRes.user);
+            setFormName(createRes.user.name || "");
           }
         }
 
-        if (!finalUser) {
-          throw new Error("Unable to load user");
-        }
+        /* Fetch activity */
 
-        /* Set user */
-        setUser(finalUser);
-
-        setForm({
-          name: finalUser.name || "",
-          phone: finalUser.phone || "",
-        });
-
-        /* Activity */
         const resAct = await callGAS("user/activity", { email });
 
-        console.log("ACTIVITY:", resAct);
-
-        if (resAct?.ok) {
-          setActivities(resAct.items || []);
+        if (resAct?.ok && Array.isArray(resAct.items)) {
+          setActivity(resAct.items);
         }
-
-      } catch (err: any) {
-        console.error("Dashboard error:", err);
-        setError("Failed to load dashboard data.");
+      } catch (err) {
+        console.error("Dashboard load error:", err);
       } finally {
         setLoading(false);
       }
-    }
+    };
 
     load();
-  }, [session, status]);
+  }, [status, session]);
 
-  /* ---------------- Save Profile ---------------- */
+  /* ---------------- Update Profile ---------------- */
 
-  async function handleSave() {
+  const saveProfile = async () => {
     if (!user) return;
 
     try {
-      setSaving(true);
-
       const res = await callGAS("user/update", {
         email: user.email,
-        name: form.name,
-        phone: form.phone,
+        name: formName,
+        phone: formPhone,
       });
 
-      if (!res?.ok) {
-        throw new Error("Update failed");
+      if (res?.ok) {
+        setUser(res.user);
+        alert("Profile updated ✅");
       }
-
-      setUser({
-        ...user,
-        name: form.name,
-        phone: form.phone,
-      });
-
-      alert("Profile updated");
-
-    } catch (e) {
-      console.error(e);
-      alert("Save failed");
-
-    } finally {
-      setSaving(false);
+    } catch (err) {
+      console.error("Update failed:", err);
+      alert("Update failed ❌");
     }
-  }
+  };
 
-  /* ---------------- UI States ---------------- */
+  /* ---------------- Loading ---------------- */
 
   if (status === "loading" || loading) {
-    return <LoadingScreen />;
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-500">
+        Loading dashboard...
+      </div>
+    );
   }
 
-  if (error) {
-    return <ErrorScreen message={error} />;
-  }
+  /* ---------------- Error ---------------- */
 
   if (!user) {
-    return <ErrorScreen message="User not found" />;
+    return (
+      <div className="flex items-center justify-center h-screen text-red-500">
+        Failed to load user data
+      </div>
+    );
   }
 
   /* ---------------- UI ---------------- */
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
 
-      <div className="max-w-6xl mx-auto p-6 space-y-10">
+      <div className="max-w-5xl mx-auto space-y-8">
 
-        <Header user={user} />
+        {/* Header */}
+
+        <div className="flex justify-between items-center bg-white rounded-xl p-6 shadow">
+
+          <div className="flex items-center gap-4">
+
+            {user.photo && (
+              <img
+                src={user.photo}
+                className="w-16 h-16 rounded-full border"
+              />
+            )}
+
+            <div>
+              <h1 className="text-xl font-bold">{user.name}</h1>
+              <p className="text-sm text-gray-500">{user.email}</p>
+            </div>
+
+          </div>
+
+          <button
+            onClick={() => signOut()}
+            className="text-sm text-red-500 hover:underline"
+          >
+            Sign out
+          </button>
+
+        </div>
 
         {/* Profile */}
-        <section className="glass p-6 rounded-2xl">
 
-          <h2 className="text-xl font-semibold mb-4">
-            Profile Settings
-          </h2>
+        <div className="bg-white rounded-xl p-6 shadow">
 
-          <div className="grid md:grid-cols-2 gap-6">
+          <h2 className="font-semibold mb-4">Profile</h2>
 
-            <Field
-              label="Full Name"
-              value={form.name}
-              onChange={(v) =>
-                setForm((s) => ({ ...s, name: v }))
-              }
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-            <Field
-              label="Phone Number"
-              value={form.phone}
-              onChange={(v) =>
-                setForm((s) => ({ ...s, phone: v }))
-              }
-            />
+            <div>
+              <label className="text-sm text-gray-600">Name</label>
+              <input
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                className="w-full border rounded-lg p-2 mt-1"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-gray-600">Phone</label>
+              <input
+                value={formPhone}
+                onChange={(e) => setFormPhone(e.target.value)}
+                className="w-full border rounded-lg p-2 mt-1"
+              />
+            </div>
 
           </div>
 
-          <div className="mt-6">
-            <button
-              disabled={saving}
-              onClick={handleSave}
-              className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50"
-            >
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
-          </div>
+          <button
+            onClick={saveProfile}
+            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Save Changes
+          </button>
 
-        </section>
+        </div>
 
         {/* Activity */}
-        <section className="glass p-6 rounded-2xl">
 
-          <h2 className="text-xl font-semibold mb-4">
-            Activity Log
-          </h2>
+        <div className="bg-white rounded-xl p-6 shadow">
 
-          {activities.length === 0 ? (
-            <EmptyActivity />
+          <h2 className="font-semibold mb-4">Recent Activity</h2>
+
+          {activity.length === 0 ? (
+            <p className="text-sm text-gray-500">
+              No activity yet
+            </p>
           ) : (
-            <ActivityTable data={activities} />
+            <div className="overflow-x-auto">
+
+              <table className="w-full text-sm">
+
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-2">Type</th>
+                    <th className="text-left py-2">Value</th>
+                    <th className="text-left py-2">Date</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+
+                  {activity.map((a) => (
+                    <tr key={a.id} className="border-b">
+
+                      <td className="py-2">{a.type}</td>
+                      <td className="py-2">{a.value}</td>
+                      <td className="py-2">
+                        {new Date(a.date).toLocaleString()}
+                      </td>
+
+                    </tr>
+                  ))}
+
+                </tbody>
+
+              </table>
+
+            </div>
           )}
 
-        </section>
+        </div>
 
       </div>
 
     </main>
-  );
-}
-
-/* ---------------- Components ---------------- */
-
-function Header({ user }: { user: UserData }) {
-  return (
-    <div className="glass p-6 rounded-2xl flex items-center gap-5">
-
-      {user.photo && (
-        <img
-          src={user.photo}
-          className="w-20 h-20 rounded-full border border-white/20"
-        />
-      )}
-
-      <div>
-        <h1 className="text-2xl font-bold">
-          {user.name || "User"}
-        </h1>
-
-        <p className="opacity-70">
-          {user.email}
-        </p>
-      </div>
-
-    </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-}: any) {
-  return (
-    <div>
-      <label className="block text-sm opacity-70 mb-1">
-        {label}
-      </label>
-
-      <input
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-2 rounded-lg bg-zinc-900 border border-white/10 focus:ring-2 focus:ring-blue-600 outline-none"
-      />
-    </div>
-  );
-}
-
-function ActivityTable({ data }: { data: Activity[] }) {
-  return (
-    <div className="overflow-x-auto">
-
-      <table className="w-full text-sm">
-
-        <thead className="opacity-70">
-          <tr>
-            <th className="p-2">Type</th>
-            <th className="p-2">Item</th>
-            <th className="p-2">Page</th>
-            <th className="p-2">Date</th>
-          </tr>
-        </thead>
-
-        <tbody>
-
-          {data.map((a) => (
-            <tr key={a.id} className="border-t border-white/5">
-              <td className="p-2">{a.type}</td>
-              <td className="p-2">{a.itemId}</td>
-              <td className="p-2">{a.pageUrl}</td>
-              <td className="p-2">
-                {new Date(a.createdAt).toLocaleString()}
-              </td>
-            </tr>
-          ))}
-
-        </tbody>
-
-      </table>
-
-    </div>
-  );
-}
-
-function EmptyActivity() {
-  return (
-    <div className="py-12 text-center opacity-60">
-      No activity yet.
-    </div>
-  );
-}
-
-function LoadingScreen() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-white">
-      Loading dashboard...
-    </div>
-  );
-}
-
-function ErrorScreen({ message }: { message: string }) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-black text-red-400">
-      {message}
-    </div>
   );
 }
