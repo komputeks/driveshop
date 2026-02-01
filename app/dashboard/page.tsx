@@ -1,4 +1,3 @@
-// app/dashboard/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -49,13 +48,17 @@ export default function DashboardPage() {
 
     const fetchData = async () => {
       try {
-        const resUser = await callGAS("user/get", { email: session.user.email });
+        // ✅ Type-safe access
+        const email = session.user?.email;
+        if (!email) return;
+
+        const resUser = await callGAS("user/get", { email });
         if (resUser.ok) {
           setUser(resUser.user);
           setFormUser({ name: resUser.user.name || "", phone: resUser.user.phone || "" });
         }
 
-        const resAct = await callGAS("user/activity", { email: session.user.email });
+        const resAct = await callGAS("user/activity", { email });
         if (resAct.ok) {
           setActivity(resAct.items || []);
           const activityForm: { [key: string]: { type: string; value: string } } = {};
@@ -236,8 +239,6 @@ export default function DashboardPage() {
               activity.map((act) => (
                 <tr key={act.id} className="hover:bg-gray-50">
                   <td className="border px-3 py-2">{new Date(act.createdAt).toLocaleString()}</td>
-
-                  {/* Editable type */}
                   <td className="border px-3 py-2">
                     {editingActivity[act.id] ? (
                       <input
@@ -249,11 +250,8 @@ export default function DashboardPage() {
                       act.type
                     )}
                   </td>
-
                   <td className="border px-3 py-2">{act.itemId}</td>
                   <td className="border px-3 py-2">{act.pageUrl}</td>
-
-                  {/* Editable value */}
                   <td className="border px-3 py-2">
                     {editingActivity[act.id] ? (
                       <input
@@ -265,8 +263,6 @@ export default function DashboardPage() {
                       act.value
                     )}
                   </td>
-
-                  {/* Actions */}
                   <td className="border px-3 py-2 flex gap-2">
                     {editingActivity[act.id] ? (
                       <>
