@@ -1,49 +1,21 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { callGAS } from "@/lib/api";
+import { callAPI } from "@/lib/api";
 
-/* ---------------- Types ---------------- */
-
-type UserData = {
+type User = {
   email: string;
   name: string;
-  phone?: string;
-  photo?: string;
+  phone: string;
+  photo: string;
 };
-
-type Activity = {
-  id: string;
-  type: string;
-  value: string;
-  date: string;
-};
-
-/* ---------------- Component ---------------- */
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
-  const router = useRouter();
 
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const [user, setUser] = useState<UserData | null>(null);
-  const [activity, setActivity] = useState<Activity[]>([]);
-
-  const [formName, setFormName] = useState("");
-  const [formPhone, setFormPhone] = useState("");
-
-  /* ---------------- Auth Guard ---------------- */
-
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    }
-  }, [status, router]);
-
-  /* ---------------- Fetch Data ---------------- */
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -51,211 +23,101 @@ export default function DashboardPage() {
 
     const email = session.user.email;
 
-    const load = async () => {
+    async function load() {
       try {
-        /* Fetch user */
+        // Ensure user exists
+        await callAPI("user/upsert", {
+          email,
+          name: session.user?.name || "",
+          photo: session.user?.image || "",
+        });
 
-        const resUser = await callGAS("user/get", { email });
+        // Fetch user
+        const res = await callAPI("user/get", { email });
 
-        if (resUser?.ok && resUser.user) {
-          setUser(resUser.user);
-          setFormName(resUser.user.name || "");
-          setFormPhone(resUser.user.phone || "");
+        if (res.ok) {
+          setUser(res.user);
         } else {
-          /* Create if missing */
-
-          const createRes = await callGAS("user", {
-            email,
-            name: session.user?.name || "",
-            photo: session.user?.image || "",
-          });
-
-          if (createRes?.ok) {
-            setUser(createRes.user);
-            setFormName(createRes.user.name || "");
-          }
+          console.error(res.error);
         }
 
-        /* Fetch activity */
-
-        const resAct = await callGAS("user/activity", { email });
-
-        if (resAct?.ok && Array.isArray(resAct.items)) {
-          setActivity(resAct.items);
-        }
-      } catch (err) {
-        console.error("Dashboard load error:", err);
+      } catch (e) {
+        console.error(e);
       } finally {
         setLoading(false);
       }
-    };
+    }
 
     load();
+
   }, [status, session]);
 
-  /* ---------------- Update Profile ---------------- */
-
-  const saveProfile = async () => {
-    if (!user) return;
-
-    try {
-      const res = await callGAS("user/update", {
-        email: user.email,
-        name: formName,
-        phone: formPhone,
-      });
-
-      if (res?.ok) {
-        setUser(res.user);
-        alert("Profile updated ✅");
-      }
-    } catch (err) {
-      console.error("Update failed:", err);
-      alert("Update failed ❌");
-    }
-  };
-
-  /* ---------------- Loading ---------------- */
-
   if (status === "loading" || loading) {
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-500">
-        Loading dashboard...
-      </div>
-    );
+    return <div className="p-10">Loading...</div>;
   }
-
-  /* ---------------- Error ---------------- */
 
   if (!user) {
-    return (
-      <div className="flex items-center justify-center h-screen text-red-500">
-        Failed to load user data
-      </div>
-    );
+    return <div className="p-10 text-red-500">Failed to load user</div>;
   }
 
-  /* ---------------- UI ---------------- */
-
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+    <div className="max-w-4xl mx-auto p-8">
 
-      <div className="max-w-5xl mx-auto space-y-8">
+      <h1 className="text-3xl font-bold mb-8">
+        Dashboard
+      </h1>
 
-        {/* Header */}
+      <div className="bg-white/5 backdrop-blur rounded-xl p-6 shadow mb-8">
 
-        <div className="flex justify-between items-center bg-white rounded-xl p-6 shadow">
+        <div className="flex items-center gap-6">
 
-          <div className="flex items-center gap-4">
-
-            {user.photo && (
-              <img
-                src={user.photo}
-                className="w-16 h-16 rounded-full border"
-              />
-            )}
-
-            <div>
-              <h1 className="text-xl font-bold">{user.name}</h1>
-              <p className="text-sm text-gray-500">{user.email}</p>
-            </div>
-
-          </div>
-
-          <button
-            onClick={() => signOut()}
-            className="text-sm text-red-500 hover:underline"
-          >
-            Sign out
-          </button>
-
-        </div>
-
-        {/* Profile */}
-
-        <div className="bg-white rounded-xl p-6 shadow">
-
-          <h2 className="font-semibold mb-4">Profile</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-            <div>
-              <label className="text-sm text-gray-600">Name</label>
-              <input
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                className="w-full border rounded-lg p-2 mt-1"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm text-gray-600">Phone</label>
-              <input
-                value={formPhone}
-                onChange={(e) => setFormPhone(e.target.value)}
-                className="w-full border rounded-lg p-2 mt-1"
-              />
-            </div>
-
-          </div>
-
-          <button
-            onClick={saveProfile}
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Save Changes
-          </button>
-
-        </div>
-
-        {/* Activity */}
-
-        <div className="bg-white rounded-xl p-6 shadow">
-
-          <h2 className="font-semibold mb-4">Recent Activity</h2>
-
-          {activity.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              No activity yet
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-
-              <table className="w-full text-sm">
-
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left py-2">Type</th>
-                    <th className="text-left py-2">Value</th>
-                    <th className="text-left py-2">Date</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-
-                  {activity.map((a) => (
-                    <tr key={a.id} className="border-b">
-
-                      <td className="py-2">{a.type}</td>
-                      <td className="py-2">{a.value}</td>
-                      <td className="py-2">
-                        {new Date(a.date).toLocaleString()}
-                      </td>
-
-                    </tr>
-                  ))}
-
-                </tbody>
-
-              </table>
-
-            </div>
+          {user.photo && (
+            <img
+              src={user.photo}
+              className="w-20 h-20 rounded-full border"
+              alt=""
+            />
           )}
+
+          <div>
+            <p className="text-xl font-semibold">
+              {user.name}
+            </p>
+            <p className="opacity-70">
+              {user.email}
+            </p>
+          </div>
 
         </div>
 
       </div>
 
-    </main>
+      <div className="bg-white/5 backdrop-blur rounded-xl p-6 shadow space-y-4">
+
+        <h2 className="text-lg font-semibold mb-4">
+          Profile
+        </h2>
+
+        <div>
+          <label className="block mb-1 text-sm">Name</label>
+          <input
+            className="w-full p-2 rounded bg-black/20 border"
+            value={user.name}
+            readOnly
+          />
+        </div>
+
+        <div>
+          <label className="block mb-1 text-sm">Phone</label>
+          <input
+            className="w-full p-2 rounded bg-black/20 border"
+            value={user.phone}
+            readOnly
+          />
+        </div>
+
+      </div>
+
+    </div>
   );
 }
