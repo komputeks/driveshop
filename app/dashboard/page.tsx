@@ -1,216 +1,230 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
+import { redirect } from "next/navigation";
 
 type Activity = {
   id: string;
-  itemId: string;
-  type: string;
-  value: string;
+  action: string;
   createdAt: string;
 };
 
-export default function Dashboard() {
+type Profile = {
+  name: string;
+  phone: string;
+};
+
+export default function DashboardPage() {
   const { data: session, status } = useSession();
 
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [profile, setProfile] = useState<Profile>({
+    name: "",
+    phone: "",
+  });
+
   const [loading, setLoading] = useState(true);
-
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-
-  const [activity, setActivity] = useState<Activity[]>([]);
-
   const [saving, setSaving] = useState(false);
 
-  // ✅ Extract email safely
-  const email = session?.user?.email || null;
+  /* ---------------------------------------------
+     AUTH GUARD
+  ---------------------------------------------- */
 
-  // Load profile
   useEffect(() => {
-    if (!email) return;
+    if (status === "unauthenticated") {
+      redirect("/login");
+    }
+  }, [status]);
 
-    async function load() {
-      setLoading(true);
+  if (status === "loading") {
+    return <div className="p-10">Loading...</div>;
+  }
 
-      const res = await fetch("/api/user-profile", {
+  if (!session || !session.user || !session.user.email) {
+    return null;
+  }
+
+  /* ---------------------------------------------
+     SAFE USER OBJECT (IMPORTANT)
+  ---------------------------------------------- */
+
+  const user = session.user;
+
+  const email = user.email;
+  const name = user.name ?? "";
+  const image = user.image ?? "";
+
+  /* ---------------------------------------------
+     LOAD USER DATA
+  ---------------------------------------------- */
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const res = await fetch("/api/dashboard", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email }),
+        });
+
+        if (!res.ok) return;
+
+        const data = await res.json();
+
+        setActivities(data.activities || []);
+
+        setProfile({
+          name: data.profile?.name || name,
+          phone: data.profile?.phone || "",
+        });
+      } catch (err) {
+        console.error("Dashboard load error:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, [email, name]);
+
+  /* ---------------------------------------------
+     SAVE PROFILE
+  ---------------------------------------------- */
+
+  async function saveProfile() {
+    setSaving(true);
+
+    try {
+      await fetch("/api/profile", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({
+          email,
+          name: profile.name,
+          phone: profile.phone,
+        }),
       });
-
-      const data = await res.json();
-
-      if (data.ok) {
-        const u = data.user.user;
-
-        setName(u?.name || "");
-        setPhone(u?.phone || "");
-
-        setActivity(data.activity?.items || []);
-      }
-
-      setLoading(false);
+    } catch (err) {
+      console.error("Save error:", err);
+    } finally {
+      setSaving(false);
     }
-
-    load();
-  }, [email]);
-
-  // Save profile
-  async function saveProfile() {
-    if (!email) return;
-
-    setSaving(true);
-
-    await fetch("/api/user-update", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        name,
-        phone,
-      }),
-    });
-
-    setSaving(false);
   }
 
-  // Loading screen
-  if (status === "loading" || loading) {
-    return (
-      <div className="h-screen flex items-center justify-center text-white">
-        Loading...
-      </div>
-    );
+  /* ---------------------------------------------
+     UI
+  ---------------------------------------------- */
+
+  if (loading) {
+    return <div className="p-10">Loading dashboard...</div>;
   }
-
-  // Not logged in
-  if (!session || !email) return null;
-
-  const user = session.user;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6">
+    <main className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto space-y-8">
 
-      {/* Header */}
-      <div className="max-w-5xl mx-auto flex items-center justify-between mb-8">
+        {/* ================= PROFILE CARD ================= */}
 
-        <div className="flex items-center gap-4">
-          {user.image && (
-            <img
-              src={user.image}
-              className="w-16 h-16 rounded-full border"
-            />
-          )}
+        <div className="bg-white rounded-xl shadow p-6">
+          <div className="flex items-center gap-4">
 
-          <div>
-            <h1 className="text-xl font-bold">
-              {email}
-            </h1>
+            {/* Avatar */}
+            {image && (
+              <img
+                src={image}
+                alt="Profile"
+                className="w-16 h-16 rounded-full border"
+              />
+            )}
 
-            <p className="text-sm opacity-70">
-              User Dashboard
-            </p>
+            {/* Info */}
+            <div>
+              <h2 className="text-xl font-semibold">
+                {profile.name || name || email}
+              </h2>
+
+              <p className="text-sm text-gray-500">{email}</p>
+            </div>
           </div>
-        </div>
 
-        <button
-          onClick={() => signOut()}
-          className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 rounded"
-        >
-          Sign Out
-        </button>
+          {/* ================= EDIT FORM ================= */}
 
-      </div>
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
 
-      {/* Content */}
-      <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
+            <div>
+              <label className="text-sm font-medium">Full Name</label>
 
-        {/* Profile */}
-        <div className="md:col-span-1 bg-white/5 rounded-xl p-6 backdrop-blur rounded-2xl">
+              <input
+                value={profile.name}
+                onChange={(e) =>
+                  setProfile((p) => ({
+                    ...p,
+                    name: e.target.value,
+                  }))
+                }
+                className="mt-1 w-full border rounded px-3 py-2"
+                placeholder="Your name"
+              />
+            </div>
 
-          <h2 className="font-semibold mb-4">
-            Profile
-          </h2>
+            <div>
+              <label className="text-sm font-medium">Phone Number</label>
 
-          <label className="block text-sm mb-1">
-            Name
-          </label>
-
-          <input
-            value={name}
-            onChange={e => setName(e.target.value)}
-            className="w-full mb-4 px-3 py-2 rounded bg-black/40 outline-none focus:ring-2 focus:ring-blue-600"
-          />
-
-          <label className="block text-sm mb-1">
-            Phone
-          </label>
-
-          <input
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
-            className="w-full mb-4 px-3 py-2 rounded bg-black/40 outline-none focus:ring-2 focus:ring-blue-600"
-          />
+              <input
+                value={profile.phone}
+                onChange={(e) =>
+                  setProfile((p) => ({
+                    ...p,
+                    phone: e.target.value,
+                  }))
+                }
+                className="mt-1 w-full border rounded px-3 py-2"
+                placeholder="+1 234 567 890"
+              />
+            </div>
+          </div>
 
           <button
             onClick={saveProfile}
             disabled={saving}
-            className="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded font-medium transition"
+            className="mt-4 bg-black text-white px-5 py-2 rounded hover:bg-gray-800 disabled:opacity-50"
           >
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? "Saving..." : "Save Profile"}
           </button>
-
         </div>
 
-        {/* Activity */}
-        <div className="md:col-span-2 bg-white/5 rounded-xl p-6 backdrop-blur rounded-2xl">
+        {/* ================= ACTIVITY ================= */}
 
-          <h2 className="font-semibold mb-4">
+        <div className="bg-white rounded-xl shadow p-6">
+          <h3 className="text-lg font-semibold mb-4">
             Recent Activity
-          </h2>
+          </h3>
 
-          {activity.length === 0 && (
-            <p className="opacity-60">
-              No activity yet.
-            </p>
+          {activities.length === 0 && (
+            <p className="text-gray-500">No activity yet.</p>
           )}
 
-          <div className="space-y-3 max-h-[500px] overflow-auto pr-2">
-
-            {activity.map(a => (
-              <div
+          <ul className="space-y-3">
+            {activities.map((a) => (
+              <li
                 key={a.id}
-                className="flex items-center justify-between bg-black/30 rounded-lg p-3 hover:bg-black/40 transition"
+                className="flex justify-between border-b pb-2 text-sm"
               >
+                <span>{a.action}</span>
 
-                <div>
-                  <p className="font-medium capitalize">
-                    {a.type}
-                  </p>
-
-                  <p className="text-sm opacity-60">
-                    Item: {a.itemId}
-                  </p>
-                </div>
-
-                <div className="text-sm opacity-60">
+                <span className="text-gray-400">
                   {new Date(a.createdAt).toLocaleString()}
-                </div>
-
-              </div>
+                </span>
+              </li>
             ))}
-
-          </div>
-
+          </ul>
         </div>
-
       </div>
-
     </main>
   );
 }
