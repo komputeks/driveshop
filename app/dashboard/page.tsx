@@ -1,299 +1,308 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { callGAS } from "@/lib/api";
 
-interface User {
+/* ---------------- Types ---------------- */
+
+type UserData = {
   email: string;
   name: string;
-  phone?: string;
-  photo?: string;
-  createdAt?: string;
-  lastLogin?: string;
-}
+  phone: string;
+  photo: string;
+};
 
-interface Activity {
+type Activity = {
   id: string;
   itemId: string;
   type: string;
   value: string;
   pageUrl: string;
   createdAt: string;
-}
+};
+
+/* ---------------- Page ---------------- */
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [activity, setActivity] = useState<Activity[]>([]);
-  const [editingUser, setEditingUser] = useState({ name: false, phone: false });
-  const [editingActivity, setEditingActivity] = useState<{ [key: string]: boolean }>({});
-  const [formUser, setFormUser] = useState({ name: "", phone: "" });
-  const [formActivity, setFormActivity] = useState<{ [key: string]: { type: string; value: string } }>({});
+  const [user, setUser] = useState<UserData | null>(null);
+  const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Redirect if unauthenticated
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+  });
+
+  const [saving, setSaving] = useState(false);
+
+  /* ---------------- Auth Guard ---------------- */
+
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
     }
   }, [status, router]);
 
-  // Fetch user & activity once authenticated
+  /* ---------------- Load Data ---------------- */
+
   useEffect(() => {
+    if (status !== "authenticated") return;
+
     if (!session?.user?.email) return;
 
-    const fetchData = async () => {
-      try {
-        // ✅ Type-safe access
-        const email = session.user?.email;
-        if (!email) return;
+    const email = session.user.email;
 
+    async function load() {
+      try {
+        setLoading(true);
+
+        /* User */
         const resUser = await callGAS("user/get", { email });
-        if (resUser.ok) {
+
+        if (resUser?.ok) {
           setUser(resUser.user);
-          setFormUser({ name: resUser.user.name || "", phone: resUser.user.phone || "" });
+
+          setForm({
+            name: resUser.user.name || "",
+            phone: resUser.user.phone || "",
+          });
         }
 
+        /* Activity */
         const resAct = await callGAS("user/activity", { email });
-        if (resAct.ok) {
-          setActivity(resAct.items || []);
-          const activityForm: { [key: string]: { type: string; value: string } } = {};
-          resAct.items.forEach((a: Activity) => {
-            activityForm[a.id] = { type: a.type, value: a.value };
-          });
-          setFormActivity(activityForm);
+
+        if (resAct?.ok) {
+          setActivities(resAct.items || []);
         }
       } catch (err) {
-        console.error("Failed to fetch user/activity:", err);
+        console.error("Dashboard load failed:", err);
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchData();
-  }, [session]);
-
-  // Handle user input changes
-  const handleUserChange = (field: "name" | "phone", value: string) => {
-    setFormUser((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const saveUserField = async (field: "name" | "phone") => {
-    if (!user) return;
-    try {
-      await callGAS("user/update", { email: user.email, [field]: formUser[field] });
-      setUser((prev) => prev ? { ...prev, [field]: formUser[field] } : prev);
-      setEditingUser((prev) => ({ ...prev, [field]: false }));
-    } catch (err) {
-      console.error("Failed to save user field:", err);
     }
-  };
 
-  // Handle activity input changes
-  const handleActivityChange = (id: string, field: "type" | "value", value: string) => {
-    setFormActivity((prev) => ({
-      ...prev,
-      [id]: { ...prev[id], [field]: value }
-    }));
-  };
+    load();
+  }, [session, status]);
 
-  const saveActivity = async (id: string) => {
+  /* ---------------- Save Profile ---------------- */
+
+  async function handleSave() {
     if (!user) return;
+
     try {
-      const { type, value } = formActivity[id];
-      await callGAS("event", { itemId: id, type, value, email: user.email });
-      setActivity((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, type, value } : a))
-      );
-      setEditingActivity((prev) => ({ ...prev, [id]: false }));
-    } catch (err) {
-      console.error("Failed to save activity:", err);
+      setSaving(true);
+
+      const res = await callGAS("user/update", {
+        email: user.email,
+        name: form.name,
+        phone: form.phone,
+      });
+
+      if (res?.ok) {
+        setUser({
+          ...user,
+          name: form.name,
+          phone: form.phone,
+        });
+
+        alert("Profile updated");
+      } else {
+        alert("Update failed");
+      }
+    } catch (e) {
+      console.error(e);
+      alert("Server error");
+    } finally {
+      setSaving(false);
     }
-  };
+  }
+
+  /* ---------------- States ---------------- */
 
   if (status === "loading" || loading) {
-    return (
-      <div className="flex items-center justify-center h-screen text-gray-500">
-        Loading dashboard...
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center h-screen text-red-500">
-        Unable to load user data.
-      </div>
-    );
+  if (!session || !user) {
+    return null;
   }
+
+  /* ---------------- UI ---------------- */
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        {user.photo && (
-          <img
-            src={user.photo}
-            alt="Avatar"
-            className="w-20 h-20 rounded-full border"
-          />
-        )}
-        <div>
-          {/* Name */}
-          <div className="flex items-center gap-2">
-            {editingUser.name ? (
-              <>
-                <input
-                  className="border p-1 rounded"
-                  value={formUser.name}
-                  onChange={(e) => handleUserChange("name", e.target.value)}
-                />
-                <button
-                  onClick={() => saveUserField("name")}
-                  className="bg-blue-600 text-white px-2 py-1 rounded"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => setEditingUser((prev) => ({ ...prev, name: false }))}
-                  className="px-2 py-1 rounded border"
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <>
-                <h2 className="text-2xl font-semibold">{user.name}</h2>
-                <button
-                  onClick={() => setEditingUser((prev) => ({ ...prev, name: true }))}
-                  className="text-sm text-blue-600 underline"
-                >
-                  Edit
-                </button>
-              </>
-            )}
+    <main className="min-h-screen bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white">
+
+      <div className="max-w-6xl mx-auto p-6 space-y-10">
+
+        {/* Header */}
+        <Header user={user} />
+
+        {/* Profile */}
+        <section className="glass p-6 rounded-2xl shadow-xl">
+
+          <h2 className="text-xl font-semibold mb-4">
+            Profile Settings
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-6">
+
+            <Field
+              label="Full Name"
+              value={form.name}
+              onChange={(v) =>
+                setForm((s) => ({ ...s, name: v }))
+              }
+            />
+
+            <Field
+              label="Phone Number"
+              value={form.phone}
+              onChange={(v) =>
+                setForm((s) => ({ ...s, phone: v }))
+              }
+            />
           </div>
 
-          {/* Phone */}
-          <div className="flex items-center gap-2 mt-1">
-            {editingUser.phone ? (
-              <>
-                <input
-                  className="border p-1 rounded"
-                  value={formUser.phone}
-                  onChange={(e) => handleUserChange("phone", e.target.value)}
-                />
-                <button
-                  onClick={() => saveUserField("phone")}
-                  className="bg-blue-600 text-white px-2 py-1 rounded"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => setEditingUser((prev) => ({ ...prev, phone: false }))}
-                  className="px-2 py-1 rounded border"
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <>
-                <span className="text-gray-600">{user.phone || "No phone set"}</span>
-                <button
-                  onClick={() => setEditingUser((prev) => ({ ...prev, phone: true }))}
-                  className="text-sm text-blue-600 underline"
-                >
-                  Edit
-                </button>
-              </>
-            )}
+          <div className="mt-6">
+            <button
+              disabled={saving}
+              onClick={handleSave}
+              className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition disabled:opacity-50"
+            >
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
           </div>
-        </div>
+
+        </section>
+
+        {/* Activity */}
+        <section className="glass p-6 rounded-2xl shadow-xl">
+
+          <h2 className="text-xl font-semibold mb-4">
+            Activity Log
+          </h2>
+
+          {activities.length === 0 ? (
+            <EmptyActivity />
+          ) : (
+            <ActivityTable data={activities} />
+          )}
+
+        </section>
+
       </div>
 
-      {/* Activity Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full border border-gray-300">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="border px-3 py-2 text-left">Time</th>
-              <th className="border px-3 py-2 text-left">Type</th>
-              <th className="border px-3 py-2 text-left">Item</th>
-              <th className="border px-3 py-2 text-left">Page</th>
-              <th className="border px-3 py-2 text-left">Value</th>
-              <th className="border px-3 py-2 text-left">Actions</th>
+    </main>
+  );
+}
+
+/* ---------------- Components ---------------- */
+
+function Header({ user }: { user: UserData }) {
+  return (
+    <div className="glass p-6 rounded-2xl flex items-center gap-5">
+
+      {user.photo && (
+        <img
+          src={user.photo}
+          className="w-20 h-20 rounded-full border border-white/20"
+        />
+      )}
+
+      <div>
+        <h1 className="text-2xl font-bold">
+          {user.name || "User"}
+        </h1>
+
+        <p className="opacity-70">
+          {user.email}
+        </p>
+      </div>
+
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label className="block text-sm opacity-70 mb-1">
+        {label}
+      </label>
+
+      <input
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-4 py-2 rounded-lg bg-zinc-900 border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-600"
+      />
+    </div>
+  );
+}
+
+function ActivityTable({ data }: { data: Activity[] }) {
+  return (
+    <div className="overflow-x-auto">
+
+      <table className="w-full text-sm">
+
+        <thead className="text-left opacity-70">
+          <tr>
+            <th className="p-2">Type</th>
+            <th className="p-2">Item</th>
+            <th className="p-2">Page</th>
+            <th className="p-2">Date</th>
+          </tr>
+        </thead>
+
+        <tbody>
+
+          {data.map((a) => (
+            <tr
+              key={a.id}
+              className="border-t border-white/5"
+            >
+              <td className="p-2">{a.type}</td>
+              <td className="p-2">{a.itemId}</td>
+              <td className="p-2">{a.pageUrl}</td>
+              <td className="p-2">
+                {new Date(a.createdAt).toLocaleString()}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {activity.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="text-center py-4 text-gray-500">
-                  No activity yet.
-                </td>
-              </tr>
-            ) : (
-              activity.map((act) => (
-                <tr key={act.id} className="hover:bg-gray-50">
-                  <td className="border px-3 py-2">{new Date(act.createdAt).toLocaleString()}</td>
-                  <td className="border px-3 py-2">
-                    {editingActivity[act.id] ? (
-                      <input
-                        className="border p-1 rounded w-full"
-                        value={formActivity[act.id]?.type || ""}
-                        onChange={(e) => handleActivityChange(act.id, "type", e.target.value)}
-                      />
-                    ) : (
-                      act.type
-                    )}
-                  </td>
-                  <td className="border px-3 py-2">{act.itemId}</td>
-                  <td className="border px-3 py-2">{act.pageUrl}</td>
-                  <td className="border px-3 py-2">
-                    {editingActivity[act.id] ? (
-                      <input
-                        className="border p-1 rounded w-full"
-                        value={formActivity[act.id]?.value || ""}
-                        onChange={(e) => handleActivityChange(act.id, "value", e.target.value)}
-                      />
-                    ) : (
-                      act.value
-                    )}
-                  </td>
-                  <td className="border px-3 py-2 flex gap-2">
-                    {editingActivity[act.id] ? (
-                      <>
-                        <button
-                          className="bg-blue-600 text-white px-2 py-1 rounded"
-                          onClick={() => saveActivity(act.id)}
-                        >
-                          Save
-                        </button>
-                        <button
-                          className="border px-2 py-1 rounded"
-                          onClick={() => setEditingActivity((prev) => ({ ...prev, [act.id]: false }))}
-                        >
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        className="text-blue-600 underline text-sm"
-                        onClick={() => setEditingActivity((prev) => ({ ...prev, [act.id]: true }))}
-                      >
-                        Edit
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+          ))}
+
+        </tbody>
+
+      </table>
+
+    </div>
+  );
+}
+
+function EmptyActivity() {
+  return (
+    <div className="text-center py-12 opacity-60">
+      No activity yet.
+    </div>
+  );
+}
+
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-black text-white">
+      Loading dashboard...
     </div>
   );
 }
