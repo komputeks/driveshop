@@ -31,7 +31,9 @@ export default function DashboardPage() {
 
   const [user, setUser] = useState<UserData | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
+
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -52,7 +54,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (status !== "authenticated") return;
-
     if (!session?.user?.email) return;
 
     const email = session.user.email;
@@ -60,27 +61,66 @@ export default function DashboardPage() {
     async function load() {
       try {
         setLoading(true);
+        setError("");
 
-        /* User */
+        /* Try get user */
         const resUser = await callGAS("user/get", { email });
 
-        if (resUser?.ok) {
-          setUser(resUser.user);
+        console.log("USER GET:", resUser);
 
-          setForm({
-            name: resUser.user.name || "",
-            phone: resUser.user.phone || "",
-          });
+        let finalUser: UserData | null = null;
+
+        /* If user exists */
+        if (resUser?.ok && resUser.user) {
+          finalUser = resUser.user;
         }
+
+        /* If user missing → create */
+        if (!finalUser) {
+          console.warn("User not found. Creating...");
+
+          const createRes = await callGAS("user", {
+            email,
+            name: session.user.name || "",
+            photo: session.user.image || "",
+          });
+
+          console.log("USER CREATE:", createRes);
+
+          if (createRes?.ok) {
+            finalUser = {
+              email,
+              name: session.user.name || "",
+              phone: "",
+              photo: session.user.image || "",
+            };
+          }
+        }
+
+        if (!finalUser) {
+          throw new Error("Unable to load user");
+        }
+
+        /* Set user */
+        setUser(finalUser);
+
+        setForm({
+          name: finalUser.name || "",
+          phone: finalUser.phone || "",
+        });
 
         /* Activity */
         const resAct = await callGAS("user/activity", { email });
 
+        console.log("ACTIVITY:", resAct);
+
         if (resAct?.ok) {
           setActivities(resAct.items || []);
         }
-      } catch (err) {
-        console.error("Dashboard load failed:", err);
+
+      } catch (err: any) {
+        console.error("Dashboard error:", err);
+        setError("Failed to load dashboard data.");
       } finally {
         setLoading(false);
       }
@@ -103,33 +143,39 @@ export default function DashboardPage() {
         phone: form.phone,
       });
 
-      if (res?.ok) {
-        setUser({
-          ...user,
-          name: form.name,
-          phone: form.phone,
-        });
-
-        alert("Profile updated");
-      } else {
-        alert("Update failed");
+      if (!res?.ok) {
+        throw new Error("Update failed");
       }
+
+      setUser({
+        ...user,
+        name: form.name,
+        phone: form.phone,
+      });
+
+      alert("Profile updated");
+
     } catch (e) {
       console.error(e);
-      alert("Server error");
+      alert("Save failed");
+
     } finally {
       setSaving(false);
     }
   }
 
-  /* ---------------- States ---------------- */
+  /* ---------------- UI States ---------------- */
 
   if (status === "loading" || loading) {
     return <LoadingScreen />;
   }
 
-  if (!session || !user) {
-    return null;
+  if (error) {
+    return <ErrorScreen message={error} />;
+  }
+
+  if (!user) {
+    return <ErrorScreen message="User not found" />;
   }
 
   /* ---------------- UI ---------------- */
@@ -139,11 +185,10 @@ export default function DashboardPage() {
 
       <div className="max-w-6xl mx-auto p-6 space-y-10">
 
-        {/* Header */}
         <Header user={user} />
 
         {/* Profile */}
-        <section className="glass p-6 rounded-2xl shadow-xl">
+        <section className="glass p-6 rounded-2xl">
 
           <h2 className="text-xl font-semibold mb-4">
             Profile Settings
@@ -166,6 +211,7 @@ export default function DashboardPage() {
                 setForm((s) => ({ ...s, phone: v }))
               }
             />
+
           </div>
 
           <div className="mt-6">
@@ -181,7 +227,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Activity */}
-        <section className="glass p-6 rounded-2xl shadow-xl">
+        <section className="glass p-6 rounded-2xl">
 
           <h2 className="text-xl font-semibold mb-4">
             Activity Log
@@ -232,11 +278,7 @@ function Field({
   label,
   value,
   onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
+}: any) {
   return (
     <div>
       <label className="block text-sm opacity-70 mb-1">
@@ -246,7 +288,7 @@ function Field({
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-2 rounded-lg bg-zinc-900 border border-white/10 focus:outline-none focus:ring-2 focus:ring-blue-600"
+        className="w-full px-4 py-2 rounded-lg bg-zinc-900 border border-white/10 focus:ring-2 focus:ring-blue-600 outline-none"
       />
     </div>
   );
@@ -258,7 +300,7 @@ function ActivityTable({ data }: { data: Activity[] }) {
 
       <table className="w-full text-sm">
 
-        <thead className="text-left opacity-70">
+        <thead className="opacity-70">
           <tr>
             <th className="p-2">Type</th>
             <th className="p-2">Item</th>
@@ -270,10 +312,7 @@ function ActivityTable({ data }: { data: Activity[] }) {
         <tbody>
 
           {data.map((a) => (
-            <tr
-              key={a.id}
-              className="border-t border-white/5"
-            >
+            <tr key={a.id} className="border-t border-white/5">
               <td className="p-2">{a.type}</td>
               <td className="p-2">{a.itemId}</td>
               <td className="p-2">{a.pageUrl}</td>
@@ -293,7 +332,7 @@ function ActivityTable({ data }: { data: Activity[] }) {
 
 function EmptyActivity() {
   return (
-    <div className="text-center py-12 opacity-60">
+    <div className="py-12 text-center opacity-60">
       No activity yet.
     </div>
   );
@@ -303,6 +342,14 @@ function LoadingScreen() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white">
       Loading dashboard...
+    </div>
+  );
+}
+
+function ErrorScreen({ message }: { message: string }) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-black text-red-400">
+      {message}
     </div>
   );
 }
