@@ -41,6 +41,8 @@ export default function DashboardPage() {
 
         // Fetch user
         const res = await callGAS("user/get", { email });
+        
+        console.log("API RESPONSE:", res);
 
         if (res.ok) {
           setUser(res.user);
