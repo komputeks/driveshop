@@ -13,11 +13,11 @@ const CFG = {
     CATEGORY_HELPER: "_cats"
   },
   DRIVE: {
-    ROOT_FOLDER_ID: getProp_("AUTO_FOLDER_ID")
+    get ROOT_FOLDER_ID() { return getProp_("AUTO_FOLDER_ID"); }
   },
   API: {
     GEMINI_KEY: getProp_("GEMINI_KEY"),
-    API_KEY: getProp_("API_KEY")
+    API_SIGNING_SECRET: getProp_("API_SIGNING_SECRET")
   },
   IMAGE: {
     CDN_WIDTH: 2000
@@ -40,7 +40,99 @@ function uuid() {
 
 
 /*************************************************
- * SpreadsheetService — Efficient Sheet Operations (FLATTENED)
+ * Core response & helpers (CANONICAL)
+ *************************************************/
+function slugify_(str) {
+  return String(str || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+function res(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function ok_(data) {
+  return res({ ok: true, ...data });
+}
+
+function errorRes(e) {
+  return res({ ok: false, error: e?.message || e });
+}
+
+function json_(obj) {
+  return res(obj);
+}
+
+
+function error_(msg) {
+  return res({ ok: false, error: msg });
+}
+
+function withGlobalLock_(fn) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    return fn();
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function withItemLock_(itemId, fn) {
+  return withGlobalLock_(fn);
+}
+
+function rateLimit_(key, limit, windowSec) {
+  const cache = CacheService.getScriptCache();
+  const now = Math.floor(Date.now() / 1000);
+
+  const data = cache.get(key);
+  let obj = data ? JSON.parse(data) : { count: 0, ts: now };
+
+  if (now - obj.ts > windowSec) {
+    obj = { count: 0, ts: now };
+  }
+
+  obj.count++;
+  cache.put(key, JSON.stringify(obj), windowSec);
+
+  if (obj.count > limit) {
+    throw new Error("Rate limit exceeded");
+  }
+}
+
+
+function idempotent_(key, ttl = 30) {
+  const cache = CacheService.getScriptCache();
+  if (cache.get(key)) return false;
+  cache.put(key, "1", ttl);
+  return true;
+}
+
+function syncItemCounters_(itemId) {
+  
+  const sh = getSheet(CFG.SHEETS.ITEMS);
+  buildItemIndex_();
+  const entry = _itemIndex[itemId];
+  if (!entry) return;
+
+  const stats = EventService.stats(itemId);
+
+  sh.getRange(entry.row, 12, 1, 3).setValues([[
+    stats.view || stats.views || 0,
+    stats.like || stats.likes || 0,
+    stats.comment || stats.comments || 0
+  ]]);
+}
+
+/*************************************************
+ * SpreadsheetService — Efficient Sheet Operations
  *************************************************/
 
 // Cache in memory
@@ -130,51 +222,62 @@ function setAllRows(sheetName, rows, headers = []) {
 function appendRow(sheetName, row) {
   const sh = getSheet(sheetName);
   sh.appendRow(row);
+
+  if (sheetName === CFG.SHEETS.ITEMS) {
+    invalidateItemIndex_();
+  }
 }
 
 
-/** Build in-memory index */
-function buildItemIndex() {
-  const rows = getAllRows(CFG.SHEETS.ITEMS);
+let _itemIndex = null;
+let _slugIndex = null;
 
-  const index = {};
+function buildItemIndex_() {
+  if (_itemIndex) return;
 
-  rows.forEach((r, i) => {
-    const id = r[0];
+  const sh = getSheet(CFG.SHEETS.ITEMS);
+  const values = sh.getDataRange().getValues();
+  const headers = values.shift();
 
-    if (!id) return;
+  const idx = {};
+  const slugIdx = {};
 
-    index[id] = {
-      row: i + 2,
-      data: r
-    };
+  values.forEach((r, i) => {
+    const item = {};
+    headers.forEach((h, j) => item[h] = r[j]);
+
+    if (!item.id) return;
+
+    item.row = i + 2;
+    idx[item.id] = item;
+    slugIdx[slugify_(item.name)] = item.id;
   });
 
-  itemIndexCache = index;
+  _itemIndex = idx;
+  _slugIndex = slugIdx;
+}
 
-  return index;
+function invalidateItemIndex_() {
+  _itemIndex = null;
+  _slugIndex = null;
 }
 
 
-/** Get item by ID */
 function getItemById(id) {
-  if (!itemIndexCache) buildItemIndex();
-
-  return itemIndexCache[id] || null;
+  buildItemIndex_();
+  return _itemIndex[id] || null;
 }
 
-
-/** Increment counter */
-function incCounter(sheetName, row, col) {
-  const sh = getSheet(sheetName);
-
-  const cell = sh.getRange(row, col);
-
-  const v = Number(cell.getValue()) || 0;
-
-  cell.setValue(v + 1);
+function getItemBySlug(slug) {
+  buildItemIndex_();
+  const id = _slugIndex[slug];
+  return id ? _itemIndex[id] : null;
 }
 
+function getAllItems() {
+  buildItemIndex_();
+  return Object.values(_itemIndex);
+}
 
 /** Initialize all sheets */
 function setupSheets_() {
@@ -182,27 +285,169 @@ function setupSheets_() {
   const sheets = CFG.SHEETS;
 
   getSheet(sheets.ITEMS, [
-    "id", "name", "category", "category2", "cdnUrl",
+    "id", "name", "cat1", "cat2", "cdn",
     "width", "height", "size", "description",
     "createdAt", "updatedAt", "views", "likes", "comments",
     "sig"
   ]);
-
-  getSheet(sheets.EVENTS, [
-    "id", "itemId", "type", "value", "pageUrl", "userEmail", "createdAt"
-  ]);
-
+  
+  const EVENTS_HEADERS = [
+    "id",
+    "itemId",
+    "type",
+    "value",
+    "pageUrl",
+    "userEmail",
+    "createdAt",
+    "updatedAt",
+    "deleted"
+  ];
+  getSheet(sheets.EVENTS, EVENTS_HEADERS);
+  
   getSheet(sheets.USERS, [
-    "email", "name", "phone", "photo", "createdAt", "lastLogin"
+    "email", "name", "photo", "createdAt", "lastLogin"
   ]);
 
   getSheet(sheets.ERRORS, [
     "time", "jobId", "itemId", "message", "stack"
   ]);
 
-  getSheet(sheets.CATEGORY_HELPER, ["category", "category2"])
+  getSheet(sheets.CATEGORY_HELPER, ["cat1", "cat2"])
     .hideSheet();
 }
+
+/*************************************************
+ * SpreadsheetService compatibility shim
+ *************************************************/
+const SpreadsheetService = {
+  getSheet,
+  getAllRows,
+  setAllRows,
+  appendRow,
+  invalidateItemIndex_,
+  getItemById,
+  getItemBySlug,
+  getAllItems
+};
+
+/*************************************************
+ * UserService — cached user lookup & upsert
+ *************************************************/
+const UserService = (() => {
+
+  const SHEET = () => SpreadsheetService.getSheet(CFG.SHEETS.USERS);
+  const CACHE = CacheService.getScriptCache();
+  const CACHE_TTL = 300; // 5 minutes
+
+  let memCache = null; // email -> user
+
+  /* ---------------------------------------------
+   * Internal helpers
+   --------------------------------------------- */
+
+  function now_() {
+    return new Date().toISOString();
+  }
+
+  function loadAll_() {
+    if (memCache) return memCache;
+
+    const cached = CACHE.get("users:all");
+    if (cached) {
+      memCache = JSON.parse(cached);
+      return memCache;
+    }
+
+    const sh = SHEET();
+    const values = sh.getDataRange().getValues();
+    values.shift(); // headers
+
+    memCache = {};
+    values.forEach(r => {
+      const [email, name, photo, createdAt, lastLogin] = r;
+      if (!email) return;
+    
+      memCache[email] = {
+        email,
+        name,
+        photo,
+        createdAt,
+        lastLogin
+      };
+    });
+    CACHE.put("users:all", JSON.stringify(memCache), CACHE_TTL);
+    return memCache;
+  }
+
+  function invalidate_() {
+    memCache = null;
+    CACHE.remove("users:all");
+  }
+
+  /* ---------------------------------------------
+   * Public API
+   --------------------------------------------- */
+
+  function getByEmail(email) {
+    if (!email) return null;
+    const users = loadAll_();
+    return users[email] || null;
+  }
+
+  /**
+   * Create or update user on login
+   */
+  function touchUser({ email, name, photo }) {
+    if (!email) return;
+
+    const sh = SHEET();
+    const users = loadAll_();
+    const ts = now_();
+
+    if (users[email]) {
+      // Update existing
+      const rows = sh.getDataRange().getValues();
+      for (let i = 1; i < rows.length; i++) {
+        if (rows[i][0] === email) {
+          rows[i][1] = name || rows[i][1];
+          rows[i][2] = photo || rows[i][2];
+          rows[i][4] = ts; // lastLogin
+          sh.getRange(i + 1, 1, 1, 5).setValues([rows[i]]);
+          break;
+        }
+      }
+    } else {
+      // Insert new
+      sh.appendRow([
+        email,
+        name || "",
+        photo || "",
+        ts,
+        ts
+      ]);
+    }
+    invalidate_();
+  }
+
+  /**
+   * Bulk resolver for comments UI
+   */
+  function mapByEmails(emails) {
+    const users = loadAll_();
+    const out = {};
+    emails.forEach(e => {
+      if (users[e]) out[e] = users[e];
+    });
+    return out;
+  }
+
+  return {
+    getByEmail,
+    touchUser,
+    mapByEmails
+  };
+
+})();
 
 
 /*************************************************
@@ -244,20 +489,22 @@ function ensureCategory2Folder(cat1, cat2) {
   return lvl2;
 }
 
-/** Move file to target folder safely */
-function moveFileToFolder(file, folder) {
-  const parents = file.getParents();
-  let moved = false;
-  while (parents.hasNext()) {
-    const p = parents.next();
-    if (p.getId() === getRootFolder().getId()) {
-      file.moveTo(folder);
-      moved = true;
-      break;
+
+  /** Move file to target folder safely */
+  function moveFileToFolder(file, folder) {
+    const parents = file.getParents();
+    let moved = false;
+    while (parents.hasNext()) {
+      const p = parents.next();
+      // Remove only from root folder
+      if (p.getId() === getRootFolder().getId()) {
+        file.moveTo(folder);
+        moved = true;
+        break;
+      }
     }
+    return moved;
   }
-  return moved;
-}
 
 /** List all folders at root */
 function listRootCategories() {
@@ -319,10 +566,23 @@ function parseCategoriesFromFilename(fileName) {
 /** Get image size safely */
 function getImageSize(file) {
   try {
-    const blob = file.getBlob();
-    const info = ImagesService.openImage(blob).getSize();
-    return { w: info.width, h: info.height };
+    if (!Drive || !Drive.Files) {
+      return getImageDimensions(file);
+    }
+    
+    const fileId = file.getId();
+    // Retrieve metadata directly from the Drive API v3
+    const metadata = Drive.Files.get(fileId, { fields: 'imageMediaMetadata' });
+    
+    if (metadata.imageMediaMetadata) {
+      return { 
+        w: metadata.imageMediaMetadata.width, 
+        h: metadata.imageMediaMetadata.height 
+      };
+    }
+    return { w: 0, h: 0 };
   } catch (err) {
+    console.error("Error fetching dimensions: " + err);
     return { w: 0, h: 0 };
   }
 }
@@ -334,53 +594,202 @@ function getCdnUrl(fileId) {
 
 
 /*************************************************
- * EventService — Track views, likes, comments (FLATTENED)
+ * EventService — Unified comments / likes / views
  *************************************************/
+const EventService = (() => {
 
-const SHEETS = CFG.SHEETS;
+  const SHEET = () => SpreadsheetService.getSheet(CFG.SHEETS.EVENTS);
+  const CACHE = CacheService.getScriptCache();
+  const CACHE_TTL = 30; // seconds (short on purpose)
 
-/** Log a generic event */
-function logEvent(itemId, type, value = "", pageUrl = "", userEmail = "") {
-  if (!itemId || !type) return;
-
-  const row = [
-    uuid(),
-    itemId,
-    type,
-    value,
-    pageUrl,
-    userEmail,
-    now()
+  const HEADERS = [
+    "id",
+    "itemId",
+    "type",
+    "value",
+    "pageUrl",
+    "userEmail",
+    "createdAt",
+    "updatedAt",
+    "deleted"
   ];
 
-  appendRow(SHEETS.EVENTS, row);
+  function cacheKey_(itemId, type) {
+    return `events:${itemId}:${type}`;
+  }
+
+  function now_() {
+    return new Date().toISOString();
+  }
+
+  function readAll_() {
+    const sh = SHEET();
+    const values = sh.getDataRange().getValues();
+    if (values.length <= 1) return [];
+
+    const headers = values.shift();
+    return values.map(r => {
+      const o = {};
+      headers.forEach((h, i) => (o[h] = r[i]));
+      return o;
+    });
+  }
+
+  function writeAll_(rows) {
+    const sh = SHEET();
+    sh.clearContents();
+    sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+    if (rows.length) {
+      sh.getRange(2, 1, rows.length, HEADERS.length)
+        .setValues(rows.map(r => HEADERS.map(h => r[h] ?? "")));
+    }
+  }
+  
+  /**
+   * List events by item + type
+   */
+  function list(itemId, type) {
+  if (typeof itemId === "object") {
+    type = itemId.type;
+    itemId = itemId.itemId;
+  }
+
+  if (!itemId || !type) return [];
+  const key = cacheKey_(itemId, type);
+  const cached = CACHE.get(key);
+  if (cached) return JSON.parse(cached);
+
+  const rows = readAll_().filter(r =>
+    r.itemId === itemId &&
+    r.type === type &&
+    r.deleted !== true
+  );
+
+  CACHE.put(key, JSON.stringify(rows), CACHE_TTL);
+  return rows;
 }
 
-/** Log a view event */
-function logViewEvent(itemId, pageUrl = "", userEmail = "") {
-  logEvent(itemId, "view", 1, pageUrl, userEmail);
+  
+  function stats(itemId) {
+  const key = `stats:${itemId}`;
+  const cached = CACHE.get(key);
+  if (cached) return JSON.parse(cached);
 
-  const item = getItemById(itemId);
-  if (item) incCounter(SHEETS.ITEMS, item.row, 12); // views
+  const rows = readAll_().filter(
+    r => r.itemId === itemId && r.deleted !== true
+  );
+
+  const out = {};
+  rows.forEach(r => {
+    out[r.type] = (out[r.type] || 0) + 1;
+  });
+
+  CACHE.put(key, JSON.stringify(out), CACHE_TTL);
+  return out;
+}
+  /**
+   * Upsert event (comment / like)
+   * - Unique by (itemId + type + userEmail)
+   */
+  function upsert({ itemId, type, value, pageUrl, userEmail }) {
+    return withItemLock_(itemId, () => {
+    const rows = readAll_();
+    const ts = now_();
+
+    let found = false;
+
+    rows.forEach(r => {
+      if (
+        r.itemId === itemId &&
+        r.type === type &&
+        r.userEmail === userEmail
+      ) {
+        r.value = value;
+        r.pageUrl = pageUrl || r.pageUrl;
+        r.updatedAt = ts;
+        r.createdAt = ts; // per your requirement
+        r.deleted = false;
+        found = true;
+      }
+    });
+
+    if (!found) {
+      rows.push({
+        id: Utilities.getUuid(),
+        itemId,
+        type,
+        value,
+        pageUrl,
+        userEmail,
+        createdAt: ts,
+        updatedAt: ts,
+        deleted: false
+      });
+    }
+
+    writeAll_(rows);
+    CACHE.remove(cacheKey_(itemId, type));
+    CACHE.remove(`stats:${itemId}`);
+    });
 }
 
-/** Log a like event */
-function logLikeEvent(itemId, pageUrl = "", userEmail = "") {
-  logEvent(itemId, "like", 1, pageUrl, userEmail);
+  /**
+   * Soft delete (unlike / delete comment)
+   */
+  function remove({ itemId, type, userEmail }) {
+    return withItemLock_(itemId, () => {
+    const rows = readAll_();
+    let changed = false;
 
-  const item = getItemById(itemId);
-  if (item) incCounter(SHEETS.ITEMS, item.row, 13); // likes
+    rows.forEach(r => {
+      if (
+        r.itemId === itemId &&
+        r.type === type &&
+        r.userEmail === userEmail
+      ) {
+        r.deleted = true;
+        r.updatedAt = now_();
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      writeAll_(rows);
+      CACHE.remove(cacheKey_(itemId, type));
+      CACHE.remove(`stats:${itemId}`);
+    }
+  });
 }
 
-/** Log a comment event */
-function logCommentEvent(itemId, commentText, pageUrl = "", userEmail = "") {
-  if (!commentText) commentText = "";
-  logEvent(itemId, "comment", commentText, pageUrl, userEmail);
 
-  const item = getItemById(itemId);
-  if (item) incCounter(SHEETS.ITEMS, item.row, 14); // comments
+function batchStats(itemIds) {
+  const key = "stats:batch:" + itemIds.sort().join(",");
+  const cached = CACHE.get(key);
+  if (cached) return JSON.parse(cached);
+
+  const rows = readAll_().filter(r =>
+    itemIds.includes(r.itemId) && r.deleted !== true
+  );
+
+  const out = {};
+  rows.forEach(r => {
+    if (!out[r.itemId]) out[r.itemId] = {};
+    out[r.itemId][r.type] = (out[r.itemId][r.type] || 0) + 1;
+  });
+
+  CACHE.put(key, JSON.stringify(out), CACHE_TTL);
+  return out;
 }
 
+return {
+  list,
+  stats,
+  batchStats,
+  upsert,
+  remove
+};
+
+})();
 
 /*************************************************
  * CDNService / ImageService (FLATTENED)
@@ -399,7 +808,7 @@ function getImageDimensions(file) {
 
 /** Generate image description via Gemini API with caching */
 function describeImage(fileId, forceRefresh = false) {
-  const sh = getSheet(SHEETS.ITEMS);
+  const sh = getSheet(CFG.SHEETS.ITEMS);
   const data = sh.getDataRange().getValues();
   const headers = data[0];
   const descCol = headers.indexOf("description") + 1;
@@ -455,15 +864,13 @@ function getImageBlobBase64(fileId) {
   return Utilities.base64Encode(blob.getBytes());
 }
 
-
-
 /*************************************************
  * SyncService — Drive ↔ Sheet Synchronization (FLATTENED)
  *************************************************/
 
 /** Normalize a single item row */
 function normalizeRow(rowIndex) {
-  const sh = getSheet(SHEETS.ITEMS);
+  const sh = getSheet(CFG.SHEETS.ITEMS);
   const rowData = sh.getRange(rowIndex, 1, 1, sh.getLastColumn()).getValues()[0];
 
   const id = rowData[0];
@@ -500,11 +907,13 @@ function normalizeRow(rowIndex) {
   // Update signature
   const sig = getFileSignature(file, destFolder.getId());
   sh.getRange(rowIndex, sh.getLastColumn()).setValue(sig);
+  
+  SpreadsheetService.invalidateItemIndex_();
 }
 
 /** Normalize all rows */
 function normalizeAll() {
-  const sh = getSheet(SHEETS.ITEMS);
+  const sh = getSheet(CFG.SHEETS.ITEMS);
   const lastRow = sh.getLastRow();
   for (let r = 2; r <= lastRow; r++) {
     try {
@@ -513,78 +922,104 @@ function normalizeAll() {
       logError("normalizeAll", sh.getRange(r, 1).getValue(), err);
     }
   }
+  SpreadsheetService.invalidateItemIndex_();
+  CacheService.getScriptCache().remove("category:tree");
 }
 
 /** Full scan: Drive → Sheet */
 function fullScan() {
-  const sh = getSheet(SHEETS.ITEMS);
-  const index = buildItemIndex();
+  const sh = getSheet(CFG.SHEETS.ITEMS);
+  buildItemIndex_();
+  const index = _itemIndex;
   const root = getRootFolder();
+  const files = walkFiles(root);
 
-  const discoveredFiles = walkFiles(root);
-  const seenIds = new Set();
+  const nowTs = now();
+  const seen = new Set();
+
+  const newRows = [];
+  const sigUpdates = [];
   const rowsToDelete = [];
 
-  discoveredFiles.forEach(file => {
+  files.forEach(file => {
     if (!file.getMimeType().startsWith("image/")) return;
 
     const id = file.getId();
-    seenIds.add(id);
+    seen.add(id);
 
-    const path = getParent(file);
-    const sig = getFileSignature(file, path.parentId);
-    const row = index[id];
+    const parent = getParent(file);
+    const sig = getFileSignature(file, parent.parentId);
+    const entry = index[id];
 
-    if (!row) {
-      // NEW FILE → parse categories, move, append row
+    if (!entry) {
       const parsed = parseCategoriesFromFilename(file.getName());
-      let cat1 = parsed.cat1;
-      let cat2 = parsed.cat2;
+      const dest = ensureCategory2Folder(parsed.cat1, parsed.cat2);
 
-      const destFolder = ensureCategory2Folder(cat1, cat2);
-      moveFileToFolder(file, destFolder);
+      moveFileToFolder(file, dest);
       renameFile(file, parsed.cleanName);
 
       const size = getImageSize(file);
-      const cdn = getCdnUrl(id);
 
-      const newRow = [
-        id, parsed.cleanName, cat1, cat2, cdn,
-        size.w, size.h, file.getSize(), "",
-        file.getDateCreated(), now(),
+      newRows.push([
+        id,
+        parsed.cleanName,
+        parsed.cat1,
+        parsed.cat2,
+        getCdnUrl(id),
+        size.w,
+        size.h,
+        file.getSize(),
+        "",
+        file.getDateCreated(),
+        nowTs,
         0, 0, 0,
         sig
-      ];
-
-      appendRow(SHEETS.ITEMS, newRow);
+      ]);
       return;
     }
 
-    // EXISTING FILE → update signature & updatedAt
-    if (row.data[row.data.length - 1] !== sig) {
-      sh.getRange(row.row, sh.getLastColumn()).setValue(sig);
-      sh.getRange(row.row, 11).setValue(now()); // updatedAt
+    if (entry.sig !== sig) {
+      sigUpdates.push({ row: entry.row, sig });
     }
   });
 
-  // DELETE removed files
   Object.keys(index).forEach(id => {
-    if (!seenIds.has(id)) rowsToDelete.push(index[id].row);
+    if (!seen.has(id)) rowsToDelete.push(index[id].row);
   });
 
-  rowsToDelete.sort((a, b) => b - a).forEach(r => sh.deleteRow(r));
+  if (newRows.length) {
+    sh.getRange(
+      sh.getLastRow() + 1,
+      1,
+      newRows.length,
+      newRows[0].length
+    ).setValues(newRows);
+  }
 
-  // Sync dropdowns
+  if (sigUpdates.length) {
+    sigUpdates.forEach(u => {
+      sh.getRange(u.row, 15).setValue(u.sig);
+      sh.getRange(u.row, 11).setValue(nowTs);
+    });
+  }
+
+  rowsToDelete
+    .sort((a, b) => b - a)
+    .forEach(r => sh.deleteRow(r));
+
+  SpreadsheetService.invalidateItemIndex_();
+  CacheService.getScriptCache().remove("category:tree");
   syncCategoryDropdown();
   syncCategory2Dropdown();
 }
+
 
 /** Sync Category1 dropdown */
 function syncCategoryDropdown() {
   const cats = listRootCategories();
   if (!cats.length) return;
 
-  const sh = getSheet(SHEETS.ITEMS);
+  const sh = getSheet(CFG.SHEETS.ITEMS);
   const rule = SpreadsheetApp.newDataValidation()
     .requireValueInList(cats, true)
     .build();
@@ -595,9 +1030,9 @@ function syncCategoryDropdown() {
 /** Sync Category2 dropdown (_dependent on Category1) */
 function syncCategory2Dropdown() {
   const ss = getSpreadsheet();
-  const helper = getSheet(SHEETS.CATEGORY_HELPER);
+  const helper = getSheet(CFG.SHEETS.CATEGORY_HELPER);
   helper.clear();
-  helper.appendRow(["category", "category2"]);
+  helper.appendRow(["cat1", "cat2"]);
 
   const root = getRootFolder();
   const lvl1 = root.getFolders();
@@ -608,7 +1043,7 @@ function syncCategory2Dropdown() {
     while (lvl2.hasNext()) helper.appendRow([c1.getName(), lvl2.next().getName()]);
   }
 
-  const items = getSheet(SHEETS.ITEMS);
+  const items = getSheet(CFG.SHEETS.ITEMS);
   const lastRow = Math.max(items.getLastRow(), 2);
 
   const rule = SpreadsheetApp.newDataValidation()
@@ -626,7 +1061,7 @@ function syncCategory2Dropdown() {
 
 /** Log an error */
 function logError(job = "", item = "", e) {
-  const sh = getSheet(SHEETS.ERRORS);
+  const sh = getSheet(CFG.SHEETS.ERRORS);
 
   const row = [
     now(),
@@ -636,7 +1071,7 @@ function logError(job = "", item = "", e) {
     e?.stack || ""
   ];
 
-  appendRow(SHEETS.ERRORS, row);
+  appendRow(CFG.SHEETS.ERRORS, row);
 
   console.error(`[${job}] Item: ${item}`, e);
 }
@@ -648,66 +1083,91 @@ function logInfo(message, ...args) {
 
 /** Clear all errors */
 function clearErrors() {
-  const sh = getSheet(SHEETS.ERRORS);
+  const sh = getSheet(CFG.SHEETS.ERRORS);
   sh.clearContents();
   sh.appendRow(["time", "jobId", "itemId", "message", "stack"]);
 }
 
 
 /*************************************************
- * APIService — HTTP Entrypoints (FLATTENED)
+ * APIService — Items list
  *************************************************/
 
-/** Standard JSON response */
-function res(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}
+function handleItemsList_(params) {
+  
+  let {
+    page = 1,
+    limit = 20,
+    cat1,
+    cat2,
+    search
+  } = params;
 
-/** Standard error response */
-function errorRes(e) {
-  return res({ ok: false, error: e?.message || e });
-}
+  page = Math.max(1, Number(page));
+  limit = Math.min(50, Math.max(1, Number(limit)));
 
-/** Ping endpoint */
-function ping() {
-  return res({ ok: true, time: now() });
-}
+  const cache = CacheService.getScriptCache();
+  const key = "items:list:" + Utilities.base64Encode(JSON.stringify({
+    page, limit, cat1, cat2, search
+  }));
+  
+  const cached = cache.get(key);
+  if (cached) return json_(JSON.parse(cached));
+  let items = SpreadsheetService.getAllItems();
 
-/** GET: List items */
-function getItems(params) {
-  try {
-    const q = (params.q || "").toLowerCase();
-    const category = params.category || "";
-
-    const allRows = getAllRows(SHEETS.ITEMS);
-    const items = allRows.map(r => ({
-      id: r[0], name: r[1], cat1: r[2], cat2: r[3], cdn: r[4],
-      w: r[5], h: r[6], size: r[7], description: r[8],
-      createdAt: r[9], updatedAt: r[10], views: r[11], likes: r[12], comments: r[13], sig: r[14]
-    })).filter(r => {
-      if (category && r.cat1 !== category) return false;
-      if (q && !r.name.toLowerCase().includes(q)) return false;
-      return true;
-    });
-
-    return res({ ok: true, items });
-  } catch (e) {
-    logError("apiGetItems", "", e);
-    return errorRes(e);
+  // Filter: category
+  if (cat1) {
+    items = items.filter(i => i.cat1 === cat1);
   }
+
+  if (cat2) {
+    items = items.filter(i => i.cat2 === cat2);
+  }
+
+  // Filter: search
+  if (search) {
+    const q = search.toLowerCase();
+    items = items.filter(i =>
+      (i.name || "").toLowerCase().includes(q) ||
+      (i.description || "").toLowerCase().includes(q)
+    );
+  }
+
+  // Sort: newest first
+  items.sort((a, b) =>
+    new Date(b.createdAt) - new Date(a.createdAt)
+  );
+
+  const total = items.length;
+  const start = (page - 1) * limit;
+  const pageItems = items.slice(start, start + limit);
+  
+  const payload = {
+    page,
+    limit,
+    total,
+    hasMore: start + limit < total,
+    items: pageItems
+  };
+  
+  cache.put(key, JSON.stringify(payload), 30);
+  return ok_(payload);
 }
 
-/** GET: Single item by ID */
-function getItem(params) {
-  const id = params.id;
-  if (!id) return errorRes("Missing id");
+function getItemBySlug(params) {
+  const slug = params.slug;
+  if (!slug) return errorRes("Missing slug");
 
-  const item = getItemById(id);
+  const item = SpreadsheetService.getItemBySlug(slug);
   if (!item) return errorRes("Not found");
 
-  return res({ ok: true, item: item.data });
+  return res({
+    ok: true,
+    item: {
+      ...item,
+      slug
+    }
+  });
 }
 
 /** GET: Categories */
@@ -726,50 +1186,11 @@ function getStats(params) {
   const id = params.id;
   if (!id) return errorRes("Missing id");
 
-  const item = getItemById(id);
+  const item = SpreadsheetService.getItemById(id);
   if (!item) return errorRes("Not found");
 
-  const [views, likes, comments] = [item.data[11], item.data[12], item.data[13]];
-  return res({ ok: true, stats: { views, likes, comments } });
-}
-
-/** POST: Log a view */
-function apiLogView(data) {
-  try {
-    const { id, pageUrl, email } = data;
-    if (!id) return errorRes("Missing id");
-    logViewEvent(id, pageUrl, email);
-    return res({ ok: true });
-  } catch (e) {
-    logError("apiLogView", data.id, e);
-    return errorRes(e);
-  }
-}
-
-/** POST: Log a like */
-function apiLogLike(data) {
-  try {
-    const { id, pageUrl, email } = data;
-    if (!id) return errorRes("Missing id");
-    logLikeEvent(id, pageUrl, email);
-    return res({ ok: true });
-  } catch (e) {
-    logError("apiLogLike", data.id, e);
-    return errorRes(e);
-  }
-}
-
-/** POST: Add a comment */
-function apiAddComment(data) {
-  try {
-    const { id, text, pageUrl, email } = data;
-    if (!id) return errorRes("Missing id");
-    logCommentEvent(id, text, pageUrl, email);
-    return res({ ok: true });
-  } catch (e) {
-    logError("apiAddComment", data.id, e);
-    return errorRes(e);
-  }
+  const stats = EventService.stats(id);
+  return res({ ok: true, stats });
 }
 
 /** POST: User login */
@@ -777,7 +1198,7 @@ function apiLogin(data) {
   try {
     const { email, name, photo } = data;
     if (!email) return errorRes("Missing email");
-    touchUser(email, name, photo); // implement this in SpreadsheetService
+    UserService.touchUser({ email, name, photo });
     return res({ ok: true });
   } catch (e) {
     logError("apiLogin", data.email, e);
@@ -785,38 +1206,320 @@ function apiLogin(data) {
   }
 }
 
-/** doGet entrypoint */
-function doGet(e) {
+function getItemEvents(params) {
   try {
-    const p = e.parameter || {};
-    switch ((p.action || "").toLowerCase()) {
-      case "items": return getItems(p);
-      case "item": return getItem(p);
-      case "categories": return getCategories();
-      case "stats": return getStats(p);
-      default: return ping();
-    }
+    const { itemId, type } = params;
+    if (!itemId) return errorRes("Missing itemId");
+
+    const events = EventService.list({ itemId, type });
+
+    const usersRows = getAllRows(CFG.SHEETS.USERS);
+    const usersMap = Object.fromEntries(
+      usersRows.map(u => [u[0], { name: u[1], photo: u[2] }])
+    );
+
+    const out = events.map(e => ({
+      ...e,
+      userName: usersMap[e.userEmail]?.name || "",
+      userPhoto: usersMap[e.userEmail]?.photo || ""
+    }));
+
+    return res({ ok: true, events: out });
   } catch (e) {
-    logError("doGet", "", e);
+    logError("getItemEvents", params.itemId, e);
     return errorRes(e);
   }
 }
 
-/** doPost entrypoint */
-function doPost(e) {
-  try {
-    const data = JSON.parse(e.postData.contents || "{}");
-    switch ((data.action || "").toLowerCase()) {
-      case "view": return apiLogView(data);
-      case "like": return apiLogLike(data);
-      case "comment": return apiAddComment(data);
-      case "login": return apiLogin(data);
-      default: return errorRes("Unknown action");
-    }
-  } catch (e) {
-    logError("doPost", "", e);
-    return errorRes(e);
+/*************************************************
+ * APIService — Events endpoints
+ *************************************************/
+
+function handleEventsGet_(params) {
+  const { itemId, type } = params;
+
+  if (!itemId || !type) {
+    return error_("Missing itemId or type");
   }
+
+  const events = EventService.list({ itemId, type });
+  return ok_({ events });
+}
+
+function handleEventsUpsert_(body) {
+  const idemKey = [
+    body.itemId,
+    body.type,
+    body.userEmail,
+    body.value
+  ].join("|");
+  
+  if (!idempotent_(idemKey)) {
+    return ok_({ ok: true, deduped: true });
+  }
+
+  rateLimit_(
+    `evt:${body.userEmail}:${body.type}`,
+    body.type === "comment" ? 5 : 20,
+    60
+  );
+  const { itemId, type, value, pageUrl, userEmail } = body;
+
+  if (!itemId || !type || !userEmail) {
+    return error_("Missing required fields");
+  }
+
+  // Value required for comments, optional for likes
+  if (type === "comment" && !value) {
+    return error_("Comment value required");
+  }
+
+  EventService.upsert({
+    itemId,
+    type,
+    value: value || "1",
+    pageUrl: pageUrl || "",
+    userEmail
+  });
+  const stats = EventService.stats(itemId);
+  syncItemCounters_(itemId);
+  revalidateNext([
+  `item:${itemId}`,
+  "items:list"
+]);
+
+  return ok_({ ok: true });
+}
+
+function handleEventsRemove_(body) {
+  const { itemId, type, userEmail } = body;
+
+  if (!itemId || !type || !userEmail) {
+    return error_("Missing required fields");
+  }
+
+  EventService.remove({ itemId, type, userEmail });
+  const stats = EventService.stats(itemId);
+  syncItemCounters_(itemId);
+  revalidateNext([
+  `item:${itemId}`,
+  "items:list"
+]);
+  return ok_({ ok: true });
+}
+
+function getCategoryTree() {
+  return res({ ok: true, categories: CategoryService.getTree() });
+}
+
+function assertNonceUnused_(action, nonce) {
+  const cache = CacheService.getScriptCache();
+  const key = `nonce:${action}:${nonce}`;
+  if (cache.get(key)) {
+    throw new Error("Replay detected");
+  }
+  cache.put(key, "1", 120); // 2 min
+}
+
+
+function verifySignedRequest_(e) {
+  
+  const h = e?.headers || {};
+
+  const action    = h["x-action"];
+  const timestamp = Number(h["x-timestamp"]);
+  const nonce     = h["x-nonce"];
+  const signature = h["x-signature"];
+
+  if (!action || !timestamp || !nonce || !signature) {
+    throw new Error("Missing HMAC headers");
+  }
+
+  if (Math.abs(Date.now()/1000 - timestamp) > 60) {
+    throw new Error("Expired request");
+  }
+
+  assertNonceUnused_(action, nonce);
+
+  const secret = getProp_("NEXTJS_HMAC_SECRET");
+  const payload = e.postData?.contents || "";
+
+  const base = [
+  "POST",
+    action,
+    timestamp,
+    nonce,
+    Utilities.base64Encode(payload)
+  ].join(".");
+
+  const raw = Utilities.computeHmacSha256Signature(base, secret);
+  const expected = raw.map(b =>
+    ('0' + (b & 0xff).toString(16)).slice(-2)
+  ).join("");
+
+  if (expected !== signature) {
+    throw new Error("Invalid HMAC signature");
+  }
+}
+
+
+
+function verifySignature_(raw, signature) {
+  const secret =  getProp_("API_SIGNING_SECRET");
+
+  const bytes = Utilities.computeHmacSha256Signature(raw, secret);
+  const expected = bytes
+    .map(b => ('0' + (b & 0xff).toString(16)).slice(-2))
+    .join('');
+
+  if (expected !== signature) {
+    throw new Error("Invalid signature");
+  }
+}
+
+
+/** doGet entrypoint */
+
+function doPost(e) {
+  if (e?.method && e.method !== "post") {
+    return error_("Invalid method");
+  }
+  
+  verifySignedRequest_(e);
+  try {
+    const body = JSON.parse(e.postData.contents || "{}");
+    const action = (body.action || "").toLowerCase();
+    const sig = (e.headers && (e.headers["X-Signature"] || e.headers["x-signature"])) || e.parameter["X-Signature"];
+
+    if (!sig) throw new Error("Missing signature");
+
+    verifySignature_(e.postData.contents, sig);
+
+    switch (action) {
+      case "item":
+        if (!body.id) return error_("Missing id");
+        return res({ ok: true, item: getItemById(body.id) });
+      case "item-by-slug": return getItemBySlug(body);
+      case "categories": return getCategories(); 
+      case "category-tree": return getCategoryTree();
+      case "stats": return getStats(body);
+      case "events.list": return json_(handleEventsGet_(body));
+      case "items.list": return json_(handleItemsList_(body));
+      case "login":
+        return apiLogin(body);
+
+      case "events.upsert":
+        return json_(handleEventsUpsert_(body));
+  
+      case "events.remove":
+        return json_(handleEventsRemove_(body));
+      
+      default:
+        return errorRes("Unknown action: " + action);
+    }
+  } catch (err) {
+    logError("doPost", "", err);
+    return errorRes(err);
+  }
+}
+
+
+/** revalidateNext */
+function revalidateNext(tags = []) {
+  if (!Array.isArray(tags) || !tags.length) return;
+
+  const url = getProp_("NEXTJS_ISR_ENDPOINT");
+
+  const signed = signPayload_("revalidate", { tags });
+
+  const res = UrlFetchApp.fetch(url, {
+    method: "post",
+    contentType: "application/json",
+    headers: {
+      "x-action": signed.action,
+      "x-timestamp": signed.timestamp,
+      "x-nonce": signed.nonce,
+      "x-signature": signed.signature
+    },
+    payload: signed.payload,
+    muteHttpExceptions: true
+  });
+
+  return res.getResponseCode();
+}
+
+/*************************************************
+ * HMAC Signing — canonical & per-action
+ *************************************************/
+function signPayload_(action, body) {
+  const secret = getProp_("NEXTJS_HMAC_SECRET");
+  const timestamp = Math.floor(Date.now() / 1000);
+  const nonce = Utilities.getUuid();
+
+  const payload = JSON.stringify(body || {});
+  const base = [
+    "POST",
+    action,
+    timestamp,
+    nonce,
+    Utilities.base64Encode(payload)
+  ].join(".");
+
+  const raw = Utilities.computeHmacSha256Signature(base, secret);
+  const signature = raw.map(b =>
+    ('0' + (b & 0xff).toString(16)).slice(-2)
+  ).join("");
+
+  return { action, timestamp, nonce, signature, payload };
+}
+/*************************************************
+ * CategoryService — canonical category tree API
+ *************************************************/
+const CategoryService = (() => {
+
+  function getTree() {
+    const cache = CacheService.getScriptCache();
+    const cached = cache.get("category:tree");
+    if (cached) return JSON.parse(cached);
+  
+    const items = SpreadsheetService.getAllItems();
+    const map = {};
+  
+    items.forEach(it => {
+      const c1 = it.cat1 || "other";
+      const c2 = it.cat2 || null;
+  
+      if (!map[c1]) {
+        map[c1] = {
+          slug: slugify_(c1),
+          name: c1,
+          children: {}
+        };
+      }
+      if (c2) {
+        map[c1].children[c2] = {
+          slug: slugify_(c2),
+          name: c2
+        };
+      }
+    });
+  
+    const tree = Object.values(map).map(c => ({
+      slug: c.slug,
+      name: c.name,
+      children: Object.values(c.children)
+    }));
+  
+    cache.put("category:tree", JSON.stringify(tree), 300);
+    return tree;
+  }
+  return { getTree };
+})();
+
+
+
+function onEdit(e) {
+  // reserved for future use
 }
 
 
@@ -831,17 +1534,28 @@ function bootstrapSetupSheets() {
     "createdAt","updatedAt","views","likes","comments","sig"
   ];
 
-  const eventsCols = ["id","itemId","type","value","pageUrl","userEmail","createdAt"];
-  const usersCols  = ["email","name","phone","photo","createdAt","lastLogin"];
+  const eventsCols = [
+    "id",
+    "itemId",
+    "type",
+    "value",
+    "pageUrl",
+    "userEmail",
+    "createdAt",
+    "updatedAt",
+    "deleted"
+  ];
+  
+  const usersCols  = ["email","name","photo","createdAt","lastLogin"];
   const errorsCols = ["time","jobId","itemId","message","stack"];
 
-  getSheet(SHEETS.ITEMS, itemsCols);
-  getSheet(SHEETS.EVENTS, eventsCols);
-  getSheet(SHEETS.USERS, usersCols);
-  getSheet(SHEETS.ERRORS, errorsCols);
+  getSheet(CFG.SHEETS.ITEMS, itemsCols);
+  getSheet(CFG.SHEETS.EVENTS, eventsCols);
+  getSheet(CFG.SHEETS.USERS, usersCols);
+  getSheet(CFG.SHEETS.ERRORS, errorsCols);
 
   // Helper sheet for category2 dropdown
-  getSheet(SHEETS.CATEGORY_HELPER, ["category","category2"]);
+  getSheet(CFG.SHEETS.CATEGORY_HELPER, ["cat1","cat2"]);
 }
 
 /** Sync all dropdowns */

@@ -1,5 +1,4 @@
 // lib/auth.ts
-// Central NextAuth configuration
 
 import GoogleProvider from "next-auth/providers/google";
 import type { NextAuthOptions } from "next-auth";
@@ -39,6 +38,6 @@ export const authOptions: NextAuthOptions = {
   },
 
   pages: {
-    signIn: "/", // We use modal login, not separate page
+    signIn: "/",
   },
 };

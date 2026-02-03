@@ -1,30 +1,51 @@
-import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
+  const session = await getServerSession(authOptions);
 
-    const GAS_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
+  if (!session?.user?.email) {
+    return new Response(
+      JSON.stringify({ ok: false, error: "Unauthorized" }),
+      { status: 401 }
+    );
+  }
 
-    const res = await fetch(`${GAS_URL}?path=user`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
+  const body = await req.json();
 
-    const data = await res.text();
+  const payload = {
+    action: "login",
+    email: session.user.email,
+    name: body.name || session.user.name || "",
+    photo: body.photo || session.user.image || "",
+    ts: Date.now(),
+  };
 
-    return NextResponse.json({
-      ok: true,
-      gas: data,
-    });
+  const raw = JSON.stringify(payload);
 
-  } catch (e: any) {
-    return NextResponse.json(
-      { ok: false, error: e.message },
+  const signature = crypto
+    .createHmac("sha256", process.env.API_SIGNING_SECRET!)
+    .update(raw)
+    .digest("hex");
+
+  const res = await fetch(process.env.NEXT_PUBLIC_API_BASE_URL!, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Signature": signature,
+    },
+    body: raw,
+  });
+
+  const data = await res.json();
+
+  if (!res.ok || !data.ok) {
+    return new Response(
+      JSON.stringify({ ok: false, error: "GAS login failed" }),
       { status: 500 }
     );
   }
+
+  return Response.json({ ok: true });
 }

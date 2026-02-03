@@ -1,36 +1,51 @@
-import { NextRequest, NextResponse } from "next/server";
-import { revalidatePath } from "next/cache";
+import { NextResponse } from "next/server";
+import crypto from "crypto";
+import { revalidateTag } from "next/cache";
 
-export async function POST(req: NextRequest) {
+const ALLOWED_ACTIONS = new Set(["revalidate"]);
+const MAX_SKEW = 60; // seconds
+
+export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const action = req.headers.get("x-action") || "";
+    const timestamp = req.headers.get("x-timestamp") || "";
+    const signature = req.headers.get("x-signature") || "";
 
-    // Security check
-    if (body.secret !== process.env.NEXTJS_ISR_SECRET) {
-      return NextResponse.json(
-        { error: "Invalid secret" },
-        { status: 401 }
-      );
+    if (!ALLOWED_ACTIONS.has(action)) {
+      return NextResponse.json({ ok: false }, { status: 403 });
     }
 
-    // Revalidate important pages
-    await Promise.all([
-      revalidatePath("/"),
-      revalidatePath("/dashboard"),
-    ]);
+    const now = Math.floor(Date.now() / 1000);
+    if (Math.abs(now - Number(timestamp)) > MAX_SKEW) {
+      return NextResponse.json({ ok: false, error: "Expired" }, { status: 401 });
+    }
 
-    return NextResponse.json({
-      success: true,
-      revalidated: true,
-      timestamp: Date.now(),
-    });
+    const body = await req.text();
+    const base = `${action}.${timestamp}.${body}`;
 
-  } catch (err) {
-    console.error("Revalidate error:", err);
+    const expected = crypto
+      .createHmac("sha256", process.env.NEXTJS_HMAC_SECRET!)
+      .update(base)
+      .digest("hex");
 
-    return NextResponse.json(
-      { error: "Revalidation failed" },
-      { status: 500 }
-    );
+    if (!crypto.timingSafeEqual(
+      Buffer.from(signature),
+      Buffer.from(expected)
+    )) {
+      return NextResponse.json({ ok: false }, { status: 401 });
+    }
+
+    const { tags } = JSON.parse(body);
+
+    if (!Array.isArray(tags)) {
+      return NextResponse.json({ ok: false }, { status: 400 });
+    }
+
+    tags.forEach(tag => revalidateTag(tag));
+
+    return NextResponse.json({ ok: true, tags });
+
+  } catch (e) {
+    return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
