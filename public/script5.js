@@ -1,40 +1,4 @@
 /*************************************************
- * DRIVE SHOP — PRODUCTION SCRIPT v6.1
- *************************************************/
-
-/*
-SCRIPT PROPERTIES
-
-AUTO_FOLDER_ID
-GEMINI_KEY
-NEXTJS_ISR_ENDPOINT
-NEXTJS_ISR_SECRET
-API_SIGNING_SECRET
-SPREADSHEET_URL (optional)
-*/
-
-/*
-NEXTJS ENV VARIABLES
-
-NEXT_PUBLIC_API_BASE_URL
-NEXTAUTH_URL
-NEXTAUTH_SECRET
-GOOGLE_CLIENT_ID
-GOOGLE_CLIENT_SECRET
-NEXTJS_ISR_ENDPOINT
-NEXTJS_ISR_SECRET
-API_SIGNING_SECRET
-
-*/
-
-const CFG = {
-  ITEMS: "Items",
-  EVENTS: "Events",
-  USERS: "Users",
-  ERRORS: "Errors",
-};
-
-/*************************************************
  * CORE
  *************************************************/
 
@@ -96,37 +60,6 @@ function sheet_(name, cols) {
   return sh;
 }
 
-
-
-function ensureCategory2Column_() {
-  const sh = ss_().getSheetByName(CFG.ITEMS);
-  if (!sh) return;
-
-  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
-
-  if (!headers.includes("category2")) {
-    sh.insertColumnAfter(3);
-    sh.getRange(1, 4).setValue("category2");
-  }
-}
-
-
-function ensureSigColumn_() {
-  const sh = ss_().getSheetByName(CFG.ITEMS);
-  if (!sh) return;
-
-  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
-
-  if (!headers.includes("_lastSig")) {
-    sh.insertColumnAfter(sh.getLastColumn());
-    sh.getRange(1, sh.getLastColumn()).setValue("_lastSig");
-  }
-}
-
-/*************************************************
- * SETUP
- *************************************************/
-
 function setup_() {
 
   sheet_(CFG.ITEMS, [
@@ -172,6 +105,30 @@ function setup_() {
     "message",
     "stack",
   ]);
+}
+
+function ensureCategory2Column_() {
+  const sh = ss_().getSheetByName(CFG.ITEMS);
+  if (!sh) return;
+
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+
+  if (!headers.includes("category2")) {
+    sh.insertColumnAfter(3);
+    sh.getRange(1, 4).setValue("category2");
+  }
+}
+
+function ensureSigColumn_() {
+  const sh = ss_().getSheetByName(CFG.ITEMS);
+  if (!sh) return;
+
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+
+  if (!headers.includes("_lastSig")) {
+    sh.insertColumnAfter(sh.getLastColumn());
+    sh.getRange(1, sh.getLastColumn()).setValue("_lastSig");
+  }
 }
 
 /*************************************************
@@ -322,8 +279,6 @@ function syncCategoryDropdown_() {
   sh.getRange("C2:C").setDataValidation(rule);
 }
 
-
-
 /*************************************************
  * CATEGORY 2 DROPDOWN (DEPENDENT ON CATEGORY 1)
  *************************************************/
@@ -365,8 +320,6 @@ function syncCategory2Dropdown_() {
 
   items.getRange(2, 4, lastRow - 1).setDataValidation(rule);
 }
-
-
 
 
 /*************************************************
@@ -436,12 +389,6 @@ function parseCategoriesFromFilename_(fileName) {
   };
 }
 
-
-
-
-
-
-
 function fileSig_(file, parentId) {
   return [
     file.getId(),
@@ -449,6 +396,7 @@ function fileSig_(file, parentId) {
     parentId || ""
   ].join("|");
 }
+
 
 
 /***********************************
@@ -466,7 +414,6 @@ function ensureCategory2Folder_(cat1, cat2) {
   return it2.hasNext() ? it2.next() : lvl1.createFolder(cat2);
 }
 
-
 /**********************
  * DRIVE — SAFE RENAME
  *********************/
@@ -476,7 +423,6 @@ function renameFileIfNeeded_(file, cleanName) {
     file.setName(cleanName);
   }
 }
-
 
 /*************************************************
  * FILE HASH / SIGNATURE
@@ -513,6 +459,7 @@ function moveToOther_(file, parentFolderId) {
   const otherFolder = ensureCatFolder_("Other"); // root/Other
   file.moveTo(otherFolder);
 }
+
 
 /*************************************************
  * SHEET → DRIVE SYNC (CATEGORY / RENAME)
@@ -552,8 +499,6 @@ function onEditCategory2_(e) {
     logErr_("cat2-edit", id, err);
   }
 }
-
-
 
 /*************************************************
  * LEGACY NORMALIZATION (SAFE)
@@ -595,8 +540,6 @@ function normalizeRow_(row) {
   const sig = fileSig_(file, dest.getId());
   sh.getRange(row, sh.getLastColumn()).setValue(sig);
 }
-
-
 
 function normalizeAllRows_() {
 
@@ -644,8 +587,6 @@ function walkFolders_(folder, collected) {
   }
 }
 
-
-
 // Resolve file path (folder names) for reference
 function resolvePath_(file) {
   const parents = file.getParents();
@@ -667,9 +608,6 @@ function fileSig_(file, parentId) {
     )
   );
 }
-
-
-
 
 /*************************************************
  * FILE WALK + SIGNATURE HELPERS
@@ -698,7 +636,6 @@ function fileSig_(file, parentId) {
     parentId
   ].join("|");
 }
-
 
 /*************************************************
  * FULL SYNC SCAN
@@ -792,6 +729,7 @@ function scanAll_() {
 
     // 🗑 DELETED FILES → REMOVE ROWS
     Object.keys(index).forEach(id => {
+    Object.keys(index).forEach(id => {
       if (!seenIds.has(id)) {
         rowsToDelete.push(index[id].row);
       }
@@ -812,6 +750,7 @@ function scanAll_() {
     logErr_("scan", "", e);
   }
 }
+
 
 /**********
  * EVENTS
@@ -853,6 +792,821 @@ function bumpStats_(id, type) {
     }
   }
 }
+
+
+/*******
+ * API
+ *******/
+
+function doPost(e) {
+  try {
+    const b = JSON.parse(e.postData.contents || "{}");
+    const p = e.parameter.path || "";
+
+    // Always ensure user if present
+    const user = ensureUser_(b.user || {
+      email: b.email,
+      name: b.name,
+      photo: b.photo,
+    });
+
+    if (user) {
+      b.__user = user;
+    }
+    
+    if (p === "items") {
+      return getItems_(e);
+    }
+
+    if (p === "event") {
+      addEvent_(
+        b.itemId,
+        b.type,
+        b.value,
+        b.page,
+        b.email || b.__user?.email || ""
+      );
+      return ok_();
+    }
+
+    if (p === "event/batch") {
+      if (!Array.isArray(b.items)) {
+        return err_("Bad batch");
+      }
+        b.items.forEach(ev => {
+          addEvent_(
+            ev.itemId,
+            ev.type,
+            ev.value,
+            ev.page,
+            ev.email || b.__user?.email || ""
+          );
+      });
+
+      return ok_();
+    }
+
+    if (p === "user") {
+      const email = b.email;
+      const name = b.name;
+      const photo = b.photo || b.image || "";
+      upsertUser_(email, name, photo);
+      return ok_();
+    }
+
+    if (p === "user/update") {
+      return updateUser_(b);
+    }
+
+    if (p === "user/get") {
+      return getUser_(b.email);
+    }
+
+    if (p === "user/activity") {
+      return getUserActivity_(b.email);
+    }
+
+    return err_("404");
+
+  } catch (e) {
+    logErr_("api", "", e);
+    return err_(e.message);
+  }
+}
+
+/******************
+ * RESPONSE HELPERS
+ *******************/
+function json_(obj) {
+  const out = ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+
+}
+
+function ok_() {
+  return json_({ ok: true });
+}
+
+function err_(msg) {
+  return json_({
+    ok: false,
+    error: msg
+  });
+}
+
+/***************************
+ * GET HANDLER (PUBLIC API)
+ ***************************/
+
+function doGet(e) {
+
+  try {
+
+    const p = e.parameter.path || "";
+
+    // Homepage / search / category
+    if (p === "items") {
+      return getItems_(e);
+    }
+    if (p === "user") {
+      return getUser_(e.parameter.email);
+    }
+
+    // Health check
+    if (p === "ping") {
+      return json_({
+        ok: true,
+        time: now_()
+      });
+    }
+
+    return err_("Not found");
+
+  } catch (e) {
+
+    logErr_("get", "", e);
+
+    return err_(e.message || "Server error");
+
+  }
+}
+
+
+function json_(obj) {
+  const out = ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+
+  return cors_(out);
+}
+
+
+/********
+ * ITEMS
+ ********/
+
+function getItems_(e) {
+
+  const q = e.parameter.q || "";
+  const cat = e.parameter.cat || "";
+
+  const sh = ss_().getSheetByName(CFG.ITEMS);
+  const rows = sh.getDataRange().getValues();
+
+  const out = [];
+
+  for (let i = 1; i < rows.length; i++) {
+
+    const r = rows[i];
+
+    const item = {
+      id: r[0],
+      name: r[1],
+      category: r[2],
+      cdnUrl: r[3],
+      width: r[4],
+      height: r[5],
+      size: r[6],
+      description: r[7],
+      createdAt: r[8],
+      updatedAt: r[9],
+      views: r[10],
+      likes: r[11],
+      comments: r[12],
+    };
+
+    // Search filter
+    if (q && !item.name.toLowerCase().includes(q.toLowerCase())) {
+      continue;
+    }
+
+    // Category filter
+    if (cat && item.category !== cat) {
+      continue;
+    }
+
+    out.push(item);
+  }
+
+  return json_({
+    items: out
+  });
+}
+
+
+/**********
+ * USERS
+ **********/
+function ensureUser_(profile) {
+  if (!profile || !profile.email) return null;
+
+  const sh = sheet_(CFG.USERS, ["email","name","phone","photo","createdAt","lastLogin"]);
+  const rows = sh.getDataRange().getValues();
+
+  const email = String(profile.email).toLowerCase().trim();
+  if (!email.includes("@")) return null;
+
+  const avatar = profile.photo || "https://www.gravatar.com/avatar/?d=mp&s=200";
+
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === email) {
+      // update
+      sh.getRange(i+1,2).setValue(profile.name || rows[i][1]);
+      sh.getRange(i+1,4).setValue(avatar);
+      sh.getRange(i+1,6).setValue(now_());
+      return { email, name: profile.name, phone: rows[i][2], photo: avatar };
+    }
+  }
+
+  // new user
+  sh.appendRow([email, profile.name||"", "", avatar, now_(), now_()]);
+  return { email, name: profile.name, phone: "", photo: avatar };
+}
+
+
+
+
+function getUser_(email) {
+  if (!email) return err_("Missing email");
+
+  const sh = sheet_(CFG.USERS, []);
+  const rows = sh.getDataRange().getValues();
+
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === email) {
+      return json_({
+        ok: true,
+        user: {
+          email: rows[i][0],
+          name: rows[i][1],
+          phone: rows[i][2],
+          photo: rows[i][3],
+          createdAt: rows[i][4],
+          lastLogin: rows[i][5],
+        }
+      });
+    }
+  }
+
+  return err_("User not found");
+}
+
+
+
+
+function getUserActivity_(email) {
+  if (!email) return err_("Missing email");
+
+  const sh = sheet_(CFG.EVENTS, []);
+  const rows = sh.getDataRange().getValues();
+
+  const out = [];
+
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][5] === email) {
+      out.push({
+        id: rows[i][0],
+        itemId: rows[i][1],
+        type: rows[i][2],
+        value: rows[i][3],
+        pageUrl: rows[i][4],
+        createdAt: rows[i][6],
+      });
+    }
+  }
+
+  return json_({
+    ok: true,
+    items: out
+  });
+}
+
+
+
+function updateUser_(data) {
+  if (!data || !data.email) {
+    return err_("Missing email");
+  }
+
+  const sh = sheet_(CFG.USERS, []);
+  const rows = sh.getDataRange().getValues();
+
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === data.email) {
+
+      if (data.name !== undefined) {
+        sh.getRange(i + 1, 2).setValue(data.name);
+      }
+
+      if (data.phone !== undefined) {
+        sh.getRange(i + 1, 3).setValue(data.phone);
+      }
+
+      sh.getRange(i + 1, 6).setValue(now_());
+
+      return json_({
+        ok: true
+      });
+    }
+  }
+
+  return err_("User not found");
+}
+
+
+
+function upsertUser_(email, name, photo) {
+  if (!email) {
+    throw new Error("Missing email");
+  }
+
+  const sh = sheet_(CFG.USERS, [
+    "email",
+    "name",
+    "phone",
+    "photo",
+    "createdAt",
+    "lastLogin",
+  ]);
+
+  const rows = sh.getDataRange().getValues();
+
+  const cleanEmail = String(email).toLowerCase().trim();
+  const avatar =
+    photo || "https://www.gravatar.com/avatar/?d=mp&s=200";
+
+  // Update if exists
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === cleanEmail) {
+      sh.getRange(i + 1, 2).setValue(name || rows[i][1]);
+      sh.getRange(i + 1, 4).setValue(avatar);
+      sh.getRange(i + 1, 6).setValue(now_());
+      return;
+    }
+  }
+
+  // Insert new
+  sh.appendRow([
+    cleanEmail,
+    name || "",
+    "",
+    avatar,
+    now_(),
+    now_(),
+  ]);
+}
+
+
+/*******
+ * ISR
+ *******/
+
+function revalidate_() {
+
+  try {
+
+    UrlFetchApp.fetch(prop_("NEXTJS_ISR_ENDPOINT"), {
+      method: "post",
+      contentType: "application/json",
+      payload: JSON.stringify({
+        secret: prop_("NEXTJS_ISR_SECRET"),
+      }),
+    });
+
+  } catch (e) {
+
+    logErr_("isr", "", e);
+  }
+}
+
+/***********
+ * SECURITY
+ ***********/
+
+function verifySig_(e, body) {
+
+  const ts = e.parameter.ts || e.headers["x-ts"];
+  const sig = e.parameter.sig || e.headers["x-sig"];
+
+  if (!ts || !sig) throw new Error("Missing signature");
+
+  const now = Date.now();
+
+  if (Math.abs(now - Number(ts)) > 300000)
+    throw new Error("Expired");
+
+  const secret = prop_("API_SIGNING_SECRET");
+
+  const base = ts + JSON.stringify(body || {});
+
+  const calc =
+    Utilities.computeHmacSha256Signature(base, secret);
+
+  const hash = calc
+    .map(b => ("0" + (b & 255).toString(16)).slice(-2))
+    .join("");
+
+  if (hash !== sig) throw new Error("Bad signature");
+}
+
+
+
+
+
+
+/****************
+ * SHEET → DRIVE
+ *****************/
+function onEdit(e) {
+
+  if (!e || !e.range) return;
+
+  try {
+    onEditRename_(e);
+    onEditCategory2_(e);
+    onEditCategory1_(e);
+  } catch (err) {
+    logErr_("onEdit", "", err);
+  }
+}
+
+
+function onEditCategory1_(e) {
+
+  const sh = e.range.getSheet();
+  if (sh.getName() !== CFG.ITEMS) return;
+  if (e.range.getColumn() !== 3) return;
+
+  const row = e.range.getRow();
+  if (row < 2) return;
+
+  const id   = sh.getRange(row, 1).getValue();
+  const cat1 = e.value;
+  const cat2 = sh.getRange(row, 4).getValue() || "Other";
+
+  if (!id || !cat1) return;
+
+  try {
+    const file = DriveApp.getFileById(id);
+    const dest = ensureCategory2Folder_(cat1, cat2);
+    file.moveTo(dest);
+
+    // Update signature
+    const sig = fileSig_(file, dest.getId());
+    sh.getRange(row, sh.getLastColumn()).setValue(sig);
+
+  } catch (err) {
+    logErr_("cat1-edit", id, err);
+  }
+}
+
+/******************************
+ * SHEET → DRIVE (RENAME SYNC 
+ ******************************/
+
+function onEditRename_(e) {
+
+  const sh = e.range.getSheet();
+
+  if (sh.getName() !== CFG.ITEMS) return;
+  if (e.range.getColumn() !== 2) return; // name column
+
+  const row = e.range.getRow();
+  if (row < 2) return;
+
+  const id = sh.getRange(row, 1).getValue();
+  const newName = e.value;
+
+  if (!id || !newName) return;
+
+  try {
+
+    const file = DriveApp.getFileById(id);
+
+    if (file.getName() !== newName) {
+      file.setName(newName);
+    }
+
+  } catch (err) {
+    logErr_("rename-edit", id, err);
+  }
+}
+
+
+/****************************
+ * SHEET → DRIVE (CATEGORY 2 
+ ****************************/
+
+function onEditCategory2_(e) {
+
+  const sh = e.range.getSheet();
+
+  if (sh.getName() !== CFG.ITEMS) return;
+  if (e.range.getColumn() !== 4) return; // category2 column
+
+  const row = e.range.getRow();
+  if (row < 2) return;
+
+  const id = sh.getRange(row, 1).getValue();
+  const cat1 = sh.getRange(row, 3).getValue();
+  const cat2 = e.value;
+
+  if (!id || !cat1 || !cat2) return;
+
+  try {
+
+    const file = DriveApp.getFileById(id);
+    const folder = ensureCategory2Folder_(cat1, cat2);
+
+    file.moveTo(folder);
+
+  } catch (err) {
+    logErr_("cat2-edit", id, err);
+  }
+}
+
+
+
+
+function resolvePath_(file) {
+
+  const parents = file.getParents();
+  if (!parents.hasNext()) return {};
+
+  const p = parents.next();
+  const root = rootFolder_();
+
+  // ROOT/file.ext
+  if (p.getId() === root.getId()) {
+    return { cat1: "", cat2: "", parentId: root.getId() };
+  }
+
+  const gpIt = p.getParents();
+  if (!gpIt.hasNext()) {
+    return { cat1: "", cat2: "", parentId: p.getId() };
+  }
+
+  const gp = gpIt.next();
+
+  // ROOT/Cat1/file.ext
+  if (gp.getId() === root.getId()) {
+    return {
+      cat1: p.getName(),
+      cat2: "",
+      parentId: p.getId()
+    };
+  }
+
+  // ROOT/Cat1/Cat2/file.ext
+  if (gp.getParents().hasNext() &&
+      gp.getParents().next().getId() === root.getId()) {
+    return {
+      cat1: gp.getName(),
+      cat2: p.getName(),
+      parentId: p.getId()
+    };
+  }
+
+  return {};
+}
+
+
+
+
+
+function walkFolders_(folder, out) {
+
+  const files = folder.getFiles();
+  while (files.hasNext()) {
+    out.push(files.next());
+  }
+
+  const folders = folder.getFolders();
+  while (folders.hasNext()) {
+    walkFolders_(folders.next(), out);
+  }
+}
+
+
+/*************************************************
+ * INVARIANT ENFORCEMENT (DRIVE → SHEET AUTHORITY)
+ *************************************************/
+
+function enforceInvariantsForFile_(file) {
+
+  const sh = ss_().getSheetByName(CFG.ITEMS);
+  const index = index_();
+  const id = file.getId();
+
+  const row = index[id];
+  if (!row) return; // not indexed yet
+
+  const sheetCat1 = sh.getRange(row.row, 3).getValue();
+  const sheetCat2 = sh.getRange(row.row, 4).getValue();
+
+  const path = resolvePath_(file);
+
+  // 🔹 Rule: no files directly under root
+  if (path.parentId === rootFolder_().getId()) {
+    const dest = ensureCategory2Folder_(sheetCat1 || "Other", sheetCat2 || "Other2");
+    file.moveTo(dest);
+    return;
+  }
+
+  // 🔹 Rule: no files under root/category1
+  const cat1Folder = rootFolder_().getFoldersByName(sheetCat1);
+  if (cat1Folder.hasNext() && path.parentId === cat1Folder.next().getId()) {
+    const dest = ensureCategory2Folder_(sheetCat1, sheetCat2 || "Other2");
+    file.moveTo(dest);
+    return;
+  }
+
+  // 🔹 Rule: must match sheet category path
+  const expected = ensureCategory2Folder_(sheetCat1, sheetCat2);
+  if (path.parentId !== expected.getId()) {
+    file.moveTo(expected);
+  }
+}
+
+
+function enforceAllInvariants_() {
+
+  const root = rootFolder_();
+  const files = [];
+  walkFolders_(root, files);
+
+  files.forEach(file => {
+    try {
+      if (!file.getMimeType().startsWith("image/")) return;
+      enforceInvariantsForFile_(file);
+    } catch (e) {
+      logErr_("enforce", file.getId(), e);
+    }
+  });
+}
+
+
+
+function forceOtherIfBadName_(file) {
+
+  const parsed = parseCategoriesFromFilename_(file.getName());
+  if (parsed.cat1 !== "Other") return;
+
+  const path = resolvePath_(file);
+
+  if (path.parentId === rootFolder_().getId()) {
+    file.moveTo(ensureCatFolder_("Other"));
+    return;
+  }
+
+  const other2 = ensureCategory2Folder_(path.parentName, "Other2");
+  file.moveTo(other2);
+}
+
+
+
+/************************************************
+ * - Lock Category column (read-only for humans)
+ * - Propagate Drive folder renames → Sheet categories
+ ******************************************************/
+
+/**
+ * Lock the Category column so only the script can modify it
+ */
+function lockCategoryColumn_() {
+  const ss = SpreadsheetApp.getActive();
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  if (!sheet) return;
+
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  const categoryCol = headers.indexOf('category') + 1;
+  if (categoryCol === 0) return;
+
+  const protections = sheet.getProtections(SpreadsheetApp.ProtectionType.RANGE);
+  const alreadyProtected = protections.some(p =>
+    p.getRange().getColumn() === categoryCol
+  );
+  if (alreadyProtected) return;
+
+  const range = sheet.getRange(2, categoryCol, sheet.getMaxRows());
+  const protection = range.protect().setDescription('Lock Category Column');
+
+  protection.removeEditors(protection.getEditors());
+  protection.setWarningOnly(false);
+}
+
+/**
+ * Build a map of folderId → folderName
+ */
+function buildFolderMap_(rootFolder) {
+  const map = {};
+  (function walk(folder) {
+    map[folder.getId()] = folder.getName();
+    const subs = folder.getFolders();
+    while (subs.hasNext()) walk(subs.next());
+  })(rootFolder);
+  return map;
+}
+
+/**
+ * Update sheet categories if Drive folders were renamed
+ */
+function syncCategoryRenames_() {
+  const root = getOrCreateFolder_(ROOT_FOLDER_NAME);
+  const folderMap = buildFolderMap_(root);
+
+  const sheet = SpreadsheetApp.getActive().getSheetByName(SHEET_NAME);
+  if (!sheet) return;
+
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  const idCol = headers.indexOf('fileId');
+  const catCol = headers.indexOf('category');
+
+  if (idCol === -1 || catCol === -1) return;
+
+  let changed = false;
+
+  for (let i = 1; i < data.length; i++) {
+    const fileId = data[i][idCol];
+    if (!fileId) continue;
+
+    let file;
+    try {
+      file = DriveApp.getFileById(fileId);
+    } catch (e) {
+      continue; // deleted files handled elsewhere
+    }
+
+    const parents = file.getParents();
+    if (!parents.hasNext()) continue;
+
+    const folder = parents.next();
+    const realCategory = folderMap[folder.getId()];
+    if (!realCategory) continue;
+
+    if (data[i][catCol] !== realCategory) {
+      sheet.getRange(i + 1, catCol).setValue(realCategory);
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    Logger.log('Category rename propagation applied');
+  }
+}
+
+
+/**************
+ * BOOTSTRAP
+ **************/
+
+function bootstrap() {
+
+  setup_();
+  
+  ensureCategory2Column_();
+
+  syncCategoryDropdown_();
+  
+  syncCategory2Dropdown_();
+
+  scanAll_();
+  
+  normalizeAllRows_();
+
+  // Clear old triggers
+  ScriptApp.getProjectTriggers().forEach(t => {
+    ScriptApp.deleteTrigger(t);
+  });
+
+  // Near realtime scan
+  ScriptApp.newTrigger("scanAll_")
+    .timeBased()
+    .everyMinutes(5)
+    .create();
+
+}
+
+
+
+function testRevalidate() {
+  const url = PropertiesService.getScriptProperties()
+    .getProperty("NEXTJS_ISR_ENDPOINT");
+
+  const secret = PropertiesService.getScriptProperties()
+    .getProperty("NEXTJS_ISR_SECRET");
+
+  const res = UrlFetchApp.fetch(url, {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({ secret }),
+  });
+
+  Logger.log(res.getContentText());
+}
+
 
 /*******
  * API
@@ -1004,7 +1758,6 @@ function json_(obj) {
 
   return cors_(out);
 }
-
 
 
 /********
@@ -1671,3 +2424,5 @@ function testRevalidate() {
 
   Logger.log(res.getContentText());
 }
+
+
