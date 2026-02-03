@@ -1,7 +1,4 @@
 
-GAS script:
-https://raw.githubusercontent.com/komputeks/driveshop/refs/heads/main/public/script8.js
-
 My Setup:
 1. Mobile Phone
 2. Chrome Browser
