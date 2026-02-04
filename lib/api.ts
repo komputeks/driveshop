@@ -1,14 +1,20 @@
-// lib/api.ts
-export async function api<T>(
+export async function api<T = any>(
   url: string,
   options?: RequestInit
 ): Promise<T> {
   const res = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+    },
     ...options,
-    next: { revalidate: 60 }
+    body: options?.body
+      ? JSON.stringify(options.body)
+      : undefined,
   });
 
-  if (!res.ok) throw new Error("API error");
+  if (!res.ok) {
+    throw new Error("API request failed");
+  }
 
   return res.json();
 }
