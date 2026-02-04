@@ -13,12 +13,15 @@ export default function ItemActions({ slug }: SlugProps) {
   const like = async () => {
     await api("/api/event", {
       method: "POST",
-      body: {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         action: "event",
         type: "like",
         itemSlug: slug,
-        value: 1
-      }
+        value: 1,
+      }),
     });
 
     mutate();
@@ -27,11 +30,14 @@ export default function ItemActions({ slug }: SlugProps) {
   const unlike = async () => {
     await api("/api/event-remove", {
       method: "POST",
-      body: {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
         action: "event-remove",
         type: "like",
-        itemSlug: slug
-      }
+        itemSlug: slug,
+      }),
     });
 
     mutate();
