@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import type { ItemStatsResponse, SlugProps } from "@/lib/types";
-
+import { api } from "@/lib/api";
 
 export default function ItemActions({ slug }: SlugProps) {
   const { data, mutate } = useSWR<ItemStatsResponse>(
