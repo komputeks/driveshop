@@ -16,7 +16,8 @@ export async function POST(req: Request) {
     }
 
     const now = Math.floor(Date.now() / 1000);
-    if (Math.abs(now - Number(timestamp)) > MAX_SKEW) {
+    const tsNum = Number(timestamp);
+    if (isNaN(tsNum) || Math.abs(now - tsNum) > MAX_SKEW) {
       return NextResponse.json({ ok: false, error: "Expired" }, { status: 401 });
     }
 
@@ -37,15 +38,17 @@ export async function POST(req: Request) {
 
     const { tags } = JSON.parse(body);
 
-    if (!Array.isArray(tags)) {
+    if (!Array.isArray(tags) || !tags.every(t => typeof t === "string")) {
       return NextResponse.json({ ok: false }, { status: 400 });
     }
 
-    tags.forEach(tag => revalidateTag(tag));
+    // ✅ Revalidate all tags
+    tags.forEach(tag => revalidateTag(tag, {}));
 
     return NextResponse.json({ ok: true, tags });
 
   } catch (e) {
+    console.error("Revalidate POST failed:", e);
     return NextResponse.json({ ok: false }, { status: 500 });
   }
 }
