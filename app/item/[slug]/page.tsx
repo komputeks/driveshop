@@ -1,6 +1,7 @@
 import ItemDetails from "./ui/ItemDetails";
 import ItemActions from "./ui/ItemActions";
 import ItemComments from "./ui/ItemComments";
+import type { SlugProps } from "@/lib/types";
 
 export default async function ItemPage({ slug }: SlugProps) {
   return (
