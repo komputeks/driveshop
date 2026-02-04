@@ -7,7 +7,7 @@ type PageProps = {
   };
 };
 
-export default async function ItemDetails({ slug }) {
+export default async function ItemPage({ params }: PageProps) {
   const { item } = await api(`/api/item-by-slug?slug=${slug}`);
 
   return (
