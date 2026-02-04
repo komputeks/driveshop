@@ -4,6 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import ItemCard from "@/components/ItemCardi";
 
+type PageProps = {
+  params: {
+    slug: string[];
+  };
+};
+
+
 export default function ItemsInfinite({
   initialData,
   searchParams
