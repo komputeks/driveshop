@@ -2,8 +2,9 @@
 
 import useSWR from "swr";
 import { api } from "@/lib/api";
+import type { SlugProps } from "@/lib/types";
 
-export default function ItemActions({ slug }) {
+export default function ItemActions({ slug }: SlugProps) {
   const { data, mutate } = useSWR(
     `/api/stats?slug=${slug}`,
     api

@@ -1,13 +1,7 @@
 import { api } from "@/lib/api";
+import type { SlugProps } from "@/lib/types";
 
-
-type PageProps = {
-  params: {
-    slug: string;
-  };
-};
-
-export default async function ItemPage({ params }: PageProps) {
+export default async function ItemPage({ slug }: SlugProps) {
   const { item } = await api(`/api/item-by-slug?slug=${slug}`);
 
   return (

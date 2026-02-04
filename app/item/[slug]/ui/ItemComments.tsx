@@ -3,8 +3,9 @@
 import useSWR from "swr";
 import { api } from "@/lib/api";
 import { useState } from "react";
+import type { SlugProps } from "@/lib/types";
 
-export default function ItemComments({ slug }) {
+export default function ItemComments({ slug }: SlugProps) {
   const { data, mutate } = useSWR(
     `/api/item-events?type=comment&slug=${slug}`,
     api

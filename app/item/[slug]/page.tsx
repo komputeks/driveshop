@@ -6,9 +6,9 @@ import type { SlugProps } from "@/lib/types";
 export default async function ItemPage({ slug }: SlugProps) {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <ItemDetails slug={params.slug} />
-      <ItemActions slug={params.slug} />
-      <ItemComments slug={params.slug} />
+      <ItemDetails slug={slug} />
+      <ItemActions slug={slug} />
+      <ItemComments slug={slug} />
     </div>
   );
 }
