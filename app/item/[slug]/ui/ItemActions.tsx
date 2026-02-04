@@ -1,11 +1,11 @@
 "use client";
 
 import useSWR from "swr";
-import { api } from "@/lib/api";
-import type { SlugProps } from "@/lib/types";
+import type { ItemStatsResponse, SlugProps } from "@/lib/types";
+
 
 export default function ItemActions({ slug }: SlugProps) {
-  const { data, mutate } = useSWR(
+  const { data, mutate } = useSWR<ItemStatsResponse>(
     `/api/stats?slug=${slug}`,
     api
   );
@@ -13,9 +13,7 @@ export default function ItemActions({ slug }: SlugProps) {
   const like = async () => {
     await api("/api/event", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "event",
         type: "like",
@@ -30,9 +28,7 @@ export default function ItemActions({ slug }: SlugProps) {
   const unlike = async () => {
     await api("/api/event-remove", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "event-remove",
         type: "like",

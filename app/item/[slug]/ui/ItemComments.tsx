@@ -3,10 +3,10 @@
 import useSWR from "swr";
 import { api } from "@/lib/api";
 import { useState } from "react";
-import type { SlugProps } from "@/lib/types";
+import type { Comment, SlugProps } from "@/lib/types";
 
 export default function ItemComments({ slug }: SlugProps) {
-  const { data, mutate } = useSWR(
+  const { data, mutate } = useSWR<CommentsResponse>(
     `/api/item-events?type=comment&slug=${slug}`,
     api
   );
@@ -18,12 +18,13 @@ export default function ItemComments({ slug }: SlugProps) {
 
     await api("/api/event", {
       method: "POST",
-      body: {
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         action: "event",
         type: "comment",
+        itemSlug: slug,
         value: text,
-        itemSlug: slug
-      }
+      }),
     });
 
     setText("");
