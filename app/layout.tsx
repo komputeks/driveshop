@@ -1,12 +1,18 @@
-// app/layout.tsx
-import "./globals.css";
 import Providers from "./providers";
+import UserSyncGate from "./UserSyncGate";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          <UserSyncGate />
+          {children}
+        </Providers>
       </body>
     </html>
   );
