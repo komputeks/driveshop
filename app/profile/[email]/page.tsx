@@ -1,4 +1,4 @@
-limport Image from "next/image";
+import Image from "next/image";
 import type { ApiResponse, User, ItemStats, EventWithUser } from "@/lib/types";
 import { getCurrentUser, signOut } from "@/lib/auth"; // your session helpers
 
