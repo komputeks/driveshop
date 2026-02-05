@@ -1,30 +1,16 @@
-// app/page.tsx (Server Component)
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+// client component
+import { useSession, signOut } from "next-auth/react";
 
-export default async function Profile() {
-  const session = await getServerSession(authOptions);
+export default function UserProfile() {
+  const { data: session } = useSession();
 
-  if (!session || !session.user) {
-    return <p>Not signed in</p>;
-  }
-
-  const { user } = session;
+  if (!session) return <p>Not logged in</p>;
 
   return (
     <div>
-      <h1>Welcome, {user.name ?? "Anonymous"}</h1>
-
-      {user.image && (
-        <img
-          src={user.image}
-          alt={user.name ?? "User avatar"}
-          width={80}
-          height={80}
-        />
-      )}
-
-      <p>Email: {user.email}</p>
+      <h2>{session.user.name}</h2>
+      <img src={session.user.image!} alt={session.user.name!} />
+      <button onClick={() => signOut()}>Logout</button>
     </div>
   );
 }
