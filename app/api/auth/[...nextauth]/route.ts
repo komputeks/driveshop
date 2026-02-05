@@ -1,9 +1,10 @@
-import NextAuth from "next-auth";
+import NextAuth, { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import type { JWT } from "next-auth/jwt";
 import type { LoginRequest, ApiResponse } from "@/lib/types";
+import type { User as NextAuthUser } from "next-auth";
 
-export const authOptions = {
+export const authOptions: AuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -13,21 +14,33 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
   callbacks: {
-    async jwt({ token, account, profile }): Promise<JWT> {
-      if (account && profile) {
-        token.email = profile.email as string;
-        token.name = profile.name as string;
-        token.picture = profile.picture as string;
+    async jwt({
+      token,
+      account,
+      user,
+      profile,
+      isNewUser,
+    }: {
+      token: JWT;
+      account: any;
+      user?: NextAuthUser;
+      profile?: any;
+      isNewUser?: boolean;
+    }): Promise<JWT> {
+      if (account && profile && profile.email) {
+        token.email = profile.email;
+        token.name = profile.name;
+        token.picture = profile.picture;
 
         // Upsert user in GAS
         const loginPayload: LoginRequest = {
           action: "login",
-          email: profile.email as string,
-          name: profile.name as string,
-          photo: profile.picture as string,
+          email: profile.email,
+          name: profile.name,
+          photo: profile.picture,
         };
 
         try {
@@ -46,7 +59,8 @@ export const authOptions = {
       }
       return token;
     },
-    async session({ session, token }) {
+
+    async session({ session, token }: { session: any; token: JWT }) {
       session.user.email = token.email!;
       session.user.name = token.name;
       session.user.image = token.picture;
