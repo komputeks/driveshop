@@ -1,6 +1,5 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import crypto from "crypto";
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -12,30 +11,19 @@ export async function POST(req: Request) {
     );
   }
 
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
 
   const payload = {
     action: "login",
     email: session.user.email,
     name: body.name || session.user.name || "",
     photo: body.photo || session.user.image || "",
-    ts: Date.now(),
   };
-
-  const raw = JSON.stringify(payload);
-
-  const signature = crypto
-    .createHmac("sha256", process.env.API_SIGNING_SECRET!)
-    .update(raw)
-    .digest("hex");
 
   const res = await fetch(process.env.NEXT_PUBLIC_API_BASE_URL!, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Signature": signature,
-    },
-    body: raw,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
   });
 
   const data = await res.json();

@@ -1345,68 +1345,68 @@ const EventService = (() => {
   }
 
     
-  function assertNonceUnused_(action, nonce) {
-    const cache = CacheService.getScriptCache();
-    const key = `nonce:${action}:${nonce}`;
-    if (cache.get(key)) {
-      throw new Error("Replay detected");
-    }
-    cache.put(key, "1", 120); // 2 min
-  }
+  // function assertNonceUnused_(action, nonce) {
+  //   const cache = CacheService.getScriptCache();
+  //   const key = `nonce:${action}:${nonce}`;
+  //   if (cache.get(key)) {
+  //     throw new Error("Replay detected");
+  //   }
+  //   cache.put(key, "1", 120); // 2 min
+  // }
 
     
-  function verifySignedRequest_(e) {
+  // function verifySignedRequest_(e) {
     
-    const h = e?.headers || {};
+  //   const h = e?.headers || {};
   
-    const action    = h["x-action"];
-    const timestamp = Number(h["x-timestamp"]);
-    const nonce     = h["x-nonce"];
-    const signature = h["x-signature"];
+  //   const action    = h["x-action"];
+  //   const timestamp = Number(h["x-timestamp"]);
+  //   const nonce     = h["x-nonce"];
+  //   const signature = h["x-signature"];
   
-    if (!action || !timestamp || !nonce || !signature) {
-      throw new Error("Missing HMAC headers");
-    }
+  //   if (!action || !timestamp || !nonce || !signature) {
+  //     throw new Error("Missing HMAC headers");
+  //   }
   
-    if (Math.abs(Date.now()/1000 - timestamp) > 60) {
-      throw new Error("Expired request");
-    }
+  //   if (Math.abs(Date.now()/1000 - timestamp) > 60) {
+  //     throw new Error("Expired request");
+  //   }
   
-    assertNonceUnused_(action, nonce);
+  //   assertNonceUnused_(action, nonce);
   
-    const secret = getProp_("NEXTJS_HMAC_SECRET");
-    const payload = e.postData?.contents || "";
+  //   const secret = getProp_("NEXTJS_HMAC_SECRET");
+  //   const payload = e.postData?.contents || "";
   
-    const base = [
-    "POST",
-      action,
-      timestamp,
-      nonce,
-      Utilities.base64Encode(payload)
-    ].join(".");
+  //   const base = [
+  //   "POST",
+  //     action,
+  //     timestamp,
+  //     nonce,
+  //     Utilities.base64Encode(payload)
+  //   ].join(".");
   
-    const raw = Utilities.computeHmacSha256Signature(base, secret);
-    const expected = raw.map(b =>
-      ('0' + (b & 0xff).toString(16)).slice(-2)
-    ).join("");
+  //   const raw = Utilities.computeHmacSha256Signature(base, secret);
+  //   const expected = raw.map(b =>
+  //     ('0' + (b & 0xff).toString(16)).slice(-2)
+  //   ).join("");
   
-    if (expected !== signature) {
-      throw new Error("Invalid HMAC signature");
-    }
-  }
+  //   if (expected !== signature) {
+  //     throw new Error("Invalid HMAC signature");
+  //   }
+  // }
   
-  function verifySignature_(raw, signature) {
-    const secret =  getProp_("API_SIGNING_SECRET");
+  // function verifySignature_(raw, signature) {
+  //   const secret =  getProp_("API_SIGNING_SECRET");
   
-    const bytes = Utilities.computeHmacSha256Signature(raw, secret);
-    const expected = bytes
-      .map(b => ('0' + (b & 0xff).toString(16)).slice(-2))
-      .join('');
+  //   const bytes = Utilities.computeHmacSha256Signature(raw, secret);
+  //   const expected = bytes
+  //     .map(b => ('0' + (b & 0xff).toString(16)).slice(-2))
+  //     .join('');
   
-    if (expected !== signature) {
-      throw new Error("Invalid signature");
-    }
-  }
+  //   if (expected !== signature) {
+  //     throw new Error("Invalid signature");
+  //   }
+  // }
 
 /*************************************************
  * doGet — public read-only API
@@ -1450,78 +1450,80 @@ const EventService = (() => {
 
 
 /** doGet entrypoint */
+function doPost(e) {
+  try {
+    if (!e || !e.postData || !e.postData.contents) {
+      return errorRes("Missing request body");
+    }
 
-  function doPost(e) {
-    if (e?.method && e.method !== "post") {
-      return error_("Invalid method");
+    const body = JSON.parse(e.postData.contents || "{}");
+    const action = (body.action || "").toLowerCase();
+
+    switch (action) {
+      case "item":
+        if (!body.id) return errorRes("Missing id");
+        return res({ ok: true, item: getItemById(body.id) });
+
+      case "item-by-slug":
+        return getItemBySlug(body);
+
+      case "categories":
+        return getCategories();
+
+      case "category-tree":
+        return getCategoryTree();
+
+      case "stats":
+        return getStats(body);
+
+      case "events.list":
+        return json_(handleEventsGet_(body));
+
+      case "items.list":
+        return json_(handleItemsList_(body));
+
+      case "login":
+        return apiLogin(body);
+      case "user.profile":
+        if (!body.email) return errorRes("Missing email");
+        return json_(handleUserProfile_(body.email));
+
+      case "events.upsert":
+        return json_(handleEventsUpsert_(body));
+
+      case "events.remove":
+        return json_(handleEventsRemove_(body));
+
+      default:
+        return errorRes("Unknown action: " + action);
     }
-    
-    verifySignedRequest_(e);
-    try {
-      const body = JSON.parse(e.postData.contents || "{}");
-      const action = (body.action || "").toLowerCase();
-      const sig = (e.headers && (e.headers["X-Signature"] || e.headers["x-signature"])) || e.parameter["X-Signature"];
-  
-      if (!sig) throw new Error("Missing signature");
-  
-      verifySignature_(e.postData.contents, sig);
-  
-      switch (action) {
-        case "item":
-          if (!body.id) return error_("Missing id");
-          return res({ ok: true, item: getItemById(body.id) });
-        case "item-by-slug": return getItemBySlug(body);
-        case "categories": return getCategories(); 
-        case "category-tree": return getCategoryTree();
-        case "stats": return getStats(body);
-        case "events.list": return json_(handleEventsGet_(body));
-        case "items.list": return json_(handleItemsList_(body));
-        case "login":
-          return apiLogin(body);
-  
-        case "events.upsert":
-          return json_(handleEventsUpsert_(body));
-    
-        case "events.remove":
-          return json_(handleEventsRemove_(body));
-        
-        default:
-          return errorRes("Unknown action: " + action);
-      }
-    } catch (err) {
-      logError("doPost", "", err);
-      return errorRes(err);
-    }
+
+  } catch (err) {
+    logError("doPost", "", err);
+    return errorRes(err.message || err);
   }
+}
 
 
 /** revalidateNext */
   function revalidateNext(tags = []) {
-    if (!Array.isArray(tags) || !tags.length) return;
-  
-    const url = getProp_("NEXTJS_ISR_ENDPOINT");
-  
-    const signed = signPayload_("revalidate", { tags });
-  
-    const res = UrlFetchApp.fetch(url, {
-      method: "post",
-      contentType: "application/json",
-      headers: {
-        "x-action": signed.action,
-        "x-timestamp": signed.timestamp,
-        "x-nonce": signed.nonce,
-        "x-signature": signed.signature
-      },
-      payload: signed.payload,
-      muteHttpExceptions: true
-    });
-  
-    return res.getResponseCode();
-  }
-  
+  if (!Array.isArray(tags) || !tags.length) return;
+
+  const url = getProp_("NEXTJS_ISR_ENDPOINT");
+
+  const res = UrlFetchApp.fetch(url, {
+    method: "post",
+    contentType: "application/json",
+    payload: JSON.stringify({ tags }),
+    muteHttpExceptions: true,
+  });
+
+  return res.getResponseCode();
+}
   /*************************************************
    * HMAC Signing — canonical & per-action
    *************************************************/
+  
   function signPayload_(action, body) {
     const secret = getProp_("NEXTJS_HMAC_SECRET");
     const timestamp = Math.floor(Date.now() / 1000);

@@ -1,10 +1,10 @@
 import Image from "next/image";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { notFound } from "next/navigation";
 import type { ApiResponse, User, ItemStats, EventWithUser } from "@/lib/types";
 
-
-
+/* ======================
+   TYPES
+====================== */
 
 type UserProfileResponse = ApiResponse<{
   user: User;
@@ -12,36 +12,52 @@ type UserProfileResponse = ApiResponse<{
   comments: EventWithUser[];
 }>;
 
-async function getUserProfile(email: string): Promise<UserProfileResponse | null> {
+/* ======================
+   DATA FETCH
+====================== */
+
+async function getUserProfile(email: string) {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}?action=userProfile&email=${encodeURIComponent(email)}`,
-    { next: { tags: [`user:${email}`] } }
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "user.profile",
+        email,
+      }),
+      cache: "no-store",
+    }
   );
 
   if (!res.ok) return null;
-  return res.json();
+  return res.json() as Promise<UserProfileResponse>;
 }
 
-export default async function ProfilePage({ params }: { params: { email: string } }) {
-  const session = await getServerSession(authOptions);
+/* ======================
+   PAGE
+====================== */
 
-  if (!session?.user?.email) {
-    return <p className="p-6 text-center text-red-400">Not logged in</p>;
-  }
+export default async function ProfilePage({
+  params,
+}: {
+  params: { email: string };
+}) {
+  const email = decodeURIComponent(params.email);
 
-  const email = params.email;
   const profile = await getUserProfile(email);
 
   if (!profile || !profile.ok) {
-    return <div className="p-8 text-center text-gray-400">User not found</div>;
+    notFound();
   }
 
   const { user, stats, comments } = profile;
 
   return (
-    <main className="max-w-5xl mx-auto px-6 py-10">
-      {/* Header */}
-      <section className="flex gap-6 items-center">
+    <main className="max-w-5xl mx-auto px-6 py-10 space-y-10">
+
+      {/* HEADER */}
+      <section className="flex items-center gap-6">
         <Image
           src={user.photo || "/avatar.png"}
           alt={user.name || user.email}
@@ -51,33 +67,47 @@ export default async function ProfilePage({ params }: { params: { email: string 
         />
 
         <div>
-          <h1 className="text-2xl font-bold">{user.name || "Anonymous"}</h1>
-          <p className="text-sm text-gray-400">{user.email}</p>
+          <h1 className="text-2xl font-bold">
+            {user.name || "Anonymous"}
+          </h1>
+
+          <p className="text-sm text-gray-400">
+            {user.email}
+          </p>
+
           <p className="text-xs text-gray-500">
             Joined {new Date(user.createdAt).toLocaleDateString()}
           </p>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="flex gap-8 mt-8 text-sm">
+      {/* STATS */}
+      <section className="flex gap-8 text-sm text-gray-300">
         <div>👍 {stats.likes} likes</div>
         <div>💬 {stats.comments} comments</div>
         <div>👁 {stats.views} views</div>
       </section>
 
-      {/* Comments */}
-      <section className="mt-10">
-        <h2 className="font-semibold mb-4">Recent comments</h2>
+      {/* COMMENTS */}
+      <section>
+        <h2 className="font-semibold mb-4">
+          Recent comments
+        </h2>
 
         {!comments.length && (
-          <p className="text-sm text-gray-400">No comments yet</p>
+          <p className="text-sm text-gray-400">
+            No comments yet
+          </p>
         )}
 
         <ul className="space-y-4">
-          {comments.map((c) => (
-            <li key={c.id} className="bg-white/5 p-4 rounded-xl text-sm">
+          {comments.map(c => (
+            <li
+              key={c.id}
+              className="bg-white/5 p-4 rounded-xl text-sm"
+            >
               <p className="mb-1">{c.value}</p>
+
               <span className="text-xs text-gray-400">
                 {new Date(c.createdAt).toLocaleString()}
               </span>
@@ -85,6 +115,17 @@ export default async function ProfilePage({ params }: { params: { email: string 
           ))}
         </ul>
       </section>
+
+      {/* LOGOUT */}
+      <section className="pt-6 border-t border-white/10">
+        <a
+          href="/api/auth/signout"
+          className="inline-block text-sm text-red-400 hover:underline"
+        >
+          Logout
+        </a>
+      </section>
+
     </main>
   );
 }
