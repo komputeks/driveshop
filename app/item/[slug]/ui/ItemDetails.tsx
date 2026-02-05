@@ -1,22 +1,35 @@
+import { useState, useEffect } from "react";
+import type { ItemWithSlug } from "@/lib/types";
 import { api } from "@/lib/api";
-import type { ItemDetailsResponse } from "@/lib/types";
 
-type PageProps = {
-  params: {
-    slug: string;
-  };
+type Props = {
+  slug: string;
 };
 
-export default async function ItemPage({ params }: PageProps) {
-  const res = await api<ItemDetailsResponse>(
-    `/api/item-by-slug?slug=${params.slug}`
-  );
+export default function ItemDetails({ slug }: Props) {
+  const [item, setItem] = useState<ItemWithSlug | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!res.ok) {
-    throw new Error("Failed to load item");
-  }
+  useEffect(() => {
+    async function fetchItem() {
+      setLoading(true);
+      try {
+        const res = await api<{ item: ItemWithSlug }>(
+          `/api/item-by-slug?slug=${slug}`
+        );
+        setItem(res.item);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-  const { item } = res;
+    fetchItem();
+  }, [slug]);
+
+  if (loading) return <div>Loading item…</div>;
+  if (!item) return <div className="text-gray-400">Item not found</div>;
 
   return (
     <div className="space-y-4">
@@ -25,15 +38,9 @@ export default async function ItemPage({ params }: PageProps) {
         alt={item.name}
         className="rounded w-full"
       />
-
-      <h1 className="text-2xl font-semibold">
-        {item.name}
-      </h1>
-
+      <h1 className="text-2xl font-semibold">{item.name}</h1>
       {item.description && (
-        <p className="text-gray-600">
-          {item.description}
-        </p>
+        <p className="text-gray-600">{item.description}</p>
       )}
     </div>
   );

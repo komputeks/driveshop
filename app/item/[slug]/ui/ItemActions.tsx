@@ -1,68 +1,64 @@
 "use client";
 
-import useSWR from "swr";
+import { useState } from "react";
+import useSWR, { mutate as globalMutate } from "swr";
 import { api } from "@/lib/api";
-import type { ItemStatsResponse, SlugProps } from "@/lib/types";
+import { apiWrite } from "@/lib/apiWriter";
+import type { ItemStats, EventsListResponse } from "@/lib/types";
 
-const fetchStats = async (url: string): Promise<ItemStatsResponse> => {
-  return api<ItemStatsResponse>(url);
+type Props = {
+  slug: string;
+  userEmail?: string;
 };
 
-export default function ItemActions({ slug }: SlugProps) {
-  const { data, mutate } = useSWR<ItemStatsResponse>(
-    `/api/stats?slug=${slug}`,
-    fetchStats
+export default function ItemActions({ slug, userEmail }: Props) {
+  const { data } = useSWR<EventsListResponse>(
+    `/api/item-events?slug=${slug}`,
+    api
   );
 
-  const like = async () => {
-    await api("/api/event", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "event",
-        type: "like",
-        itemSlug: slug,
-        value: 1,
-      }),
-    });
+  const [loading, setLoading] = useState(false);
 
-    mutate();
+  const likes = data?.events?.filter(e => e.type === "like" && e.value === "1").length ?? 0;
+  const hasLiked = userEmail
+    ? data?.events?.some(e => e.type === "like" && e.value === "1" && e.userEmail === userEmail)
+    : false;
+
+  const toggleLike = async () => {
+    if (!userEmail) return alert("Login required");
+
+    setLoading(true);
+
+    try {
+      await apiWrite(
+        hasLiked ? "unlike" : "like",
+        "/api/events",
+        { itemId: slug, userEmail }
+      );
+
+      // 🔁 revalidate this item's events
+      globalMutate(`/api/item-events?slug=${slug}`);
+      globalMutate(`/api/items?slug=${slug}`); // update stats if needed
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
-
-  const unlike = async () => {
-    await api("/api/event-remove", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "event-remove",
-        type: "like",
-        itemSlug: slug,
-      }),
-    });
-
-    mutate();
-  };
-
-  if (!data) return null;
-
-  const { likes, views, comments } = data.stats;
 
   return (
-    <div className="flex items-center gap-6">
+    <div className="flex gap-4 items-center">
       <button
-        onClick={like}
-        className="px-3 py-1 border rounded"
+        onClick={toggleLike}
+        disabled={loading}
+        className={`px-4 py-2 rounded-xl font-medium transition ${
+          hasLiked
+            ? "bg-red-500 text-white hover:bg-red-600"
+            : "bg-gray-100 text-gray-800 hover:bg-gray-200"
+        }`}
       >
         ❤️ {likes}
       </button>
-
-      <span className="text-sm text-gray-500">
-        👁 {views}
-      </span>
-
-      <span className="text-sm text-gray-500">
-        💬 {comments}
-      </span>
     </div>
   );
 }

@@ -1,78 +1,118 @@
 "use client";
 
 import { useState } from "react";
-import useSWR from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import { api } from "@/lib/api";
-import type { SlugProps, CommentsResponse } from "@/lib/types";
+import { apiWrite } from "@/lib/apiWriter";
+import type { EventRow, EventsListResponse } from "@/lib/types";
 
-const fetchComments = async (url: string): Promise<CommentsResponse> => {
-  return api<CommentsResponse>(url);
+type Props = {
+  slug: string;
+  userEmail?: string;
 };
 
-export default function ItemComments({ slug }: SlugProps) {
-  const { data, mutate } = useSWR<CommentsResponse>(
-    `/api/item-events?type=comment&slug=${slug}`,
-    fetchComments
+export default function ItemComments({ slug, userEmail }: Props) {
+  const { data } = useSWR<EventsListResponse>(
+    `/api/item-events?slug=${slug}`,
+    api
   );
 
-  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [newComment, setNewComment] = useState("");
 
-  const submit = async () => {
-    if (!text.trim()) return;
+  const comments: EventRow[] =
+    data?.events?.filter(e => e.type === "comment" && !e.deleted) ?? [];
 
-    await api("/api/event", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "event",
+  const addComment = async () => {
+    if (!userEmail) return alert("Login required");
+    if (!newComment.trim()) return;
+
+    setLoading(true);
+
+    try {
+      await apiWrite("comment", "/api/events", {
+        itemId: slug,
         type: "comment",
-        itemSlug: slug,
-        value: text,
-      }),
-    });
+        value: newComment,
+        userEmail,
+      });
 
-    setText("");
-    mutate();
+      setNewComment("");
+
+      globalMutate(`/api/item-events?slug=${slug}`);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const events = data?.events ?? [];
+  const deleteComment = async (id: string) => {
+    if (!userEmail) return;
+
+    setLoading(true);
+
+    try {
+      await apiWrite("delete", "/api/events", {
+        itemId: slug,
+        type: "comment",
+        userEmail,
+        eventId: id,
+      });
+
+      globalMutate(`/api/item-events?slug=${slug}`);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <h2 className="font-semibold">Comments</h2>
-
-      {/* Input */}
+    <div className="mt-6 space-y-4">
+      {/* New Comment */}
       <div className="flex gap-2">
         <input
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder="Write a comment…"
-          className="flex-1 border rounded p-2"
+          type="text"
+          value={newComment}
+          onChange={e => setNewComment(e.target.value)}
+          placeholder="Add a comment…"
+          className="flex-1 border rounded px-3 py-2"
         />
         <button
-          onClick={submit}
-          className="border rounded px-4"
+          onClick={addComment}
+          disabled={loading}
+          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
         >
           Post
         </button>
       </div>
 
-      {/* List */}
+      {/* Comments List */}
       <div className="space-y-3">
-        {events.map(c => (
-          <div key={c.id} className="border rounded p-3">
-            <div className="text-sm text-gray-500">
-              {c.userName || c.userEmail || "Anonymous"}
+        {comments.map(c => (
+          <div
+            key={c.id}
+            className="p-3 border rounded bg-white/5 flex justify-between items-start"
+          >
+            <div>
+              <p className="text-sm">{c.value}</p>
+              <span className="text-xs text-gray-400">
+                {new Date(c.createdAt).toLocaleString()}
+              </span>
             </div>
-            <div>{c.value}</div>
+
+            {userEmail === c.userEmail && (
+              <button
+                onClick={() => deleteComment(c.id)}
+                disabled={loading}
+                className="text-red-500 text-sm hover:underline ml-4"
+              >
+                Delete
+              </button>
+            )}
           </div>
         ))}
-
-        {!events.length && (
-          <div className="text-sm text-gray-400">
-            No comments yet
-          </div>
-        )}
       </div>
     </div>
   );
