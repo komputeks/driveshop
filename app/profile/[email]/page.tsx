@@ -1,47 +1,16 @@
-import Image from "next/image";
-import type { ApiResponse, User, ItemStats, EventWithUser } from "@/lib/types";
-import { getCurrentUser, signOut } from "@/lib/auth"; // your session helpers
-
-type UserProfileResponse = ApiResponse<{
-  user: User;
-  stats: ItemStats;
-  comments: EventWithUser[];
-}>;
-
-async function getUserProfile(email: string): Promise<UserProfileResponse | null> {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}?action=userProfile&email=${encodeURIComponent(email)}`,
-    { next: { tags: [`user:${email}`] } }
-  );
-  if (!res.ok) return null;
-  return res.json();
-}
-
-export default async function ProfilePage({ params }: { params?: { email?: string } }) {
-  const sessionUser = await getCurrentUser();
-  const email = params?.email || sessionUser?.email;
-
-  if (!email) {
-    return (
-      <div className="p-8 text-center text-gray-400">
-        User not found
-      </div>
-    );
-  }
+export default async function ProfilePage({ params }: { params: { email: string } }) {
+  const email = params.email;
 
   const profile = await getUserProfile(email);
 
   if (!profile || !profile.ok) {
     return (
-      <div className="p-8 text-center text-gray-400">
-        User not found
-      </div>
+      <div className="p-8 text-center text-gray-400">User not found</div>
     );
   }
 
   const { user, stats, comments } = profile;
 
-  // Strip domain for public display
   const displayName = user.name || user.email.split("@")[0] || "Anonymous";
 
   return (
@@ -55,7 +24,6 @@ export default async function ProfilePage({ params }: { params?: { email?: strin
           height={96}
           className="rounded-full"
         />
-
         <div>
           <h1 className="text-2xl font-bold">{displayName}</h1>
           <p className="text-sm text-gray-400">{user.email}</p>
@@ -63,15 +31,6 @@ export default async function ProfilePage({ params }: { params?: { email?: strin
             Joined {new Date(user.createdAt).toLocaleDateString()}
           </p>
         </div>
-
-        {sessionUser && sessionUser.email === user.email && (
-          <button
-            onClick={() => signOut()}
-            className="ml-auto px-4 py-2 bg-red-500 text-white rounded"
-          >
-            Logout
-          </button>
-        )}
       </section>
 
       {/* Stats */}
