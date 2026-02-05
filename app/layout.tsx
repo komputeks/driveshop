@@ -1,5 +1,3 @@
-import Providers from "./providers";
-import UserSyncGate from "./UserSyncGate";
 
 export default function RootLayout({
   children,
@@ -9,10 +7,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <Providers>
-          <UserSyncGate />
-          {children}
-        </Providers>
+        {children}
       </body>
     </html>
   );
