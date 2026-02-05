@@ -1,25 +1,15 @@
-import { NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
     const { tags } = await req.json();
 
-    if (!Array.isArray(tags)) {
-      return NextResponse.json(
-        { ok: false, error: "Invalid tags" },
-        { status: 400 }
-      );
-    }
-
-    tags.forEach(tag => revalidateTag(tag, {}));
+    // ✅ Fix: pass options explicitly
+    tags.forEach((tag: string) => revalidateTag(tag, { revalidate: true }));
 
     return NextResponse.json({ ok: true, tags });
   } catch (e) {
-    console.error("Revalidate failed:", e);
-    return NextResponse.json(
-      { ok: false, error: "Server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, error: (e as Error).message });
   }
 }
