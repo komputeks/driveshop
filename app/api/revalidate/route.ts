@@ -1,45 +1,35 @@
-// app/api/revalidate/route.ts
-
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { revalidateTag } from "next/cache";
 
-const ALLOWED_ACTION = "revalidate";
-const MAX_SKEW_SECONDS = 60;
+const ALLOWED_ACTIONS = new Set(["revalidate"]);
+const MAX_SKEW = 60; // seconds
 
 export async function POST(req: Request) {
   try {
-    const action = req.headers.get("x-action");
-    const tsHeader = req.headers.get("x-ts");
-    const signature = req.headers.get("x-signature");
+    const action = req.headers.get("x-action") || "";
+    const timestamp = req.headers.get("x-timestamp") || "";
+    const signature = req.headers.get("x-signature") || "";
 
-    if (!action || !tsHeader || !signature) {
+    if (!ALLOWED_ACTIONS.has(action)) {
       return NextResponse.json(
-        { ok: false, error: "Missing headers" },
-        { status: 400 }
-      );
-    }
-
-    if (action !== ALLOWED_ACTION) {
-      return NextResponse.json(
-        { ok: false, error: "Action not allowed" },
+        { ok: false, error: "Forbidden" },
         { status: 403 }
       );
     }
 
-    const ts = Number(tsHeader);
     const now = Math.floor(Date.now() / 1000);
+    const tsNum = Number(timestamp);
 
-    if (!ts || Math.abs(now - ts) > MAX_SKEW_SECONDS) {
+    if (!tsNum || Math.abs(now - tsNum) > MAX_SKEW) {
       return NextResponse.json(
         { ok: false, error: "Expired request" },
         { status: 401 }
       );
     }
 
-    const bodyText = await req.text();
-
-    const base = `${action}.${tsHeader}.${bodyText}`;
+    const body = await req.text();
+    const base = `${action}.${timestamp}.${body}`;
 
     const expected = crypto
       .createHmac("sha256", process.env.GAS_API_SIGNING_SECRET!)
@@ -59,32 +49,24 @@ export async function POST(req: Request) {
       );
     }
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(bodyText);
-    } catch {
-      return NextResponse.json(
-        { ok: false, error: "Invalid JSON body" },
-        { status: 400 }
-      );
-    }
-
-    const { tags } = parsed as { tags?: unknown };
+    const { tags } = JSON.parse(body);
 
     if (!Array.isArray(tags) || !tags.every(t => typeof t === "string")) {
       return NextResponse.json(
-        { ok: false, error: "Invalid tags payload" },
+        { ok: false, error: "Invalid tags" },
         { status: 400 }
       );
     }
 
-    // 🔁 Revalidate semantic tags
-    tags.forEach(tag => revalidateTag(tag));
+    // 🔁 Revalidate semantic cache tags (Next.js 14+)
+    tags.forEach(tag => {
+      revalidateTag(tag, "page");
+    });
 
     return NextResponse.json({ ok: true, tags });
 
-  } catch (err) {
-    console.error("Revalidate POST failed:", err);
+  } catch (e) {
+    console.error("Revalidate POST failed:", e);
     return NextResponse.json(
       { ok: false, error: "Internal error" },
       { status: 500 }
