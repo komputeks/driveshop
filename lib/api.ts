@@ -1,20 +1,25 @@
-export async function api<T = any>(
+import type { ApiResponse } from "@/lib/types";
+
+export async function api<T>(
   url: string,
   options?: RequestInit
-): Promise<T> {
+): Promise<ApiResponse<T>> {
   const res = await fetch(url, {
+    ...options,
     headers: {
       "Content-Type": "application/json",
+      ...(options?.headers || {}),
     },
-    ...options,
-    body: options?.body
-      ? JSON.stringify(options.body)
-      : undefined,
   });
 
+  const json = await res.json();
+
   if (!res.ok) {
-    throw new Error("API request failed");
+    return {
+      ok: false,
+      error: json?.error || "API request failed",
+    };
   }
 
-  return res.json();
+  return json as ApiResponse<T>;
 }

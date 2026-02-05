@@ -1,14 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
 import { api } from "@/lib/api";
-import { useState } from "react";
-import type { Comment, SlugProps } from "@/lib/types";
+import type { SlugProps, CommentsResponse } from "@/lib/types";
+
+const fetchComments = async (url: string): Promise<CommentsResponse> => {
+  return api<CommentsResponse>(url);
+};
 
 export default function ItemComments({ slug }: SlugProps) {
   const { data, mutate } = useSWR<CommentsResponse>(
     `/api/item-events?type=comment&slug=${slug}`,
-    api
+    fetchComments
   );
 
   const [text, setText] = useState("");
@@ -30,6 +34,8 @@ export default function ItemComments({ slug }: SlugProps) {
     setText("");
     mutate();
   };
+
+  const events = data?.events ?? [];
 
   return (
     <div className="space-y-4">
@@ -53,19 +59,16 @@ export default function ItemComments({ slug }: SlugProps) {
 
       {/* List */}
       <div className="space-y-3">
-        {data?.events?.map(c => (
-          <div
-            key={c.id}
-            className="border rounded p-3"
-          >
+        {events.map(c => (
+          <div key={c.id} className="border rounded p-3">
             <div className="text-sm text-gray-500">
-              {c.userName || "Anonymous"}
+              {c.userName || c.userEmail || "Anonymous"}
             </div>
             <div>{c.value}</div>
           </div>
         ))}
 
-        {!data?.events?.length && (
+        {!events.length && (
           <div className="text-sm text-gray-400">
             No comments yet
           </div>

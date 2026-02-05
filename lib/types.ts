@@ -1,143 +1,208 @@
 /* =========================
-   CORE / SHARED
+   PRIMITIVES
 ========================= */
 
-export type ID = string;
-export type ISODate = string;
-
-export type SlugProps = {
-  slug: string;
-};
-
-/* =========================
-   USER
-========================= */
-
-export type UserProfile = {
-  email: string;
-  name: string;
-  photo: string;
-};
-
-export type UserSyncPayload = {
-  action: "login";
-  email: string;
-  name: string;
-  photo: string;
-};
-
-/* =========================
-   CATEGORIES
-========================= */
-
-export type Category = {
-  id: ID;
-  slug: string;
-  title: string;
-  parentId?: ID | null;
-};
-
-export type CategoryNode = Category & {
-  children: CategoryNode[];
-};
-
-export type CategoriesResponse = {
-  categories: CategoryNode[];
-};
+export type ISODateString = string; // new Date().toISOString()
+export type UUID = string;
+export type Signature = string;
 
 /* =========================
    ITEMS
 ========================= */
 
 export type Item = {
-  id: ID;
-  slug: string;
-  title: string;
+  id: string;            // Drive file ID
+  name: string;
+  cat1: string;
+  cat2?: string | null;
+  cdn: string;
+  width: number;
+  height: number;
+  size: number;
   description?: string;
-  categoryId: ID;
-  createdAt: ISODate;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+  views: number;
+  likes: number;
+  comments: number;
+  sig: Signature;
 };
 
-export type ItemsListResponse = {
-  items: Item[];
-  page: number;
-  pageSize: number;
-  hasMore: boolean;
-};
-
-export type ItemDetailsResponse = {
-  item: Item;
+export type ItemWithSlug = Item & {
+  slug: string;
 };
 
 /* =========================
-   EVENTS (likes + comments)
+   EVENTS
 ========================= */
 
-export type EventType = "like" | "comment";
+export type EventType = "view" | "like" | "comment";
 
 export type EventRow = {
-  id: ID;
-  itemId: ID;
+  id: UUID;
+  itemId: string;
   type: EventType;
-  value: string | number; // comment text OR 1
-  pageUrl: string;
+  value: string;          // "1" for like, text for comment
+  pageUrl?: string;
   userEmail: string;
-  createdAt: ISODate;
-  deleted?: boolean;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+  deleted: boolean;
 };
 
-export type CreateEventPayload = {
-  action: "event";
-  type: EventType;
-  itemSlug: string;
-  value: string | number;
-};
-
-export type RemoveEventPayload = {
-  action: "event-remove";
-  type: EventType;
-  itemSlug: string;
+export type EventWithUser = EventRow & {
+  userName?: string;
+  userPhoto?: string;
 };
 
 /* =========================
-   STATS
+   USERS
 ========================= */
 
+export type User = {
+  email: string;
+  name?: string;
+  photo?: string;
+  createdAt: ISODateString;
+  lastLogin: ISODateString;
+};
+
+/* =========================
+   CATEGORIES
+========================= */
+
+export type CategoryHelperRow = {
+  cat1: string;
+  cat2: string;
+};
+
+export type CategoryNode = {
+  slug: string;
+  name: string;
+};
+
+export type CategoryTreeNode = CategoryNode & {
+  children: CategoryTreeNode[];
+};
+
+export type CategoryTree = CategoryTreeNode[];
+
+/* =========================
+   ERRORS / LOGGING
+========================= */
+
+export type ErrorLog = {
+  time: ISODateString;
+  jobId?: string;
+  itemId?: string;
+  message: string;
+  stack?: string;
+};
+
+/* =========================
+   API RESPONSE WRAPPERS
+========================= */
+
+export type ApiOk<T = {}> = {
+  ok: true;
+} & T;
+
+export type ApiError = {
+  ok: false;
+  error: string;
+};
+
+export type ApiResponse<T = {}> = ApiOk<T> | ApiError;
+
+/* =========================
+   API RESPONSES
+========================= */
+
+export type ItemsListResponse = ApiOk<{
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+  items: Item[];
+}>;
+
+export type ItemResponse = ApiOk<{
+  item: Item;
+}>;
+
+export type ItemBySlugResponse = ApiOk<{
+  item: ItemWithSlug;
+}>;
+
+export type CategoriesResponse = ApiOk<{
+  categories: string[];
+}>;
+
+export type CategoryTreeResponse = ApiOk<{
+  categories: CategoryTree;
+}>;
+
 export type ItemStats = {
-  likes: number;
   views: number;
+  likes: number;
   comments: number;
 };
 
-export type ItemStatsResponse = {
+export type StatsResponse = ApiOk<{
   stats: ItemStats;
-};
+}>;
+
+export type EventsListResponse = ApiOk<{
+  events: EventRow[] | EventWithUser[];
+}>;
 
 /* =========================
-   COMMENTS
+   REQUEST PAYLOADS
 ========================= */
 
-export type Comment = {
-  id: ID;
-  text: string;
+export type LoginRequest = {
+  action: "login";
+  email: string;
+  name?: string;
+  photo?: string;
+};
+
+export type EventsUpsertRequest = {
+  action: "events.upsert";
+  itemId: string;
+  type: EventType;
+  value?: string;
+  pageUrl?: string;
   userEmail: string;
-  createdAt: ISODate;
 };
 
-export type CommentsResponse = {
-  comments: Comment[];
+export type EventsRemoveRequest = {
+  action: "events.remove";
+  itemId: string;
+  type: EventType;
+  userEmail: string;
 };
 
 /* =========================
-   API STANDARD RESPONSE
+   MISC
 ========================= */
 
-export type OkResponse<T = unknown> = {
-  ok: true;
-  data: T;
+export type RevalidatePayload = {
+  tags: string[];
 };
 
-export type ErrorResponse = {
-  ok: false;
-  error: string;
+export type SignedPayload = {
+  action: string;
+  timestamp: number;
+  nonce: string;
+  signature: string;
+  payload: string;
+};
+
+export type ItemPageParams = {
+  slug: string;
+};
+
+export type ItemPageProps = {
+  params: ItemPageParams;
 };

@@ -6,8 +6,8 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.email) {
-    return new Response(
-      JSON.stringify({ ok: false, error: "Unauthorized" }),
+    return Response.json(
+      { ok: false, error: "Unauthorized" },
       { status: 401 }
     );
   }
@@ -40,9 +40,9 @@ export async function POST(req: Request) {
 
   const data = await res.json();
 
-  if (!res.ok || !data.ok) {
-    return new Response(
-      JSON.stringify({ ok: false, error: "GAS login failed" }),
+  if (!res.ok || !data?.ok) {
+    return Response.json(
+      { ok: false, error: "GAS login failed" },
       { status: 500 }
     );
   }
