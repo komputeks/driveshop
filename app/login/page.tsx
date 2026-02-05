@@ -8,14 +8,15 @@ export default function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
+  // Redirect to own profile after login
   useEffect(() => {
-    if (status === "authenticated") {
-      router.push("/profile");
+    if (status === "authenticated" && session?.user?.email) {
+      router.push(`/profile/${encodeURIComponent(session.user.email)}`);
     }
-  }, [status, router]);
+  }, [status, session?.user?.email, router]);
 
   if (status === "loading") {
-    return <p className="p-6">Loading...</p>;
+    return <p className="p-6 text-center">Loading...</p>;
   }
 
   return (
