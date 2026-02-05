@@ -1,5 +1,6 @@
 // client component
 import { useSession, signOut } from "next-auth/react";
+import Session from "types/next-auth.d.ts";
 
 export default function UserProfile() {
   const { data: session } = useSession();
