@@ -1,43 +1,29 @@
-import crypto from "crypto";
-import type { SignedPayload } from "./types";
+type Action = "like" | "unlike" | "comment" | "edit" | "delete";
 
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
-const API_SECRET = process.env.API_SIGNING_SECRET!;
+interface WritePayload {
+  itemSlug: string;
+  value?: string;
+  eventId?: string;
+}
 
-/**
- * Send a signed POST request to your API
- * @param action - action name for your backend
- * @param endpoint - API route (relative path)
- * @param payload - data to send
- */
-export async function apiWrite(
-  action: string,
-  endpoint: string,
-  payload: Record<string, any>
-) {
-  const ts = Date.now();
-  const nonce = crypto.randomUUID();
+export async function apiWrite(action: Action, endpoint: string, payload: WritePayload) {
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ action, ...payload }),
+    });
 
-  const rawPayload = JSON.stringify(payload);
+    const data = await res.json();
+    if (!res.ok || !data.ok) {
+      throw new Error(data.error || "API write failed");
+    }
 
-  const signature = crypto
-    .createHmac("sha256", API_SECRET)
-    .update(`${action}|POST|${ts}|${nonce}|${rawPayload}`)
-    .digest("hex");
-
-  const signed: SignedPayload = {
-    action,
-    timestamp: ts,
-    nonce,
-    signature,
-    payload: rawPayload,
-  };
-
-  const res = await fetch(endpoint, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(signed),
-  });
-
-  return res.json();
+    return data;
+  } catch (err) {
+    console.error(`apiWrite ${action} failed:`, err);
+    throw err;
+  }
 }
