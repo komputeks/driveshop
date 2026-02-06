@@ -1,3 +1,4 @@
+import "global.css";
 import AuthProvider from "@/app/_providers/AuthProvider";
 
 export default function LoginLayout({
