@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import NextAuth, { AuthOptions } from "next-auth";
 import type { ItemStats, StatsResponse } from "@/lib/types";
 
 async function fetchItemEventsFromGAS(slug: string) {
