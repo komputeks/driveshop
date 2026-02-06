@@ -20,7 +20,7 @@ async function getPublicProfile(
   cursor?: string
 ): Promise<UserProfileResponse> {
   const res = await fetch(
-    `${process.env.NEXT_AUTH_URL}/api/public-profile`,
+    `https://driveshp-three.vercel.app/api/public-profile`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -110,13 +110,15 @@ export default async function PublicProfilePage({
         {/* ===== Timeline ===== */}
         <section className="mt-6 space-y-6">
           {tab === "likes" &&
-            likes.items.map((item) => (
+            likes.items.map((item: UserLike) => (
               <LikeRow key={item.itemId} item={item} />
             ))}
-
           {tab === "comments" &&
-            comments.items.map((item) => (
-              <CommentRow key={item.itemId + item.commentedAt} item={item} />
+            comments.items.map((item: UserComment) => (
+              <CommentRow
+                key={`${item.itemId}-${item.commentedAt}`}
+                item={item}
+              />
             ))}
         </section>
 

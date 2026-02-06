@@ -1520,8 +1520,6 @@ const EventService = (() => {
     return res({ ok: true, categories: CategoryService.getTree() });
   }
   
-  .
-  
   
   /*************************************************
  * Resolve public handle → email

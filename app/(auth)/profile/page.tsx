@@ -14,15 +14,13 @@ export default async function ProfilePage() {
     );
   }
 
-  const { user } = session;
-  const handle = user.email?.split("@")[0]; // TEMP, public-safe
 
   return (
     <main className="max-w-4xl mx-auto px-6 py-10 space-y-10">
       {/* Header */}
       <section className="flex items-center gap-6">
         <Image
-          src={user.image || "/avatar.png"}
+          src={user.image}
           alt={user.name || "User"}
           width={96}
           height={96}
@@ -37,20 +35,9 @@ export default async function ProfilePage() {
           <p className="text-sm text-gray-400">
             {user.email}
           </p>
-
-          {/* Public profile link (future-proof) */}
-          {handle && (
-            <a
-              href={`/u/${handle}`}
-              className="inline-block mt-2 text-sm text-blue-400 hover:underline"
-            >
-              View public profile →
-            </a>
-          )}
         </div>
       </section>
 
-      {/* Actions */}
       <section className="flex items-center gap-4">
         <LogoutButton />
       </section>
