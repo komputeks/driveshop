@@ -206,3 +206,110 @@ export type ItemPageParams = {
 export type ItemPageProps = {
   params: ItemPageParams;
 };
+
+
+
+
+
+
+
+
+
+
+
+/*************************************************
+ * Types for calling getUserProfile endpoint
+ *************************************************/
+
+// Request payload for getUserProfile
+export interface GetUserProfileRequest {
+  action: "getUserProfile";
+  email: string;                 // required user email
+  limit?: number;                // optional, default 20
+  likesCursor?: string;          // optional ISO timestamp for likes pagination
+  commentsCursor?: string;       // optional ISO timestamp for comments pagination
+}
+
+// Example usage:
+const payload: GetUserProfileRequest = {
+  action: "getUserProfile",
+  email: "alice@example.com",
+  limit: 10,
+  likesCursor: "2026-02-04T11:20:05.000Z",
+  commentsCursor: "2026-02-03T18:55:12.000Z"
+};
+
+
+
+
+
+/*************************************************
+ * Types for UserActivityService / getUserProfile
+ *************************************************/
+
+// Represents a single liked item
+export interface UserLike {
+  itemId: string;
+  itemName: string;
+  pageUrl: string;
+  likedAt: string; // ISO timestamp
+}
+
+// Represents a single commented item
+export interface UserComment {
+  itemId: string;
+  itemName: string;
+  pageUrl: string;
+  comment: string;
+  commentedAt: string; // ISO timestamp
+}
+
+// Paginated likes/comments container
+export interface PaginatedItems<T> {
+  items: T[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+// Response returned from getUserProfile
+export interface GetUserProfileResponse {
+  userEmail: string;
+  profilePic: string;
+  likedCount: number;
+  commentCount: number;
+  likes: PaginatedItems<UserLike>;
+  comments: PaginatedItems<UserComment>;
+}
+
+// Example usage
+const example: GetUserProfileResponse = {
+  userEmail: "alice@example.com",
+  profilePic: "https://cdn.example.com/photos/alice.jpg",
+  likedCount: 3,
+  commentCount: 2,
+  likes: {
+    items: [
+      {
+        itemId: "item_001",
+        itemName: "Vintage Chair",
+        pageUrl: "/items/item_001",
+        likedAt: "2026-02-05T14:32:10.000Z"
+      }
+    ],
+    nextCursor: "2026-02-05T14:32:10.000Z",
+    hasMore: true
+  },
+  comments: {
+    items: [
+      {
+        itemId: "item_002",
+        itemName: "Modern Desk",
+        pageUrl: "/items/item_002",
+        comment: "Love this desk!",
+        commentedAt: "2026-02-05T10:15:20.000Z"
+      }
+    ],
+    nextCursor: "2026-02-05T10:15:20.000Z",
+    hasMore: false
+  }
+};

@@ -42,15 +42,16 @@ const CFG = {
 /*************************************************
  * Core response & helpers (CANONICAL)
  *************************************************/
-  function slugify_(str) {
-    return String(str || "")
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/-+/g, "-");
-  }
   
+  function slugify_(str) {
+  return String(str || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[\s_]+/g, "-")     // spaces → dashes
+    .replace(/[^a-z0-9-]/g, "")  // drop unsafe chars
+    .replace(/-+/g, "-")         // collapse dashes
+    .replace(/^-|-$/g, "");      // trim edges
+}
   function res(obj) {
     return ContentService
       .createTextOutput(JSON.stringify(obj))
@@ -454,89 +455,175 @@ const UserService = (() => {
  * UserActivityService — User-centric activity
  *************************************************/
 const UserActivityService = (() => {
-
   const EVENTS_SHEET = CFG.SHEETS.EVENTS;
-  const MAX_SCAN = 300; // rows per read to avoid full scan
+  const ITEMS_SHEET = CFG.SHEETS.ITEMS;
 
+  const MAX_SCAN = 300; // hard cap per call
+
+  /**
+   * Builds an index of itemId -> { name, cdn }
+   * Scans items sheet ONCE per invocation.
+   */
+  function createItemIndex_() {
+    const sh = getSheet(ITEMS_SHEET);
+    const lastRow = sh.getLastRow();
+    if (lastRow < 2) return {};
+
+    const rows = sh
+      .getRange(2, 1, lastRow - 1, sh.getLastColumn())
+      .getValues();
+
+    const map = Object.create(null);
+
+    for (const r of rows) {
+      const [
+        id,
+        name,
+        _cat1,
+        _cat2,
+        cdn
+      ] = r;
+
+      if (!id) continue;
+
+      map[id] = {
+        name: name || "(untitled)",
+        cdn: cdn || ""
+      };
+    }
+
+    return map;
+  }
+
+  /**
+   * Core activity reader
+   */
   function getActivity(email, opts = {}) {
-    if (!email) return { likedCount: 0, commentCount: 0, likes: { items: [] }, comments: { items: [] } };
+    if (!email) {
+      return {
+        likedCount: 0,
+        commentCount: 0,
+        likes: { items: [], nextCursor: null, hasMore: false },
+        comments: { items: [], nextCursor: null, hasMore: false }
+      };
+    }
 
     const limit = Number(opts.limit || 20);
-    const likesCursor = opts.likesCursor || null;
-    const commentsCursor = opts.commentsCursor || null;
+    const likesCursor = opts.likesCursor
+      ? new Date(opts.likesCursor).getTime()
+      : Infinity;
+
+    const commentsCursor = opts.commentsCursor
+      ? new Date(opts.commentsCursor).getTime()
+      : Infinity;
 
     const sh = getSheet(EVENTS_SHEET);
     const lastRow = sh.getLastRow();
-    if (lastRow < 2) return { likedCount: 0, commentCount: 0, likes: { items: [] }, comments: { items: [] } };
+    if (lastRow < 2) {
+      return {
+        likedCount: 0,
+        commentCount: 0,
+        likes: { items: [], nextCursor: null, hasMore: false },
+        comments: { items: [], nextCursor: null, hasMore: false }
+      };
+    }
 
     const readRows = Math.min(MAX_SCAN, lastRow - 1);
-    const rows = sh.getRange(2, 1, readRows, sh.getLastColumn()).getValues();
+    const rows = sh
+      .getRange(2, 1, readRows, sh.getLastColumn())
+      .getValues();
 
-    const likes = [];
-    const comments = [];
-    const likesCursorTime = likesCursor ? new Date(likesCursor).getTime() : Infinity;
-    const commentsCursorTime = commentsCursor ? new Date(commentsCursor).getTime() : Infinity;
+    const likesRaw = [];
+    const commentsRaw = [];
 
     for (let i = 0; i < rows.length; i++) {
-      const r = rows[i];
-      const [id, itemId, type, value, pageUrl, userEmailRow, createdAt, updatedAt, deleted] = r;
+      const [
+        eventId,
+        itemId,
+        type,
+        value,
+        pageUrl,
+        userEmail,
+        createdAt,
+        _updatedAt,
+        deleted
+      ] = rows[i];
 
-      if (userEmailRow !== email || deleted === true) continue;
+      if (deleted === true) continue;
+      if (userEmail !== email) continue;
+      if (!itemId || !createdAt) continue;
 
       const ts = new Date(createdAt).getTime();
 
-      if (type === "like" && ts < likesCursorTime && likes.length < limit) {
-        likes.push({ itemId, createdAt, pageUrl });
+      if (type === "like" && ts < likesCursor && likesRaw.length < limit) {
+        likesRaw.push({
+          itemId,
+          pageUrl,
+          createdAt
+        });
       }
 
-      if (type === "comment" && ts < commentsCursorTime && comments.length < limit) {
-        comments.push({ itemId, createdAt, content: value, pageUrl });
+      if (type === "comment" && ts < commentsCursor && commentsRaw.length < limit) {
+        commentsRaw.push({
+          itemId,
+          pageUrl,
+          comment: value || "",
+          createdAt
+        });
       }
 
-      if (likes.length === limit && comments.length === limit) break;
+      if (likesRaw.length >= limit && commentsRaw.length >= limit) break;
     }
 
-    buildItemIndex_();
-    const itemMap = _itemIndex;
+    // Build item lookup AFTER collecting IDs
+    const itemIndex = createItemIndex_();
 
-    const likesEnriched = likes.map(e => ({
+    const likes = likesRaw.map(e => ({
       itemId: e.itemId,
-      itemName: itemMap[e.itemId]?.name || "(missing)",
+      itemName: itemIndex[e.itemId]?.name || "(missing)",
+      itemImage: itemIndex[e.itemId]?.cdn || "",
       pageUrl: e.pageUrl,
       likedAt: e.createdAt
     }));
 
-    const commentsEnriched = comments.map(e => ({
+    const comments = commentsRaw.map(e => ({
       itemId: e.itemId,
-      itemName: itemMap[e.itemId]?.name || "(missing)",
+      itemName: itemIndex[e.itemId]?.name || "(missing)",
+      itemImage: itemIndex[e.itemId]?.cdn || "",
       pageUrl: e.pageUrl,
-      comment: e.content || "",
+      comment: e.comment,
       commentedAt: e.createdAt
     }));
 
     return {
-      likedCount: likesEnriched.length,
-      commentCount: commentsEnriched.length,
+      likedCount: likes.length,
+      commentCount: comments.length,
 
       likes: {
-        items: likesEnriched,
-        nextCursor: likesEnriched.length ? likesEnriched[likesEnriched.length - 1].likedAt : null,
-        hasMore: likesEnriched.length === limit
+        items: likes,
+        nextCursor: likes.length
+          ? likes[likes.length - 1].likedAt
+          : null,
+        hasMore: likes.length === limit
       },
 
       comments: {
-        items: commentsEnriched,
-        nextCursor: commentsEnriched.length ? commentsEnriched[commentsEnriched.length - 1].commentedAt : null,
-        hasMore: commentsEnriched.length === limit
+        items: comments,
+        nextCursor: comments.length
+          ? comments[comments.length - 1].commentedAt
+          : null,
+        hasMore: comments.length === limit
       }
     };
   }
 
   return { getActivity };
-
 })();
 
 
+  /*************************************************
+ * getUserProfile — public activity profile
+ *************************************************/
   function getUserProfile(data) {
     const email = data.email;
     if (!email) return error_("Missing email");
@@ -544,19 +631,19 @@ const UserActivityService = (() => {
     const user = UserService.getByEmail(email);
     if (!user) return error_("User not found");
   
-    const profilePic = user.cdn || "";
-  
     const activity = UserActivityService.getActivity(email, {
+      limit: Number(data.limit || 20),
       likesCursor: data.likesCursor || null,
-      commentsCursor: data.commentsCursor || null,
-      limit: Number(data.limit || 20)
+      commentsCursor: data.commentsCursor || null
     });
   
     return ok_({
-      userEmail: email,     // appears once on top
-      profilePic,
+      userEmail: email,            // appears once at top
+      profilePic: user.photo || "",
+  
       likedCount: activity.likedCount,
       commentCount: activity.commentCount,
+  
       likes: activity.likes,
       comments: activity.comments
     });
@@ -1433,30 +1520,55 @@ const EventService = (() => {
     return res({ ok: true, categories: CategoryService.getTree() });
   }
   
-  function handleUserProfile_(email) {
-    const user = UserService.getByEmail(email);
-    if (!user) return { ok: false };
+  .
   
-    const events = EventService.getByUser_(email);
   
-    const stats = {
-      likes: events.filter(e => e.type === "like").length,
-      comments: events.filter(e => e.type === "comment").length,
-      views: events.filter(e => e.type === "view").length
-    };
-  
-    const comments = events
-      .filter(e => e.type === "comment" && e.deleted !== true)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      .slice(0, 10);
-  
-    return {
-      ok: true,
-      user,
-      stats,
-      comments
-    };
+  /*************************************************
+ * Resolve public handle → email
+ * Priority:
+ *   1. slugified name column (if exists)
+ *   2. email handle fallback
+ *************************************************/
+function resolveUserHandle(data) {
+  const handle = String(data.handle || "")
+    .toLowerCase()
+    .trim();
+
+  if (!handle) return error_("Missing handle");
+
+  const sh = getSheet(CFG.SHEETS.USERS);
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return error_("User not found");
+
+  const rows = sh
+    .getRange(2, 1, lastRow - 1, sh.getLastColumn())
+    .getValues();
+
+  // Users sheet columns:
+  // 0 = email | 1 = name | 2 = photo | 3 = createdAt | 4 = lastLogin
+  for (let i = 0; i < rows.length; i++) {
+    const email = String(rows[i][0] || "").toLowerCase().trim();
+    const name = String(rows[i][1] || "").toLowerCase().trim();
+
+    if (!email) continue;
+
+    // 1️⃣ name → handle (slugified)
+    if (name) {
+      const nameHandle = slugify_(name);
+      if (nameHandle === handle) {
+        return ok_({ email });
+      }
+    }
+
+    // 2️⃣ email fallback
+    const emailHandle = email.split("@")[0];
+    if (emailHandle === handle) {
+      return ok_({ email });
+    }
   }
+
+  return error_("User not found");
+}
 
     
   // function assertNonceUnused_(action, nonce) {
@@ -1805,3 +1917,5 @@ const CategoryService = (() => {
       .addItem("Initialize", "initDriveShopUI")
       .addToUi();
   }
+
+
