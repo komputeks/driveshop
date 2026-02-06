@@ -1,4 +1,4 @@
-import "global.css";
+import "@/app/globals.css";
 import AuthProvider from "@/app/_providers/AuthProvider";
 
 export default function LoginLayout({
