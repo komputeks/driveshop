@@ -1,71 +1,70 @@
-// app/page.tsx (Server Component)
-import { getServerSession } from "next-auth";
-import Image from "next/image";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import LogoutButton from "@/components/LogoutButton";
+"use client";
 
-export default async function ProfilePage() {
-  const session = await getServerSession(authOptions);
+export const dynamic = "force-dynamic";
 
-  if (!session || !session.user) {
-    return (
-      <main className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">Not signed in</p>
-      </main>
-    );
-  }
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
-  const { user } = session;
-  const handle = user.email?.split("@")[0]; // TEMP, public-safe
+export default function SignInPage() {
+  const router = useRouter();
+  const sessionResult = useSession();
+
+  // Defensive: sessionResult can be undefined during transitions
+  const session = sessionResult?.data;
+  const status = sessionResult?.status;
+
+  const isLoggedIn = status === "authenticated";
 
   return (
-    <main className="max-w-4xl mx-auto px-6 py-10 space-y-10">
-      {/* Header */}
-      <section className="flex items-center gap-6">
-        <Image
-          src={user.image || "/avatar.png"}
-          alt={user.name || "User"}
-          width={96}
-          height={96}
-          className="rounded-full border border-white/10"
-        />
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-zinc-900 via-black to-zinc-900">
+      <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl p-8 text-center">
 
-        <div>
-          <h1 className="text-2xl font-bold">
-            {user.name || "Anonymous"}
+        {/* Soft glow */}
+        <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-pink-500/20 blur-xl pointer-events-none" />
+
+        <div className="relative space-y-6">
+          <h1 className="text-3xl font-bold tracking-tight text-white">
+            Welcome to DriveShop
           </h1>
 
-          <p className="text-sm text-gray-400">
-            {user.email}
+          <p className="text-sm text-zinc-400">
+            Browse freely. Sign in to interact.
           </p>
 
-          {/* Public profile link (future-proof) */}
-          {handle && (
-            <a
-              href={`/u/${handle}`}
-              className="inline-block mt-2 text-sm text-blue-400 hover:underline"
+          {status === "loading" && (
+            <div className="text-xs text-zinc-500">
+              Checking session…
+            </div>
+          )}
+
+          {!isLoggedIn && status !== "loading" && (
+            <button
+              onClick={() =>
+                signIn("google", { callbackUrl: "/profile" })
+              }
+              className="w-full py-3 rounded-xl font-semibold text-black
+                         bg-white hover:bg-zinc-200
+                         transition-all duration-200
+                         hover:scale-[1.02] active:scale-[0.98]"
             >
-              View public profile →
-            </a>
+              Continue with Google
+            </button>
+          )}
+
+          {isLoggedIn && (
+            <button
+              onClick={() => router.push("/profile")}
+              className="w-full py-3 rounded-xl font-semibold text-white
+                         bg-gradient-to-r from-indigo-500 to-purple-600
+                         hover:from-indigo-400 hover:to-purple-500
+                         transition-all duration-200
+                         hover:scale-[1.02] active:scale-[0.98]"
+            >
+              Go to your profile →
+            </button>
           )}
         </div>
-      </section>
-
-      {/* Actions */}
-      <section className="flex items-center gap-4">
-        <LogoutButton />
-      </section>
-
-      {/* Placeholder sections */}
-      <section className="border-t border-white/10 pt-6">
-        <h2 className="font-semibold mb-2">
-          Account
-        </h2>
-
-        <p className="text-sm text-gray-400">
-          More settings coming soon.
-        </p>
-      </section>
+      </div>
     </main>
   );
 }
