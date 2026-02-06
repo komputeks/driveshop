@@ -1,17 +1,32 @@
-// client component
-import { useSession, signOut } from "next-auth/react";
-import Session from "types/next-auth.d.ts";
+// app/page.tsx (Server Component)
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import {  LogoutButton} from "@components/LogoutButton";
 
-export default function UserProfile() {
-  const { data: session } = useSession();
+export default async function Profile() {
+  const session = await getServerSession(authOptions);
 
-  if (!session) return <p>Not logged in</p>;
+  if (!session || !session.user) {
+    return <p>Not signed in</p>;
+  }
+
+  const { user } = session;
 
   return (
     <div>
-      <h2>{session.user.name}</h2>
-      <img src={session.user.image!} alt={session.user.name!} />
-      <button onClick={() => signOut()}>Logout</button>
+      <h1>Welcome, {user.name ?? "Anonymous"}</h1>
+
+      {user.image && (
+        <img
+          src={user.image}
+          alt={user.name ?? "User avatar"}
+          width={80}
+          height={80}
+        />
+      )}
+
+      <p>Email: {user.email}</p>
+      <LogoutButton />
     </div>
   );
 }
