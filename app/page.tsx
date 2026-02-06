@@ -1,7 +1,7 @@
 // app/page.tsx (Server Component)
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-import { LogoutButton } from "@/components/LogoutButton";
+import LogoutButton from "@/components/LogoutButton";
 
 export default async function Profile() {
   const session = await getServerSession(authOptions);
