@@ -451,6 +451,120 @@ const UserService = (() => {
 
 
 /*************************************************
+ * UserActivityService — User-centric activity
+ *************************************************/
+const UserActivityService = (() => {
+
+  const EVENTS_SHEET = CFG.SHEETS.EVENTS;
+  const MAX_SCAN = 300; // rows per read to avoid full scan
+
+  function getActivity(email, opts = {}) {
+    if (!email) return { likedCount: 0, commentCount: 0, likes: { items: [] }, comments: { items: [] } };
+
+    const limit = Number(opts.limit || 20);
+    const likesCursor = opts.likesCursor || null;
+    const commentsCursor = opts.commentsCursor || null;
+
+    const sh = getSheet(EVENTS_SHEET);
+    const lastRow = sh.getLastRow();
+    if (lastRow < 2) return { likedCount: 0, commentCount: 0, likes: { items: [] }, comments: { items: [] } };
+
+    const readRows = Math.min(MAX_SCAN, lastRow - 1);
+    const rows = sh.getRange(2, 1, readRows, sh.getLastColumn()).getValues();
+
+    const likes = [];
+    const comments = [];
+    const likesCursorTime = likesCursor ? new Date(likesCursor).getTime() : Infinity;
+    const commentsCursorTime = commentsCursor ? new Date(commentsCursor).getTime() : Infinity;
+
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      const [id, itemId, type, value, pageUrl, userEmailRow, createdAt, updatedAt, deleted] = r;
+
+      if (userEmailRow !== email || deleted === true) continue;
+
+      const ts = new Date(createdAt).getTime();
+
+      if (type === "like" && ts < likesCursorTime && likes.length < limit) {
+        likes.push({ itemId, createdAt, pageUrl });
+      }
+
+      if (type === "comment" && ts < commentsCursorTime && comments.length < limit) {
+        comments.push({ itemId, createdAt, content: value, pageUrl });
+      }
+
+      if (likes.length === limit && comments.length === limit) break;
+    }
+
+    buildItemIndex_();
+    const itemMap = _itemIndex;
+
+    const likesEnriched = likes.map(e => ({
+      itemId: e.itemId,
+      itemName: itemMap[e.itemId]?.name || "(missing)",
+      pageUrl: e.pageUrl,
+      likedAt: e.createdAt
+    }));
+
+    const commentsEnriched = comments.map(e => ({
+      itemId: e.itemId,
+      itemName: itemMap[e.itemId]?.name || "(missing)",
+      pageUrl: e.pageUrl,
+      comment: e.content || "",
+      commentedAt: e.createdAt
+    }));
+
+    return {
+      likedCount: likesEnriched.length,
+      commentCount: commentsEnriched.length,
+
+      likes: {
+        items: likesEnriched,
+        nextCursor: likesEnriched.length ? likesEnriched[likesEnriched.length - 1].likedAt : null,
+        hasMore: likesEnriched.length === limit
+      },
+
+      comments: {
+        items: commentsEnriched,
+        nextCursor: commentsEnriched.length ? commentsEnriched[commentsEnriched.length - 1].commentedAt : null,
+        hasMore: commentsEnriched.length === limit
+      }
+    };
+  }
+
+  return { getActivity };
+
+})();
+
+
+  function getUserProfile(data) {
+    const email = data.email;
+    if (!email) return error_("Missing email");
+  
+    const user = UserService.getByEmail(email);
+    if (!user) return error_("User not found");
+  
+    const profilePic = user.cdn || "";
+  
+    const activity = UserActivityService.getActivity(email, {
+      likesCursor: data.likesCursor || null,
+      commentsCursor: data.commentsCursor || null,
+      limit: Number(data.limit || 20)
+    });
+  
+    return ok_({
+      userEmail: email,     // appears once on top
+      profilePic,
+      likedCount: activity.likedCount,
+      commentCount: activity.commentCount,
+      likes: activity.likes,
+      comments: activity.comments
+    });
+  }
+  
+  
+  
+/*************************************************
  * DriveService — File & Folder Operations (FLATTENED)
  *************************************************/
 
@@ -1484,9 +1598,13 @@ function doPost(e) {
 
       case "login":
         return apiLogin(body);
+        
       case "user.profile":
         if (!body.email) return errorRes("Missing email");
         return json_(handleUserProfile_(body.email));
+        
+      case "getUserProfile":
+        return getUserProfile(body);
 
       case "events.upsert":
         return json_(handleEventsUpsert_(body));
