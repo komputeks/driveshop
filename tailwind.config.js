@@ -1,17 +1,38 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+import type { Config } from "tailwindcss";
+
+export default {
+  darkMode: "class",
   content: [
-    "./app/**/*.{js,ts,jsx,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {
-      backdropBlur: {
-        xs: '2px',
-      },
       colors: {
-        glass: "rgba(255,255,255,0.08)",
+        bg: "rgb(var(--bg))",
+        fg: "rgb(var(--fg))",
+        card: "rgb(var(--card))",
+        border: "rgb(var(--border))",
+        muted: "rgb(var(--muted))",
+        primary: "rgb(var(--primary))",
+        secondary: "rgb(var(--secondary))",
+      },
+      borderRadius: {
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+      },
+      boxShadow: {
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+      },
+      backgroundImage: {
+        "grad-primary": "var(--grad-primary)",
+        "grad-soft": "var(--grad-soft)",
       },
     },
   },
   plugins: [],
-};
+} satisfies Config;
