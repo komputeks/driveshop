@@ -3,7 +3,10 @@ import { getServerSession } from "next-auth";
 import Image from "next/image";
 import { authOptions } from "@/lib/auth";
 import LogoutButton from "./LogoutButton";
-import { GetUserProfileResponse, UserActivityProfile } from "@/lib/userActivityTypes";
+import {
+  GetUserProfileResponse,
+  UserActivityProfile,
+} from "@/lib/userActivityTypes";
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
@@ -16,13 +19,11 @@ export default async function ProfilePage() {
     );
   }
 
-  // ✅ user is defined here
   const user = session.user;
-  const handle = user.email?.split("@")[0]; // TEMP, public-safe
 
   // Fetch user activity
   const activityRes = await fetch(
-    `https://driveshop-three.vercel.app/api/user/activity`,
+    "https://driveshop-three.vercel.app/api/user/activity",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -35,7 +36,8 @@ export default async function ProfilePage() {
     ? await activityRes.json()
     : { ok: false, error: "Failed to load activity" };
 
-  const activity: UserActivityProfile | null = activityData.ok ? activityData.data : null;
+  const activity: UserActivityProfile | null =
+    activityData.ok ? activityData.data : null;
 
   return (
     <main className="max-w-4xl mx-auto px-6 py-10 space-y-10">
@@ -50,17 +52,10 @@ export default async function ProfilePage() {
         />
 
         <div>
-          <h1 className="text-2xl font-bold">{user.name || "Anonymous"}</h1>
+          <h1 className="text-2xl font-bold">
+            {user.name || "Anonymous"}
+          </h1>
           <p className="text-sm text-gray-400">{user.email}</p>
-
-          {handle && (
-            <a
-              href={`/u/${handle}`}
-              className="inline-block mt-2 text-sm text-blue-400 hover:underline"
-            >
-              View public profile →
-            </a>
-          )}
         </div>
       </section>
 
