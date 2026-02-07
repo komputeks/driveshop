@@ -1,8 +1,7 @@
-import type { ISODateString } from "next-auth";
-
 /* ======================================================
    USER ACTIVITY / PUBLIC PROFILE (Timeline-based)
 ====================================================== */
+export type ISODateString = string; // RFC 3339 / ISO 8601
 
 /**
  * Cursor is always an ISO timestamp (createdAt)
@@ -57,16 +56,23 @@ export type UserProfileActivity = {
   comments: PaginatedTimeline<UserComment>;
 };
 
+/* ======================================================
+   API RESPONSE WRAPPERS
+====================================================== */
 
-/**
- * API response wrapper for public profile
- */
 export type ApiOk<T> = {
   ok: true;
   data: T;
 };
 
-export type UserProfileResponse = ApiOk<UserProfileActivity>;
+export type ApiErr = {
+  ok: false;
+  error: string;
+};
+
+export type ApiResponse<T> = ApiOk<T> | ApiErr;
+
+export type UserProfileResponse = ApiResponse<UserProfileActivity>;
 
 /* ======================================================
    REQUEST PAYLOAD
