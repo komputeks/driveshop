@@ -1,4 +1,5 @@
 import type { UserComment } from "@/lib/publicProfileTypes";
+import Image from "next/image";
 
 export default function CommentRow({ item }: { item: UserComment }) {
   return (
