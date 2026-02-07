@@ -1,32 +1,37 @@
 import { Inter, PT_Serif, Caveat } from "next/font/google";
-import "./globals.css";
+import globals.css from "@/app/globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-body",
+  variable: "--font-inter",
   display: "swap",
 });
 
 const ptSerif = PT_Serif({
   subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-heading",
+  variable: "--font-serif",
   display: "swap",
 });
 
 const caveat = Caveat({
   subsets: ["latin"],
-  variable: "--font-accent",
+  variable: "--font-fancy",
   display: "swap",
 });
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="en"
       className={`${inter.variable} ${ptSerif.variable} ${caveat.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+      </body>
     </html>
   );
 }
