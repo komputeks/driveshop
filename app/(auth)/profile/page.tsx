@@ -14,6 +14,22 @@ export default async function ProfilePage() {
       </main>
     );
   }
+  
+  const activityRes = await fetch(
+    `${process.env.NEXTAUTH_URL}/api/user/activity`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: user.email }),
+      cache: "no-store",
+    }
+  );
+  
+  const activity = activityRes.ok
+    ? await activityRes.json()
+    : null;
+    
+  console.log("activity", activity);
 
   // ✅ user is explicitly defined here
   const user = session.user;
