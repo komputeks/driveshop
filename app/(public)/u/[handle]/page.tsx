@@ -108,9 +108,7 @@ export default async function PublicProfilePage({
             comments.items.map((item: UserComment) => (
               <CommentRow
                 key={`${item.itemId}-${item.commentedAt}`}
-                item={item}
-                userImage={item.userImage}
-              />
+                item={item}              />
             ))}
         </section>
 
