@@ -1,112 +1,89 @@
 "use client";
 
 import { useState } from "react";
-import { UserActivity } from "@/lib/userActivityTypes";
 import Image from "next/image";
+import { UserActivityProfile, UserLike, UserComment } from "@/lib/userActivityTypes";
 
 interface ProfileActivityTabsProps {
-  activity: UserActivity | null;
+  activity: UserActivityProfile;
 }
 
 export default function ProfileActivityTabs({ activity }: ProfileActivityTabsProps) {
   const [tab, setTab] = useState<"likes" | "comments">("likes");
 
-  if (!activity) {
-    return (
-      <section className="border-t border-white/10 pt-6">
-        <p className="text-gray-400">No activity yet.</p>
-      </section>
-    );
-  }
-
-  const likes = activity.likes.items;
-  const comments = activity.comments.items;
+  const items: UserLike[] | UserComment[] =
+    tab === "likes" ? activity.likes.items : activity.comments.items;
 
   return (
     <section className="border-t border-white/10 pt-6">
       {/* Tabs */}
-      <div className="flex gap-4 border-b border-white/10 mb-4">
+      <div className="flex gap-4 mb-4">
         <button
-          className={`px-3 py-1 font-semibold ${
-            tab === "likes" ? "border-b-2 border-blue-400 text-white" : "text-gray-400"
-          }`}
           onClick={() => setTab("likes")}
+          className={`px-4 py-2 rounded ${tab === "likes" ? "bg-blue-500 text-white" : "bg-white/10 text-gray-300"}`}
         >
           Likes ({activity.likedCount})
         </button>
-
         <button
-          className={`px-3 py-1 font-semibold ${
-            tab === "comments" ? "border-b-2 border-blue-400 text-white" : "text-gray-400"
-          }`}
           onClick={() => setTab("comments")}
+          className={`px-4 py-2 rounded ${tab === "comments" ? "bg-blue-500 text-white" : "bg-white/10 text-gray-300"}`}
         >
           Comments ({activity.commentCount})
         </button>
       </div>
 
-      {/* Content */}
-      <div className="space-y-4">
-        {tab === "likes" &&
-          (likes.length ? (
-            likes.map((item) => (
-              <div key={item.itemId} className="flex items-center gap-4">
-                <Image
-                  src={item.itemImage || "/avatar.png"}
-                  alt={item.itemName}
-                  width={48}
-                  height={48}
-                  className="rounded-md"
-                />
-                <div>
-                  <p className="font-semibold">{item.itemName}</p>
-                  {item.pageUrl && (
-                    <a
-                      href={item.pageUrl}
-                      className="text-blue-400 text-sm hover:underline"
-                    >
-                      View item
-                    </a>
-                  )}
-                  <p className="text-gray-400 text-sm">
-                    Liked at {new Date(item.likedAt).toLocaleString()}
-                  </p>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-400">No likes yet.</p>
-          ))}
+      {/* Items */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {items.length === 0 && (
+          <p className="text-gray-400 col-span-full">No {tab} yet.</p>
+        )}
 
-        {tab === "comments" &&
-          (comments.length ? (
-            comments.map((c) => (
-              <div key={c.itemId + c.commentedAt} className="flex items-start gap-4">
-                <Image
-                  src={c.itemImage || "/avatar.png"}
-                  alt={c.itemName}
-                  width={48}
-                  height={48}
-                  className="rounded-md"
-                />
-                <div>
-                  <p className="font-semibold">{c.itemName}</p>
-                  {c.pageUrl && (
-                    <a
-                      href={c.pageUrl}
-                      className="text-blue-400 text-sm hover:underline"
-                    >
-                      View item
-                    </a>
-                  )}
-                  <p className="text-gray-400 text-sm">Commented at {new Date(c.commentedAt).toLocaleString()}</p>
-                  <p className="mt-1">{c.comment}</p>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-gray-400">No comments yet.</p>
-          ))}
+        {items.map((item, idx) => (
+          <div
+            key={idx}
+            className="flex gap-3 p-3 border border-white/10 rounded items-center"
+          >
+            <Image
+              src={item.itemImage}
+              alt={item.itemName}
+              width={48}
+              height={48}
+              className="rounded object-cover"
+            />
+
+            <div className="flex-1">
+              <a
+                href={item.pageUrl}
+                className="font-medium hover:underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {item.itemName}
+              </a>
+
+              {tab === "likes" && "likedAt" in item && (
+                <p className="text-xs text-gray-400">{new Date(item.likedAt).toLocaleString()}</p>
+              )}
+
+              {tab === "comments" && "commentedAt" in item && (
+                <>
+                  <p className="text-xs text-gray-400">{new Date(item.commentedAt).toLocaleString()}</p>
+                  <p className="text-sm">{(item as UserComment).comment}</p>
+                </>
+              )}
+            </div>
+
+            {tab === "comments" && "userImage" in item && (
+              <Image
+                src={(item as UserComment).userImage}
+                alt="User"
+                width={32}
+                height={32}
+                className="rounded-full"
+              />
+            )}
+          </div>
+        ))}
       </div>
     </section>
   );
