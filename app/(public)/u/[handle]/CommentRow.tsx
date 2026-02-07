@@ -1,3 +1,5 @@
+import { UserComment } from "@/lib/publocProfileTypes";
+
 function CommentRow({ item }: { item: UserComment }) {
   return (
     <div className="flex gap-4 bg-white/5 rounded-xl p-4 items-start">

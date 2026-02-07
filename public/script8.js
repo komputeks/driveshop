@@ -450,6 +450,8 @@ const UserService = (() => {
 
 })();
 
+
+
 /*************************************************
  * UserActivityService — User-centric activity
  *************************************************/
@@ -460,184 +462,176 @@ const UserActivityService = (() => {
 
   const MAX_SCAN = 300; // hard cap per call
 
-  /**
-   * Builds an index of itemId -> { name, cdn }
-   */
+  /** Safe index of itemId -> { name, cdn } */
   function createItemIndex_() {
-    const sh = getSheet(ITEMS_SHEET);
-    const lastRow = sh.getLastRow();
-    if (lastRow < 2) return {};
+    try {
+      const sh = getSheet(ITEMS_SHEET);
+      const lastRow = sh.getLastRow();
+      if (lastRow < 2) return {};
 
-    const rows = sh.getRange(2, 1, lastRow - 1, sh.getLastColumn()).getValues();
-    const map = Object.create(null);
+      const rows = sh.getRange(2, 1, lastRow - 1, sh.getLastColumn()).getValues();
+      const map = Object.create(null);
 
-    for (const r of rows) {
-      const [id, name, _cat1, _cat2, cdn] = r;
-      if (!id) continue;
+      for (const r of rows) {
+        const [id, name, _cat1, _cat2, cdn] = r;
+        if (!id) continue;
 
-      map[id] = {
-        name: name || "(untitled)",
-        cdn: cdn || "",
-      };
+        map[id] = {
+          name: name || "(untitled)",
+          cdn: cdn || "",
+        };
+      }
+      return map;
+    } catch (e) {
+      console.error("createItemIndex_ error:", e);
+      return {};
     }
-    return map;
   }
 
-  /**
-   * Builds an index of email -> { name, photo/cdn }
-   */
+  /** Safe index of email -> { name, photo } */
   function createUserIndex_() {
-    const sh = getSheet(USERS_SHEET);
-    const lastRow = sh.getLastRow();
-    if (lastRow < 2) return {};
+    try {
+      const sh = getSheet(USERS_SHEET);
+      const lastRow = sh.getLastRow();
+      if (lastRow < 2) return {};
 
-    const rows = sh.getRange(2, 1, lastRow - 1, sh.getLastColumn()).getValues();
-    const map = Object.create(null);
+      const rows = sh.getRange(2, 1, lastRow - 1, sh.getLastColumn()).getValues();
+      const map = Object.create(null);
 
-    for (const r of rows) {
-      const [email, name, photo] = r;
-      if (!email) continue;
+      for (const r of rows) {
+        const [email, name, photo] = r;
+        if (!email) continue;
 
-      map[email] = {
-        name: name || email.split("@")[0],
-        photo: photo || "",
-      };
+        map[email.toLowerCase()] = {
+          name: name || email.split("@")[0],
+          photo: photo || "",
+        };
+      }
+      return map;
+    } catch (e) {
+      console.error("createUserIndex_ error:", e);
+      return {};
     }
-    return map;
   }
 
-  /**
-   * Core activity reader
-   */
+  /** Core activity reader */
   function getActivity(email, opts = {}) {
-    if (!email) {
-      return {
-        likedCount: 0,
-        commentCount: 0,
-        likes: { items: [], nextCursor: null, hasMore: false },
-        comments: { items: [], nextCursor: null, hasMore: false },
-      };
-    }
+    if (!email) return emptyActivity_();
 
-    const limit = Number(opts.limit || 20);
-    const likesCursor = opts.likesCursor ? new Date(opts.likesCursor).getTime() : Infinity;
-    const commentsCursor = opts.commentsCursor ? new Date(opts.commentsCursor).getTime() : Infinity;
+    try {
+      const limit = Number(opts.limit || 20);
+      const likesCursor = opts.likesCursor ? new Date(opts.likesCursor).getTime() : Infinity;
+      const commentsCursor = opts.commentsCursor ? new Date(opts.commentsCursor).getTime() : Infinity;
 
-    const sh = getSheet(EVENTS_SHEET);
-    const lastRow = sh.getLastRow();
-    if (lastRow < 2) return {
-      likedCount: 0,
-      commentCount: 0,
-      likes: { items: [], nextCursor: null, hasMore: false },
-      comments: { items: [], nextCursor: null, hasMore: false },
-    };
+      const sh = getSheet(EVENTS_SHEET);
+      const lastRow = sh.getLastRow();
+      if (lastRow < 2) return emptyActivity_();
 
-    const readRows = Math.min(MAX_SCAN, lastRow - 1);
-    const rows = sh.getRange(2, 1, readRows, sh.getLastColumn()).getValues();
+      const readRows = Math.min(MAX_SCAN, lastRow - 1);
+      const rows = sh.getRange(2, 1, readRows, sh.getLastColumn()).getValues();
 
-    const likesRaw = [];
-    const commentsRaw = [];
+      const likesRaw = [];
+      const commentsRaw = [];
 
-    for (let i = 0; i < rows.length; i++) {
-      const [
-        _eventId,
-        itemId,
-        type,
-        value,
-        pageUrl,
-        userEmailRow,
-        createdAt,
-        _updatedAt,
-        deleted
-      ] = rows[i];
+      for (const row of rows) {
+        const [_eventId, itemId, type, value, pageUrl, userEmailRow, createdAt, _updatedAt, deleted] = row;
+        if (deleted === true || !itemId || !createdAt || !userEmailRow) continue;
 
-      if (deleted === true || !itemId || !createdAt) continue;
+        if (userEmailRow.toLowerCase() !== email.toLowerCase()) continue;
 
-      const ts = new Date(createdAt).getTime();
+        const ts = new Date(createdAt).getTime();
 
-      if (type === "like" && userEmailRow === email && ts < likesCursor && likesRaw.length < limit) {
-        likesRaw.push({ itemId, pageUrl, createdAt });
+        if (type === "like" && ts < likesCursor && likesRaw.length < limit) {
+          likesRaw.push({ itemId, pageUrl, createdAt });
+        }
+
+        if (type === "comment" && ts < commentsCursor && commentsRaw.length < limit) {
+          commentsRaw.push({ itemId, pageUrl, comment: value || "", createdAt, userEmail: userEmailRow });
+        }
+
+        if (likesRaw.length >= limit && commentsRaw.length >= limit) break;
       }
 
-      if (type === "comment" && userEmailRow === email && ts < commentsCursor && commentsRaw.length < limit) {
-        commentsRaw.push({ itemId, pageUrl, comment: value || "", createdAt, userEmail: userEmailRow });
-      }
+      const itemIndex = createItemIndex_();
+      const userIndex = createUserIndex_();
 
-      if (likesRaw.length >= limit && commentsRaw.length >= limit) break;
-    }
-
-    const itemIndex = createItemIndex_();
-    const userIndex = createUserIndex_();
-
-    const likes = likesRaw.map(e => ({
-      itemId: e.itemId,
-      itemName: itemIndex[e.itemId]?.name || "(missing)",
-      itemImage: itemIndex[e.itemId]?.cdn || "",
-      pageUrl: e.pageUrl,
-      likedAt: e.createdAt
-    }));
-
-    const comments = commentsRaw.map(e => {
-      const userProfile = userIndex[e.userEmail] || { photo: "", name: e.userEmail.split("@")[0] };
-      return {
+      const likes = likesRaw.map(e => ({
         itemId: e.itemId,
         itemName: itemIndex[e.itemId]?.name || "(missing)",
         itemImage: itemIndex[e.itemId]?.cdn || "",
         pageUrl: e.pageUrl,
-        comment: e.comment,
-        commentedAt: e.createdAt,
-        userImage: userProfile.photo, // <-- user avatar included
-      };
-    });
+        likedAt: e.createdAt
+      }));
 
+      const comments = commentsRaw.map(e => {
+        const userProfile = userIndex[e.userEmail.toLowerCase()] || { photo: "", name: e.userEmail.split("@")[0] };
+        return {
+          itemId: e.itemId,
+          itemName: itemIndex[e.itemId]?.name || "(missing)",
+          itemImage: itemIndex[e.itemId]?.cdn || "",
+          pageUrl: e.pageUrl,
+          comment: e.comment,
+          commentedAt: e.createdAt,
+          userImage: userProfile.photo,
+        };
+      });
+
+      return {
+        likedCount: likes.length,
+        commentCount: comments.length,
+        likes: { items: likes, nextCursor: likes.length ? likes[likes.length - 1].likedAt : null, hasMore: likes.length === limit },
+        comments: { items: comments, nextCursor: comments.length ? comments[comments.length - 1].commentedAt : null, hasMore: comments.length === limit }
+      };
+    } catch (err) {
+      console.error("getActivity error:", err);
+      return emptyActivity_();
+    }
+  }
+
+  function emptyActivity_() {
     return {
-      likedCount: likes.length,
-      commentCount: comments.length,
-      likes: {
-        items: likes,
-        nextCursor: likes.length ? likes[likes.length - 1].likedAt : null,
-        hasMore: likes.length === limit,
-      },
-      comments: {
-        items: comments,
-        nextCursor: comments.length ? comments[comments.length - 1].commentedAt : null,
-        hasMore: comments.length === limit,
-      }
+      likedCount: 0,
+      commentCount: 0,
+      likes: { items: [], nextCursor: null, hasMore: false },
+      comments: { items: [], nextCursor: null, hasMore: false },
     };
   }
 
   return { getActivity };
 })();
 
-
 /*************************************************
  * getUserProfile — public activity profile
  *************************************************/
 function getUserProfile(data) {
-  const email = data.email;
-  if (!email) return error_("Missing email");
+  try {
+    const email = data.email;
+    if (!email) return error_("Missing email");
 
-  const user = UserService.getByEmail(email);
-  if (!user) return error_("User not found");
+    const user = UserService.getByEmail(email);
+    if (!user) return error_("User not found");
 
-  const activity = UserActivityService.getActivity(email, {
-    limit: Number(data.limit || 20),
-    likesCursor: data.likesCursor || null,
-    commentsCursor: data.commentsCursor || null
-  });
+    const activity = UserActivityService.getActivity(email, {
+      limit: Number(data.limit || 20),
+      likesCursor: data.likesCursor || null,
+      commentsCursor: data.commentsCursor || null
+    });
 
-  return ok_({
-    userEmail: email,            // appears once at top
-    profilePic: user.photo || "",
+    return ok_({
+      userEmail: email,
+      profilePic: user.photo || "",
 
-    likedCount: activity.likedCount,
-    commentCount: activity.commentCount,
+      likedCount: activity.likedCount,
+      commentCount: activity.commentCount,
 
-    likes: activity.likes,
-    comments: activity.comments
-  });
+      likes: activity.likes,
+      comments: activity.comments
+    });
+  } catch (err) {
+    console.error("getUserProfile error:", err);
+    return error_("Server error");
+  }
 }
-
   
 /*************************************************
  * DriveService — File & Folder Operations (FLATTENED)
