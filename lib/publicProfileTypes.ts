@@ -57,9 +57,15 @@ export type UserProfileActivity = {
   comments: PaginatedTimeline<UserComment>;
 };
 
+
 /**
  * API response wrapper for public profile
  */
+export type ApiOk<T> = {
+  ok: true;
+  data: T;
+};
+
 export type UserProfileResponse = ApiOk<UserProfileActivity>;
 
 /* ======================================================
