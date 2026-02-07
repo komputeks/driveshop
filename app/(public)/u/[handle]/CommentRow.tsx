@@ -1,4 +1,4 @@
-import { UserComment } from "@/lib/publocProfileTypes";
+import type { UserComment } from "@/lib/publicProfileTypes";
 
 export default function CommentRow({ item }: { item: UserComment }) {
   return (
