@@ -7,6 +7,11 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "serif"],
+        fancy: ["var(--font-fancy)", "cursive"],
+      },
       colors: {
         // Map CSS variables so Tailwind can generate classes like bg-bg / text-fg
         bg: "rgb(var(--bg) / <alpha-value>)",

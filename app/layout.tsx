@@ -1,4 +1,5 @@
-import "@/app/globals.css";
+import "./globals.css";
+import { fontSans, fontSerif, fontFancy } from "./fonts";
 
 export default function RootLayout({
   children,
@@ -7,7 +8,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body
+        className={`
+          ${fontSans.variable}
+          ${fontSerif.variable}
+          ${fontFancy.variable}
+        `}
+      >
         {children}
       </body>
     </html>

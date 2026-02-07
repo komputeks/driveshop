@@ -5,7 +5,7 @@
 
 /* =========================
    DESIGN TOKENS
-   (single source of truth)
+   Single source of truth
 ========================= */
 @layer base {
   :root {
@@ -38,6 +38,7 @@
       rgb(37 99 235),
       rgb(79 70 229)
     );
+
     --grad-soft: linear-gradient(
       180deg,
       rgb(248 250 252),
@@ -56,7 +57,7 @@
 }
 
 /* =========================
-   BASE STYLES
+   BASE
 ========================= */
 @layer base {
   html {
@@ -64,12 +65,12 @@
   }
 
   body {
-    @apply bg-bg text-fg;
+    @apply bg-bg text-fg font-sans;
   }
 
-  h1 { @apply text-2xl font-semibold; }
-  h2 { @apply text-xl font-semibold; }
-  h3 { @apply text-lg font-medium; }
+  h1 { @apply text-2xl font-serif font-semibold tracking-tight; }
+  h2 { @apply text-xl font-serif font-semibold tracking-tight; }
+  h3 { @apply text-lg font-serif font-medium; }
 }
 
 /* =========================
@@ -89,7 +90,7 @@
   }
 
   .muted {
-    @apply text-[rgb(var(--muted))];
+    @apply text-muted;
   }
 
   /* Skeleton loader */
@@ -119,10 +120,7 @@
 @layer components {
   /* Card */
   .card {
-    @apply rounded-lg
-           bg-[rgb(var(--card))]
-           border border-[rgb(var(--border))]
-           shadow-sm;
+    @apply rounded-lg bg-card border border-border shadow-sm;
   }
 
   /* Buttons */
@@ -132,7 +130,7 @@
            transition
            active:scale-[0.98]
            disabled:opacity-50 disabled:pointer-events-none
-           focus:outline-none focus:ring-2 focus:ring-offset-2;
+           focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
   }
 
   .btn-lg {
@@ -140,45 +138,34 @@
   }
 
   .btn-primary {
-    @apply btn
-           bg-[rgb(var(--primary))] text-white
-           hover:opacity-90
-           focus:ring-[rgb(var(--primary))];
+    @apply btn bg-primary text-white hover:opacity-90;
   }
 
   .btn-ghost {
-    @apply btn
-           bg-transparent text-[rgb(var(--fg))]
-           hover:bg-[rgb(var(--border))]/40;
+    @apply btn bg-transparent text-fg hover:bg-border/40;
   }
 
   .btn-danger {
-    @apply btn
-           bg-red-500/10 text-red-600
-           hover:bg-red-500/20;
+    @apply btn bg-red-500/10 text-red-600 hover:bg-red-500/20;
   }
 
   /* Inputs */
   .input {
     @apply w-full rounded-md
-           border border-[rgb(var(--border))]
-           bg-[rgb(var(--bg))]
+           border border-border bg-bg
            px-3 py-2 text-sm
            outline-none transition
-           focus:ring-2 focus:ring-[rgb(var(--primary))]/40;
+           focus:ring-2 focus:ring-primary/40;
   }
 
   /* Badge */
   .badge {
-    @apply inline-flex items-center
-           rounded-full px-2.5 py-0.5
-           text-xs font-medium;
+    @apply inline-flex items-center rounded-full
+           px-2.5 py-0.5 text-xs font-medium;
   }
 
   .badge-primary {
-    @apply badge
-           bg-[rgb(var(--primary))]/10
-           text-[rgb(var(--primary))];
+    @apply badge bg-primary/10 text-primary;
   }
 }
 
@@ -193,8 +180,7 @@
   }
 
   .modal-panel {
-    @apply card w-full max-w-lg
-           p-6 animate-scale-in;
+    @apply card w-full max-w-lg p-6 animate-scale-in;
   }
 
   .drawer-backdrop {
@@ -203,20 +189,14 @@
 
   .drawer-panel {
     @apply fixed right-0 top-0 h-full w-80
-           bg-[rgb(var(--card))]
-           border-l border-[rgb(var(--border))]
-           shadow-lg
-           animate-slide-in;
+           bg-card border-l border-border
+           shadow-lg animate-slide-in;
   }
 
   .popover {
-    @apply absolute z-50 mt-2
-           min-w-[10rem]
-           rounded-md
-           bg-[rgb(var(--card))]
-           border border-[rgb(var(--border))]
-           shadow-md
-           animate-scale-in;
+    @apply absolute z-50 mt-2 min-w-[10rem]
+           rounded-md bg-card border border-border
+           shadow-md animate-scale-in;
   }
 }
 
