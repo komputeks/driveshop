@@ -1,3 +1,4 @@
+import ProfileActivityTabs from "./ProfileActivityTabs";
 import { getServerSession } from "next-auth";
 import Image from "next/image";
 import { authOptions } from "@/lib/auth";
@@ -54,14 +55,8 @@ export default async function ProfilePage() {
       <section className="flex items-center gap-4">
         <LogoutButton />
       </section>
-
-      {/* Placeholder */}
-      <section className="border-t border-white/10 pt-6">
-        <h2 className="font-semibold mb-2">Account</h2>
-        <p className="text-sm text-gray-400">
-          More settings coming soon.
-        </p>
-      </section>
+      {/* Activity */}
+      <ProfileActivityTabs />
     </main>
   );
 }
