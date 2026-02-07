@@ -1,8 +1,6 @@
 import { AuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import type { JWT } from "next-auth/jwt";
 import type { LoginRequest, ApiResponse } from "@/lib/types";
-import type { User as NextAuthUser } from "next-auth";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -20,17 +18,18 @@ export const authOptions: AuthOptions = {
   },
 
   callbacks: {
-    async jwt({ token, account, profile }) {
-      if (account && profile?.email) {
-        token.email = profile.email;
-        token.name = profile.name;
-        token.picture = profile.picture;
+    async jwt({ token, user, account }) {
+      // Runs only on sign-in
+      if (account && user) {
+        token.email = user.email;
+        token.name = user.name;
+        token.picture = user.image;
 
         const loginPayload: LoginRequest = {
           action: "login",
-          email: profile.email,
-          name: profile.name,
-          photo: profile.picture,
+          email: user.email!,
+          name: user.name || "",
+          photo: user.image || "",
         };
 
         try {
@@ -59,8 +58,8 @@ export const authOptions: AuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.email = token.email!;
-        session.user.name = token.name;
-        session.user.image = token.picture;
+        session.user.name = token.name || null;
+        session.user.image = token.picture || null;
       }
 
       return session;

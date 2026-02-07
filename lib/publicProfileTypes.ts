@@ -83,3 +83,21 @@ export interface ResolveHandleResponse {
   ok: true;
   email: string;
 }
+
+
+
+export interface ItemPreview {
+  itemId: string;
+  itemName: string;
+  itemImage: string;
+  pageUrl: string;
+}
+
+export type UserLike = ItemPreview & {
+  likedAt: ISODateString;
+};
+
+export type UserComment = ItemPreview & {
+  comment: string;
+  commentedAt: ISODateString;
+};
