@@ -1,45 +1,49 @@
 import { NextResponse } from "next/server";
-import type { UserActivityProfile } from "@/lib/userActivityTypes";
+import type { GetUserProfileResponse } from "@/lib/userActivityTypes";
 
-const GAS_ENDPOINT = process.env.NEXT_PUBLIC_API_BASE_URL!;
+const GAS_ENDPOINT = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export async function POST(req: Request) {
   try {
-    const { email } = await req.json();
-
-    if (!email) {
-      return NextResponse.json(
-        { ok: false, error: "Missing email" },
-        { status: 400 }
-      );
+    if (!GAS_ENDPOINT) {
+      throw new Error("Missing NEXT_PUBLIC_API_BASE_URL");
     }
+
+    const body = await req.json();
 
     const res = await fetch(GAS_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "getUserProfile",
-        email,
+        email: body.email,
       }),
       cache: "no-store",
     });
 
-    if (!res.ok) {
+    const json = await res.json();
+
+    // GAS-level error
+    if (!json || json.ok !== true) {
       return NextResponse.json(
-        { ok: false, error: "Upstream error" },
-        { status: 502 }
+        { ok: false, error: json?.error || "GAS error" },
+        { status: 200 }
       );
     }
 
-    const data = await res.json();
+    // Normalize shape (IMPORTANT)
+    const normalized: GetUserProfileResponse = {
+      ok: true,
+      data: json.data ?? json, // handles both GAS styles
+    };
 
-    return NextResponse.json(data as UserActivityProfile, {
+    return NextResponse.json(normalized, {
       headers: { "Cache-Control": "no-store" },
     });
-  } catch (err) {
-    console.error("user activity error", err);
+  } catch (e: any) {
+    console.error("user-activity error", e);
     return NextResponse.json(
-      { ok: false, error: "Server error" },
+      { ok: false, error: e.message },
       { status: 500 }
     );
   }

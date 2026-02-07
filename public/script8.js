@@ -521,7 +521,7 @@ const UserActivityService = (() => {
   /* ------------------ helpers ------------------ */
 
   function buildItemPreview_(event, user) {
-    const item = SpreadsheetService.getItemById_(event.itemId);
+    const item = SpreadsheetService.getItemById(event.itemId);
     if (!item) return null;
 
     return {
@@ -534,7 +534,7 @@ const UserActivityService = (() => {
   }
 
   function buildCommentPreview_(event, user) {
-    const item = SpreadsheetService.getItemById_(event.itemId);
+    const item = SpreadsheetService.getItemById(event.itemId);
     if (!item) return null;
 
     return {
@@ -1615,10 +1615,6 @@ function resolveUserHandle(data) {
         case "events.list":
           return handleEventsGet_(params);
   
-        case "user.profile":
-          if (!params.email) return error_("Missing email");
-          return json_(handleUserProfile_(params.email));
-  
         default:
           return error_("Unknown GET action: " + action);
       }
@@ -1640,9 +1636,13 @@ function doPost(e) {
     const action = (body.action || "").toLowerCase();
 
     switch (action) {
+      
       case "item":
         if (!body.id) return errorRes("Missing id");
         return res({ ok: true, item: getItemById(body.id) });
+        
+      case "getuserprofile":
+        return getUserProfile(body);
 
       case "item-by-slug":
         return getItemBySlug(body);
@@ -1664,13 +1664,6 @@ function doPost(e) {
 
       case "login":
         return apiLogin(body);
-        
-      case "user.profile":
-        if (!body.email) return errorRes("Missing email");
-        return json_(handleUserProfile_(body.email));
-        
-      case "getUserProfile":
-        return getUserProfile(body);
 
       case "events.upsert":
         return json_(handleEventsUpsert_(body));
