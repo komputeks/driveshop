@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import Image from "next/image";
 import { authOptions } from "@/lib/auth";
-import LogoutButton from "@/components/LogoutButton";
+import LogoutButton from "./LogoutButton";
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
