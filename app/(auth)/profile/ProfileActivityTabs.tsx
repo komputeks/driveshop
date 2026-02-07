@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import {
+import type {
   UserActivityProfile,
   UserLike,
   UserComment,
-} from "@/lib/userActivityTypes";
+} from "@/lib/types";
 
 interface ProfileActivityTabsProps {
   activity: UserActivityProfile;
@@ -18,79 +18,87 @@ export default function ProfileActivityTabs({
   const [tab, setTab] = useState<"likes" | "comments">("likes");
 
   const items: (UserLike | UserComment)[] =
-    tab === "likes" ? activity.likes.items : activity.comments.items;
+    tab === "likes"
+      ? activity.likes.items
+      : activity.comments.items;
 
   return (
-    <section className="border-t border-white/10 pt-6">
+    <section className="space-y-6">
+
       {/* Tabs */}
-      <div className="flex gap-4 mb-4">
+      <div className="flex gap-2">
         <button
           onClick={() => setTab("likes")}
-          className={`px-4 py-2 rounded ${
-            tab === "likes"
-              ? "bg-blue-500 text-white"
-              : "bg-white/10 text-gray-300"
-          }`}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition
+            ${
+              tab === "likes"
+                ? "bg-[rgb(var(--fg))] text-[rgb(var(--bg))]"
+                : "border border-[rgb(var(--border))] text-[rgb(var(--muted))] hover:bg-[rgb(var(--border))]/40"
+            }`}
         >
-          Likes ({activity.likedCount})
+          Likes <span className="opacity-70">({activity.likedCount})</span>
         </button>
 
         <button
           onClick={() => setTab("comments")}
-          className={`px-4 py-2 rounded ${
-            tab === "comments"
-              ? "bg-blue-500 text-white"
-              : "bg-white/10 text-gray-300"
-          }`}
+          className={`px-4 py-2 rounded-md text-sm font-medium transition
+            ${
+              tab === "comments"
+                ? "bg-[rgb(var(--fg))] text-[rgb(var(--bg))]"
+                : "border border-[rgb(var(--border))] text-[rgb(var(--muted))] hover:bg-[rgb(var(--border))]/40"
+            }`}
         >
-          Comments ({activity.commentCount})
+          Comments{" "}
+          <span className="opacity-70">({activity.commentCount})</span>
         </button>
       </div>
 
       {/* Items */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {items.length === 0 && (
-          <p className="text-gray-400 col-span-full">
+          <p className="col-span-full text-sm muted">
             No {tab} yet.
           </p>
         )}
 
         {items.map((item, idx) => (
-          <div
+          <article
             key={idx}
-            className="flex gap-3 p-3 border border-white/10 rounded items-start"
+            className="card p-4 flex gap-4 items-start"
           >
             {/* Item image */}
             <Image
               src={item.itemImage || "/placeholder.png"}
               alt={item.itemName}
-              width={48}
-              height={48}
-              className="rounded object-cover"
+              width={56}
+              height={56}
+              className="rounded-md object-cover flex-shrink-0"
             />
 
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 space-y-1">
               <a
                 href={item.pageUrl}
-                className="font-medium hover:underline block truncate"
                 target="_blank"
                 rel="noopener noreferrer"
+                className="font-medium leading-tight hover:underline truncate block"
               >
                 {item.itemName}
               </a>
 
-              {tab === "likes" && "likedAt" in item && (
-                <p className="text-xs text-gray-400">
+              {"likedAt" in item && (
+                <p className="text-xs muted">
+                  Liked{" "}
                   {new Date(item.likedAt).toLocaleString()}
                 </p>
               )}
 
-              {tab === "comments" && "commentedAt" in item && (
+              {"commentedAt" in item && (
                 <>
-                  <p className="text-xs text-gray-400">
+                  <p className="text-xs muted">
+                    Commented{" "}
                     {new Date(item.commentedAt).toLocaleString()}
                   </p>
-                  <p className="text-sm mt-1">
+                  <p className="text-sm leading-snug">
                     {(item as UserComment).comment}
                   </p>
                 </>
@@ -98,16 +106,16 @@ export default function ProfileActivityTabs({
             </div>
 
             {/* User avatar (comments only) */}
-            {tab === "comments" && "userImage" in item && (
+            {"userImage" in item && (
               <Image
-                src={(item as UserComment).userImage || "/avatar.png"}
+                src={item.userImage || "/avatar.png"}
                 alt="User"
                 width={32}
                 height={32}
-                className="rounded-full"
+                className="rounded-full border border-[rgb(var(--border))]"
               />
             )}
-          </div>
+          </article>
         ))}
       </div>
     </section>

@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import type { GetUserProfileResponse } from "@/lib/userActivityTypes";
+import type {
+  GetUserProfileResponse,
+  UserActivityProfile,
+} from "@/lib/types";
 
 const GAS_ENDPOINT = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -10,6 +13,13 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
+
+    if (!body?.email) {
+      return NextResponse.json(
+        { ok: false, error: "Missing email" },
+        { status: 400 }
+      );
+    }
 
     const res = await fetch(GAS_ENDPOINT, {
       method: "POST",
@@ -23,7 +33,9 @@ export async function POST(req: Request) {
 
     const json = await res.json();
 
-    // GAS-level error
+    /* ------------------------------
+       GAS-level error passthrough
+    ------------------------------ */
     if (!json || json.ok !== true) {
       return NextResponse.json(
         { ok: false, error: json?.error || "GAS error" },
@@ -31,19 +43,27 @@ export async function POST(req: Request) {
       );
     }
 
-    // Normalize shape (IMPORTANT)
+    /* ------------------------------
+       Normalize → canonical API shape
+       (defensive, future-safe)
+    ------------------------------ */
+    const data: UserActivityProfile =
+      json.data ?? json;
+
     const normalized: GetUserProfileResponse = {
       ok: true,
-      data: json.data ?? json, // handles both GAS styles
+      data,
     };
 
     return NextResponse.json(normalized, {
       headers: { "Cache-Control": "no-store" },
     });
+
   } catch (e: any) {
     console.error("user-activity error", e);
+
     return NextResponse.json(
-      { ok: false, error: e.message },
+      { ok: false, error: e.message || "Server error" },
       { status: 500 }
     );
   }

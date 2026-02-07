@@ -1,27 +1,29 @@
 import ProfileActivityTabs from "./ProfileActivityTabs";
-import { getServerSession } from "next-auth";
 import Image from "next/image";
-import { authOptions } from "@/lib/auth";
 import LogoutButton from "./LogoutButton";
-import {
+import { authOptions } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import type {
   GetUserProfileResponse,
   UserActivityProfile,
-} from "@/lib/userActivityTypes";
+} from "@/lib/types";
 
 export default async function ProfilePage() {
   const session = await getServerSession(authOptions);
 
-  if (!session || !session.user) {
+  if (!session || !session.user || !session.user.email) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-400">Not signed in</p>
+        <p className="muted text-sm">Not signed in</p>
       </main>
     );
   }
 
   const user = session.user;
 
-  // Fetch user activity
+  /* -----------------------------
+     Fetch user activity (internal API)
+  ----------------------------- */
   const activityRes = await fetch(
     "https://driveshop-three.vercel.app/api/user/activity",
     {
@@ -40,32 +42,39 @@ export default async function ProfilePage() {
     activityData.ok ? activityData.data : null;
 
   return (
-    <main className="max-w-4xl mx-auto px-6 py-10 space-y-10">
-      {/* Header */}
-      <section className="flex items-center gap-6">
-        <Image
-          src={user.image ?? "/avatar.png"}
-          alt={user.name ?? "User"}
-          width={96}
-          height={96}
-          className="rounded-full border border-white/10"
-        />
+    <main className="section">
+      <div className="container space-y-10 max-w-4xl">
 
-        <div>
-          <h1 className="text-2xl font-bold">
-            {user.name || "Anonymous"}
-          </h1>
-          <p className="text-sm text-gray-400">{user.email}</p>
-        </div>
-      </section>
+        {/* Profile header */}
+        <section className="card p-6 flex items-center gap-6">
 
-      {/* Actions */}
-      <section className="flex items-center gap-4">
-        <LogoutButton />
-      </section>
+          <Image
+            src={user.image ?? "/avatar.png"}
+            alt={user.name ?? "User"}
+            width={96}
+            height={96}
+            className="rounded-full border border-[rgb(var(--border))]"
+          />
 
-      {/* Activity Tabs */}
-      {activity && <ProfileActivityTabs activity={activity} />}
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-semibold tracking-tight truncate">
+              {user.name || "Anonymous"}
+            </h1>
+            <p className="text-sm muted truncate">
+              {user.email}
+            </p>
+          </div>
+
+          <LogoutButton />
+        </section>
+
+        {/* Activity */}
+        {activity && (
+          <section className="card p-6">
+            <ProfileActivityTabs activity={activity} />
+          </section>
+        )}
+      </div>
     </main>
   );
 }

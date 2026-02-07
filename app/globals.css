@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* -------------------------------
-   DESIGN TOKENS
---------------------------------*/
+/* ======================================================
+   DESIGN TOKENS (DO NOT @apply THESE)
+====================================================== */
 
 :root {
   /* Base */
@@ -54,42 +54,165 @@
   --muted: 148 163 184;
 }
 
-/* -------------------------------
+/* ======================================================
    BASE STYLES
---------------------------------*/
+====================================================== */
 
 html {
-  scroll-behavior: smooth;
+  @apply scroll-smooth;
 }
 
 body {
-  background: rgb(var(--bg));
+  @apply antialiased;
+  background-color: rgb(var(--bg));
   color: rgb(var(--fg));
   font-feature-settings: "ss01", "cv02";
 }
 
-/* -------------------------------
-   COMPONENT PRIMITIVES
---------------------------------*/
+/* ======================================================
+   TYPOGRAPHY PRIMITIVES
+====================================================== */
+
+.h1 {
+  @apply text-4xl md:text-5xl font-semibold tracking-tight;
+}
+
+.h2 {
+  @apply text-2xl md:text-3xl font-semibold tracking-tight;
+}
+
+.h3 {
+  @apply text-xl font-semibold;
+}
+
+.muted {
+  color: rgb(var(--muted));
+}
+
+.link {
+  @apply underline underline-offset-4 hover:opacity-80 transition;
+}
+
+/* ======================================================
+   LAYOUT PRIMITIVES
+====================================================== */
+
+.container {
+  @apply mx-auto px-6;
+  max-width: 1280px;
+}
+
+.section {
+  @apply py-16 md:py-24;
+}
+
+/* ======================================================
+   CARD / SURFACE SYSTEM
+====================================================== */
 
 .card {
-  background: rgb(var(--card));
+  @apply relative overflow-hidden;
+  background-color: rgb(var(--card));
   border: 1px solid rgb(var(--border));
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
 }
 
+.card-soft {
+  @apply card;
+  background: var(--grad-soft);
+}
+
 .glass {
-  backdrop-filter: blur(16px);
-  background: rgba(255,255,255,.7);
+  @apply backdrop-blur-xl;
+  background-color: rgba(255, 255, 255, 0.7);
 }
 
-.section {
-  padding: clamp(3rem, 6vw, 6rem) 0;
+.dark .glass {
+  background-color: rgba(10, 15, 30, 0.7);
 }
 
-.container {
-  max-width: 1280px;
-  padding-inline: 1.5rem;
-  margin-inline: auto;
+/* ======================================================
+   BUTTON SYSTEM (ENTERPRISE-GRADE)
+====================================================== */
+
+.btn {
+  @apply inline-flex items-center justify-center
+         font-semibold
+         transition-all
+         select-none
+         active:scale-[0.97]
+         disabled:opacity-50
+         disabled:pointer-events-none;
+  border-radius: var(--radius-md);
+}
+
+.btn-lg {
+  @apply px-6 py-3 text-base;
+}
+
+.btn-sm {
+  @apply px-4 py-2 text-sm;
+}
+
+.btn-primary {
+  color: white;
+  background: var(--grad-primary);
+}
+
+.btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+.btn-ghost {
+  background-color: rgb(var(--fg));
+  color: rgb(var(--bg));
+}
+
+.btn-outline {
+  @apply bg-transparent;
+  border: 1px solid rgb(var(--border));
+}
+
+/* ======================================================
+   BADGES / TAGS
+====================================================== */
+
+.badge {
+  @apply inline-flex items-center gap-1
+         px-3 py-1
+         text-xs font-medium;
+  border-radius: 999px;
+  background: var(--grad-soft);
+}
+
+/* ======================================================
+   IMAGE PRIMITIVES
+====================================================== */
+
+.img-cover {
+  @apply object-cover rounded-lg;
+}
+
+.avatar {
+  @apply rounded-full object-cover;
+}
+
+/* ======================================================
+   STATES
+====================================================== */
+
+.skeleton {
+  @apply animate-pulse rounded-md;
+  background-color: rgb(var(--border));
+}
+
+/* ======================================================
+   UTILITIES
+====================================================== */
+
+.gradient-text {
+  background: var(--grad-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
