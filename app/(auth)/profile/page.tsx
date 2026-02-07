@@ -14,14 +14,17 @@ export default async function ProfilePage() {
     );
   }
 
+  // ✅ user is explicitly defined here
+  const user = session.user;
+  const handle = user.email?.split("@")[0]; // TEMP, public-safe
 
   return (
     <main className="max-w-4xl mx-auto px-6 py-10 space-y-10">
       {/* Header */}
       <section className="flex items-center gap-6">
         <Image
-          src={user.image}
-          alt={user.name || "User"}
+          src={user.image ?? "/avatar.png"}
+          alt={user.name ?? "User"}
           width={96}
           height={96}
           className="rounded-full border border-white/10"
@@ -35,19 +38,26 @@ export default async function ProfilePage() {
           <p className="text-sm text-gray-400">
             {user.email}
           </p>
+
+          {handle && (
+            <a
+              href={`/u/${handle}`}
+              className="inline-block mt-2 text-sm text-blue-400 hover:underline"
+            >
+              View public profile →
+            </a>
+          )}
         </div>
       </section>
 
+      {/* Actions */}
       <section className="flex items-center gap-4">
         <LogoutButton />
       </section>
 
-      {/* Placeholder sections */}
+      {/* Placeholder */}
       <section className="border-t border-white/10 pt-6">
-        <h2 className="font-semibold mb-2">
-          Account
-        </h2>
-
+        <h2 className="font-semibold mb-2">Account</h2>
         <p className="text-sm text-gray-400">
           More settings coming soon.
         </p>
