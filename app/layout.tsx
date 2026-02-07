@@ -1,5 +1,5 @@
 import { Inter, PT_Serif, Caveat } from "next/font/google";
-import globals.css from "@/app/globals.css";
+import "@/app/globals.css";
 
 const inter = Inter({
   subsets: ["latin"],
