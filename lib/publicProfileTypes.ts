@@ -1,6 +1,5 @@
 import type { ISODateString } from "next-auth";
 
-
 /* ======================================================
    USER ACTIVITY / PUBLIC PROFILE (Timeline-based)
 ====================================================== */
@@ -11,26 +10,28 @@ import type { ISODateString } from "next-auth";
 export type Cursor = ISODateString | null;
 
 /**
- * A single liked item, enriched from ITEMS sheet
+ * Shared item fields (enriched from ITEMS sheet)
  */
-export type UserLike = {
-  itemId: string;          // items.id
-  itemName: string;        // items.name
-  itemImage: string;       // items.cdn
-  pageUrl: string;         // events.pageUrl (canonical link)
-  likedAt: ISODateString;  // events.createdAt
+export interface ItemPreview {
+  itemId: string;     // items.id
+  itemName: string;   // items.name
+  itemImage: string;  // items.cdn
+  pageUrl: string;    // events.pageUrl (canonical link)
+}
+
+/**
+ * A single liked item
+ */
+export type UserLike = ItemPreview & {
+  likedAt: ISODateString; // events.createdAt
 };
 
 /**
- * A single comment, enriched from ITEMS sheet
+ * A single comment
  */
-export type UserComment = {
-  itemId: string;              // items.id
-  itemName: string;            // items.name
-  itemImage: string;           // items.cdn
-  pageUrl: string;             // events.pageUrl
-  comment: string;             // events.value
-  commentedAt: ISODateString;  // events.createdAt
+export type UserComment = ItemPreview & {
+  comment: string;        // events.value
+  commentedAt: ISODateString; // events.createdAt
 };
 
 /**
@@ -47,8 +48,8 @@ export type PaginatedTimeline<T> = {
  * Returned by getUserProfile (GAS)
  */
 export type UserProfileActivity = {
-  userEmail: string;        // appears ONCE at top
-  profilePic: string;       // users.cdn or photo
+  userEmail: string;   // appears ONCE at top
+  profilePic: string;  // users.cdn or photo
   likedCount: number;
   commentCount: number;
 
@@ -86,21 +87,3 @@ export interface ResolveHandleResponse {
   ok: true;
   email: string;
 }
-
-
-
-export interface ItemPreview {
-  itemId: string;
-  itemName: string;
-  itemImage: string;
-  pageUrl: string;
-}
-
-export type UserLike = ItemPreview & {
-  likedAt: ISODateString;
-};
-
-export type UserComment = ItemPreview & {
-  comment: string;
-  commentedAt: ISODateString;
-};
