@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import type {
@@ -5,6 +7,8 @@ import type {
   UserLike,
   UserComment,
 } from "@/lib/publicProfileTypes";
+import LikeRow from "./LikeRow";
+import CommentRow from "./CommentRow";
 
 type PageProps = {
   params: { handle: string };
@@ -14,41 +18,38 @@ type PageProps = {
   };
 };
 
+/**
+ * Fetches the public profile from GAS
+ */
 async function getPublicProfile(
   handle: string,
   tab: "likes" | "comments",
   cursor?: string
 ): Promise<UserProfileResponse> {
-  const res = await fetch(
-    `https://driveshp-three.vercel.app/api/public-profile`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        handle,
-        limit: 10,
-        ...(tab === "likes"
-          ? { likesCursor: cursor }
-          : { commentsCursor: cursor }),
-      }),
-      cache: "no-store",
-    }
-  );
+  const res = await fetch("/api/public-profile", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      handle,
+      limit: 10,
+      ...(tab === "likes" ? { likesCursor: cursor } : { commentsCursor: cursor }),
+    }),
+    cache: "no-store",
+  });
 
   return res.json();
 }
 
+/**
+ * Public Profile Page
+ */
 export default async function PublicProfilePage({
   params,
   searchParams,
 }: PageProps) {
   const tab = searchParams.tab === "comments" ? "comments" : "likes";
 
-  const data = await getPublicProfile(
-    params.handle,
-    tab,
-    searchParams.cursor
-  );
+  const data = await getPublicProfile(params.handle, tab, searchParams.cursor);
 
   if (!data.ok) {
     return (
@@ -58,9 +59,8 @@ export default async function PublicProfilePage({
     );
   }
 
-  const {
-    data: { profilePic, likedCount, commentCount, likes, comments },
-  } = data;
+  const { data: profile } = data;
+  const { profilePic, likedCount, commentCount, likes, comments } = profile;
 
   return (
     <main className="min-h-screen bg-neutral-950 text-white">
@@ -77,12 +77,11 @@ export default async function PublicProfilePage({
             alt={params.handle}
             width={128}
             height={128}
-            className="rounded-full border-4 border-black bg-black shadow-lg"
+            className="rounded-full border-4 border-black bg-black"
           />
 
           <div>
             <h1 className="text-2xl font-bold">@{params.handle}</h1>
-
             <div className="flex gap-6 text-sm text-gray-300 mt-2">
               <span>👍 {likedCount} likes</span>
               <span>💬 {commentCount} comments</span>
@@ -92,17 +91,10 @@ export default async function PublicProfilePage({
 
         {/* ===== Tabs ===== */}
         <div className="flex gap-8 mt-10 border-b border-white/10">
-          <TabLink
-            active={tab === "likes"}
-            href={`/u/${params.handle}?tab=likes`}
-          >
+          <TabLink active={tab === "likes"} href={`/u/${params.handle}?tab=likes`}>
             Likes
           </TabLink>
-
-          <TabLink
-            active={tab === "comments"}
-            href={`/u/${params.handle}?tab=comments`}
-          >
+          <TabLink active={tab === "comments"} href={`/u/${params.handle}?tab=comments`}>
             Comments
           </TabLink>
         </div>
@@ -110,34 +102,25 @@ export default async function PublicProfilePage({
         {/* ===== Timeline ===== */}
         <section className="mt-6 space-y-6">
           {tab === "likes" &&
-            likes.items.map((item: UserLike) => (
-              <LikeRow key={item.itemId} item={item} />
-            ))}
+            likes.items.map((item: UserLike) => <LikeRow key={item.itemId} item={item} />)}
+
           {tab === "comments" &&
             comments.items.map((item: UserComment) => (
               <CommentRow
                 key={`${item.itemId}-${item.commentedAt}`}
                 item={item}
+                userImage={item.userImage}
               />
             ))}
         </section>
 
         {/* ===== Pagination ===== */}
-        <div className="py-10">
+        <div className="py-10 text-center">
           {tab === "likes" && likes.hasMore && (
-            <LoadMore
-              handle={params.handle}
-              tab="likes"
-              cursor={likes.nextCursor}
-            />
+            <LoadMore handle={params.handle} tab="likes" cursor={likes.nextCursor} />
           )}
-
           {tab === "comments" && comments.hasMore && (
-            <LoadMore
-              handle={params.handle}
-              tab="comments"
-              cursor={comments.nextCursor}
-            />
+            <LoadMore handle={params.handle} tab="comments" cursor={comments.nextCursor} />
           )}
         </div>
       </section>
@@ -161,67 +144,12 @@ function TabLink({
   return (
     <Link
       href={href}
-      className={`pb-3 font-medium transition relative ${
-        active
-          ? "text-white after:absolute after:bottom-0 after:left-0 after:h-1 after:w-full after:rounded-full after:bg-gradient-to-r after:from-purple-400 after:via-pink-500 after:to-orange-400"
-          : "text-gray-400 hover:text-white"
+      className={`pb-3 font-medium transition ${
+        active ? "border-b-2 border-white" : "text-gray-400 hover:text-white"
       }`}
     >
       {children}
     </Link>
-  );
-}
-
-function LikeRow({ item }: { item: UserLike }) {
-  return (
-    <Link
-      href={item.pageUrl}
-      className="flex gap-4 items-center bg-white/5 hover:bg-white/10 transition rounded-xl p-4 shadow-sm hover:shadow-md"
-    >
-      <Image
-        src={item.itemImage || "/placeholder.png"}
-        alt={item.itemName}
-        width={64}
-        height={64}
-        className="rounded-lg object-cover"
-      />
-
-      <div>
-        <p className="font-medium">{item.itemName}</p>
-        <p className="text-xs text-gray-400">
-          Liked {new Date(item.likedAt).toLocaleString()}
-        </p>
-      </div>
-    </Link>
-  );
-}
-
-function CommentRow({ item }: { item: UserComment }) {
-  return (
-    <div className="flex gap-4 bg-white/5 rounded-xl p-4 shadow-sm hover:shadow-md transition">
-      <Image
-        src={item.itemImage || "/placeholder.png"}
-        alt={item.itemName}
-        width={64}
-        height={64}
-        className="rounded-lg object-cover"
-      />
-
-      <div className="flex-1">
-        <Link
-          href={item.pageUrl}
-          className="font-medium hover:underline"
-        >
-          {item.itemName}
-        </Link>
-
-        <p className="mt-2 text-sm text-gray-300">{item.comment}</p>
-
-        <p className="text-xs text-gray-400 mt-1">
-          {new Date(item.commentedAt).toLocaleString()}
-        </p>
-      </div>
-    </div>
   );
 }
 
@@ -238,10 +166,8 @@ function LoadMore({
 
   return (
     <Link
-      href={`/u/${handle}?tab=${tab}&cursor=${encodeURIComponent(
-        cursor
-      )}`}
-      className="block text-center text-sm text-blue-400 hover:underline transition"
+      href={`/u/${handle}?tab=${tab}&cursor=${encodeURIComponent(cursor)}`}
+      className="block text-sm text-blue-400 hover:underline"
     >
       Load more
     </Link>

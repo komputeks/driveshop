@@ -1,64 +1,43 @@
 /* ======================================================
-   USER ACTIVITY / PUBLIC PROFILE (Timeline-based)
+   USER ACTIVITY / PUBLIC PROFILE TYPES
 ====================================================== */
-export type ISODateString = string; // RFC 3339 / ISO 8601
 
-/**
- * Cursor is always an ISO timestamp (createdAt)
- */
+export type ISODateString = string;
+
 export type Cursor = ISODateString | null;
 
-/**
- * Shared item fields (enriched from ITEMS sheet)
- */
 export interface ItemPreview {
-  itemId: string;     // items.id
-  itemName: string;   // items.name
-  itemImage: string;  // items.cdn
-  pageUrl: string;    // events.pageUrl (canonical link)
+  itemId: string;
+  itemName: string;
+  itemImage: string; // cdn of the item
+  pageUrl: string;
 }
 
-/**
- * A single liked item
- */
 export type UserLike = ItemPreview & {
-  likedAt: ISODateString; // events.createdAt
+  likedAt: ISODateString;
 };
 
-/**
- * A single comment
- */
 export type UserComment = ItemPreview & {
-  comment: string;        // events.value
-  commentedAt: ISODateString; // events.createdAt
+  comment: string;
+  commentedAt: ISODateString;
+  userImage: string; // avatar of the commenting user
 };
 
-/**
- * Generic cursor-based pagination container
- */
 export type PaginatedTimeline<T> = {
   items: T[];
   nextCursor: Cursor;
   hasMore: boolean;
 };
 
-/**
- * Public user activity payload
- * Returned by getUserProfile (GAS)
- */
 export type UserProfileActivity = {
-  userEmail: string;   // appears ONCE at top
-  profilePic: string;  // users.cdn or photo
+  userEmail: string;   // once at top
+  profilePic: string;  // page owner photo
   likedCount: number;
   commentCount: number;
 
   likes: PaginatedTimeline<UserLike>;
   comments: PaginatedTimeline<UserComment>;
 };
-
-/* ======================================================
-   API RESPONSE WRAPPERS
-====================================================== */
 
 export type ApiOk<T> = {
   ok: true;
@@ -72,11 +51,11 @@ export type ApiErr = {
 
 export type ApiResponse<T> = ApiOk<T> | ApiErr;
 
-export type UserProfileResponse = ApiResponse<UserProfileActivity>;
+export type UserProfileResponse = ApiOk<UserProfileActivity>;
 
-/* ======================================================
+/* =========================
    REQUEST PAYLOAD
-====================================================== */
+========================= */
 
 export type GetUserProfileRequest = {
   action: "getUserProfile";
