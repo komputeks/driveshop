@@ -15,6 +15,9 @@ export default async function ProfilePage() {
     );
   }
   
+  
+  const user = session.user;
+  
   const activityRes = await fetch(
     `${process.env.NEXTAUTH_URL}/api/user/activity`,
     {
