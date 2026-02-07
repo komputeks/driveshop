@@ -1,218 +1,255 @@
+/* app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ======================================================
-   DESIGN TOKENS (DO NOT @apply THESE)
-====================================================== */
+/* =========================
+   DESIGN TOKENS
+   (single source of truth)
+========================= */
+@layer base {
+  :root {
+    /* Core colors (RGB for Tailwind) */
+    --bg: 255 255 255;
+    --fg: 15 23 42;
 
-:root {
-  /* Base */
-  --bg: 255 255 255;
-  --fg: 15 23 42;
+    --card: 255 255 255;
+    --border: 203 213 225; /* slate-300 */
+    --muted: 71 85 105;   /* slate-600 */
 
-  /* Brand */
-  --primary: 99 102 241;     /* indigo */
-  --secondary: 16 185 129;   /* emerald */
-  --accent: 236 72 153;      /* pink */
+    /* Brand */
+    --primary: 37 99 235;   /* blue-600 */
+    --secondary: 79 70 229; /* indigo-600 */
 
-  /* UI */
-  --card: 255 255 255;
-  --border: 226 232 240;
-  --muted: 100 116 139;
+    /* Radius */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
 
-  /* Radius */
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
-  --radius-xl: 28px;
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 10px rgb(0 0 0 / 0.08);
+    --shadow-lg: 0 12px 24px rgb(0 0 0 / 0.12);
 
-  /* Shadows */
-  --shadow-sm: 0 4px 12px rgba(0,0,0,.04);
-  --shadow-md: 0 10px 30px rgba(0,0,0,.08);
-  --shadow-lg: 0 30px 60px rgba(0,0,0,.12);
+    /* Gradients */
+    --grad-primary: linear-gradient(
+      135deg,
+      rgb(37 99 235),
+      rgb(79 70 229)
+    );
+    --grad-soft: linear-gradient(
+      180deg,
+      rgb(248 250 252),
+      rgb(241 245 249)
+    );
+  }
 
-  /* Gradients */
-  --grad-primary: linear-gradient(
-    135deg,
-    rgb(var(--primary)),
-    rgb(var(--secondary))
-  );
+  .dark {
+    --bg: 15 23 42;
+    --fg: 226 232 240;
 
-  --grad-soft: linear-gradient(
-    180deg,
-    rgba(99,102,241,.08),
-    rgba(16,185,129,.08)
-  );
+    --card: 30 41 59;
+    --border: 71 85 105;   /* slate-600 */
+    --muted: 148 163 184; /* slate-400 */
+  }
 }
 
-.dark {
-  --bg: 3 7 18;
-  --fg: 226 232 240;
-  --card: 10 15 30;
-  --border: 30 41 59;
-  --muted: 148 163 184;
-}
-
-/* ======================================================
+/* =========================
    BASE STYLES
-====================================================== */
+========================= */
+@layer base {
+  html {
+    @apply antialiased;
+  }
 
-html {
-  @apply scroll-smooth;
+  body {
+    @apply bg-bg text-fg;
+  }
+
+  h1 { @apply text-2xl font-semibold; }
+  h2 { @apply text-xl font-semibold; }
+  h3 { @apply text-lg font-medium; }
 }
 
-body {
-  @apply antialiased;
-  background-color: rgb(var(--bg));
-  color: rgb(var(--fg));
-  font-feature-settings: "ss01", "cv02";
-}
-
-/* ======================================================
-   TYPOGRAPHY PRIMITIVES
-====================================================== */
-
-.h1 {
-  @apply text-4xl md:text-5xl font-semibold tracking-tight;
-}
-
-.h2 {
-  @apply text-2xl md:text-3xl font-semibold tracking-tight;
-}
-
-.h3 {
-  @apply text-xl font-semibold;
-}
-
-.muted {
-  color: rgb(var(--muted));
-}
-
-.link {
-  @apply underline underline-offset-4 hover:opacity-80 transition;
-}
-
-/* ======================================================
-   LAYOUT PRIMITIVES
-====================================================== */
-
-.container {
-  @apply mx-auto px-6;
-  max-width: 1280px;
-}
-
-.section {
-  @apply py-16 md:py-24;
-}
-
-/* ======================================================
-   CARD / SURFACE SYSTEM
-====================================================== */
-
-.card {
-  @apply relative overflow-hidden;
-  background-color: rgb(var(--card));
-  border: 1px solid rgb(var(--border));
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-}
-
-.card-soft {
-  @apply card;
-  background: var(--grad-soft);
-}
-
-.glass {
-  @apply backdrop-blur-xl;
-  background-color: rgba(255, 255, 255, 0.7);
-}
-
-.dark .glass {
-  background-color: rgba(10, 15, 30, 0.7);
-}
-
-/* ======================================================
-   BUTTON SYSTEM (ENTERPRISE-GRADE)
-====================================================== */
-
-.btn {
-  @apply inline-flex items-center justify-center
-         font-semibold
-         transition-all
-         select-none
-         active:scale-[0.97]
-         disabled:opacity-50
-         disabled:pointer-events-none;
-  border-radius: var(--radius-md);
-}
-
-.btn-lg {
-  @apply px-6 py-3 text-base;
-}
-
-.btn-sm {
-  @apply px-4 py-2 text-sm;
-}
-
-.btn-primary {
-  color: white;
-  background: var(--grad-primary);
-}
-
-.btn-primary:hover {
-  filter: brightness(1.05);
-}
-
-.btn-ghost {
-  background-color: rgb(var(--fg));
-  color: rgb(var(--bg));
-}
-
-.btn-outline {
-  @apply bg-transparent;
-  border: 1px solid rgb(var(--border));
-}
-
-/* ======================================================
-   BADGES / TAGS
-====================================================== */
-
-.badge {
-  @apply inline-flex items-center gap-1
-         px-3 py-1
-         text-xs font-medium;
-  border-radius: 999px;
-  background: var(--grad-soft);
-}
-
-/* ======================================================
-   IMAGE PRIMITIVES
-====================================================== */
-
-.img-cover {
-  @apply object-cover rounded-lg;
-}
-
-.avatar {
-  @apply rounded-full object-cover;
-}
-
-/* ======================================================
-   STATES
-====================================================== */
-
-.skeleton {
-  @apply animate-pulse rounded-md;
-  background-color: rgb(var(--border));
-}
-
-/* ======================================================
+/* =========================
    UTILITIES
-====================================================== */
+========================= */
+@layer utilities {
+  .container-page {
+    @apply mx-auto max-w-7xl px-4;
+  }
 
-.gradient-text {
-  background: var(--grad-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  .stack {
+    @apply flex flex-col gap-4;
+  }
+
+  .inline {
+    @apply flex items-center gap-2;
+  }
+
+  .muted {
+    @apply text-[rgb(var(--muted))];
+  }
+
+  /* Skeleton loader */
+  .skeleton {
+    @apply relative overflow-hidden rounded-md
+           bg-slate-200 dark:bg-slate-800;
+  }
+
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255,255,255,0.35),
+      transparent
+    );
+    animation: shimmer 1.2s infinite;
+  }
+}
+
+/* =========================
+   COMPONENTS
+========================= */
+@layer components {
+  /* Card */
+  .card {
+    @apply rounded-lg
+           bg-[rgb(var(--card))]
+           border border-[rgb(var(--border))]
+           shadow-sm;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2
+           rounded-md px-4 py-2 text-sm font-medium
+           transition
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:pointer-events-none
+           focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-lg {
+    @apply h-12 px-6;
+  }
+
+  .btn-primary {
+    @apply btn
+           bg-[rgb(var(--primary))] text-white
+           hover:opacity-90
+           focus:ring-[rgb(var(--primary))];
+  }
+
+  .btn-ghost {
+    @apply btn
+           bg-transparent text-[rgb(var(--fg))]
+           hover:bg-[rgb(var(--border))]/40;
+  }
+
+  .btn-danger {
+    @apply btn
+           bg-red-500/10 text-red-600
+           hover:bg-red-500/20;
+  }
+
+  /* Inputs */
+  .input {
+    @apply w-full rounded-md
+           border border-[rgb(var(--border))]
+           bg-[rgb(var(--bg))]
+           px-3 py-2 text-sm
+           outline-none transition
+           focus:ring-2 focus:ring-[rgb(var(--primary))]/40;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center
+           rounded-full px-2.5 py-0.5
+           text-xs font-medium;
+  }
+
+  .badge-primary {
+    @apply badge
+           bg-[rgb(var(--primary))]/10
+           text-[rgb(var(--primary))];
+  }
+}
+
+/* =========================
+   OVERLAYS
+========================= */
+@layer components {
+  .modal-backdrop {
+    @apply fixed inset-0 z-50
+           bg-black/50
+           flex items-center justify-center;
+  }
+
+  .modal-panel {
+    @apply card w-full max-w-lg
+           p-6 animate-scale-in;
+  }
+
+  .drawer-backdrop {
+    @apply fixed inset-0 z-50 bg-black/40;
+  }
+
+  .drawer-panel {
+    @apply fixed right-0 top-0 h-full w-80
+           bg-[rgb(var(--card))]
+           border-l border-[rgb(var(--border))]
+           shadow-lg
+           animate-slide-in;
+  }
+
+  .popover {
+    @apply absolute z-50 mt-2
+           min-w-[10rem]
+           rounded-md
+           bg-[rgb(var(--card))]
+           border border-[rgb(var(--border))]
+           shadow-md
+           animate-scale-in;
+  }
+}
+
+/* =========================
+   ANIMATIONS
+========================= */
+@keyframes fadeIn {
+  from { opacity: 0 }
+  to { opacity: 1 }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.96) }
+  to { opacity: 1; transform: scale(1) }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%) }
+  to { transform: translateX(0) }
+}
+
+@keyframes shimmer {
+  100% { transform: translateX(100%) }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.25s ease-out both;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out both;
 }

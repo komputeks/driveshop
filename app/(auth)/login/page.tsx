@@ -8,23 +8,24 @@ export default function SignInPage() {
   const router = useRouter();
 
   const isLoggedIn = status === "authenticated";
+  const isLoading = status === "loading";
 
   return (
     <main className="min-h-screen flex items-center justify-center">
-      <div className="container flex justify-center">
+      <div className="container-page flex justify-center">
         <div className="relative w-full max-w-md">
 
           {/* Ambient gradient glow */}
           <div
             aria-hidden
-            className="absolute -inset-1 rounded-[32px] blur-2xl opacity-60"
+            className="absolute -inset-2 rounded-xl blur-2xl opacity-60"
             style={{ background: "var(--grad-primary)" }}
           />
 
           {/* Card */}
-          <div className="relative card glass p-8 text-center space-y-6">
+          <div className="relative card p-8 text-center space-y-6">
 
-            <h1 className="h2">
+            <h1 className="text-xl font-semibold">
               Welcome to DriveShop
             </h1>
 
@@ -34,9 +35,8 @@ export default function SignInPage() {
 
             {!isLoggedIn && (
               <button
-                onClick={() =>
-                  signIn("google", { callbackUrl: "/profile" })
-                }
+                onClick={() => signIn("google", { callbackUrl: "/profile" })}
+                disabled={isLoading}
                 className="btn btn-lg btn-ghost w-full"
               >
                 Continue with Google
@@ -52,8 +52,8 @@ export default function SignInPage() {
               </button>
             )}
 
-            {status === "loading" && (
-              <p className="text-xs muted">
+            {isLoading && (
+              <p className="text-xs muted" aria-live="polite">
                 Checking session…
               </p>
             )}

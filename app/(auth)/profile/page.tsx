@@ -14,7 +14,7 @@ export default async function ProfilePage() {
   if (!session || !session.user || !session.user.email) {
     return (
       <main className="min-h-screen flex items-center justify-center">
-        <p className="muted text-sm">Not signed in</p>
+        <p className="text-sm muted">Not signed in</p>
       </main>
     );
   }
@@ -22,7 +22,7 @@ export default async function ProfilePage() {
   const user = session.user;
 
   /* -----------------------------
-     Fetch user activity (internal API)
+     Fetch user activity
   ----------------------------- */
   const activityRes = await fetch(
     "https://driveshop-three.vercel.app/api/user/activity",
@@ -42,11 +42,11 @@ export default async function ProfilePage() {
     activityData.ok ? activityData.data : null;
 
   return (
-    <main className="section">
-      <div className="container space-y-10 max-w-4xl">
+    <main className="py-12">
+      <div className="container-page max-w-4xl stack">
 
         {/* Profile header */}
-        <section className="card p-6 flex items-center gap-6">
+        <section className="card p-6 flex flex-col sm:flex-row gap-6 items-start sm:items-center">
 
           <Image
             src={user.image ?? "/avatar.png"}
@@ -57,7 +57,7 @@ export default async function ProfilePage() {
           />
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-semibold tracking-tight truncate">
+            <h1 className="text-xl font-semibold truncate">
               {user.name || "Anonymous"}
             </h1>
             <p className="text-sm muted truncate">
@@ -65,7 +65,9 @@ export default async function ProfilePage() {
             </p>
           </div>
 
-          <LogoutButton />
+          <div className="self-start sm:self-auto">
+            <LogoutButton />
+          </div>
         </section>
 
         {/* Activity */}

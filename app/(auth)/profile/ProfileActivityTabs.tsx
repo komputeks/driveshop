@@ -23,34 +23,24 @@ export default function ProfileActivityTabs({
       : activity.comments.items;
 
   return (
-    <section className="space-y-6">
+    <section className="stack">
 
       {/* Tabs */}
-      <div className="flex gap-2">
-        <button
+      <div className="inline">
+        <TabButton
+          active={tab === "likes"}
           onClick={() => setTab("likes")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition
-            ${
-              tab === "likes"
-                ? "bg-[rgb(var(--fg))] text-[rgb(var(--bg))]"
-                : "border border-[rgb(var(--border))] text-[rgb(var(--muted))] hover:bg-[rgb(var(--border))]/40"
-            }`}
         >
-          Likes <span className="opacity-70">({activity.likedCount})</span>
-        </button>
+          Likes <span className="opacity-60">({activity.likedCount})</span>
+        </TabButton>
 
-        <button
+        <TabButton
+          active={tab === "comments"}
           onClick={() => setTab("comments")}
-          className={`px-4 py-2 rounded-md text-sm font-medium transition
-            ${
-              tab === "comments"
-                ? "bg-[rgb(var(--fg))] text-[rgb(var(--bg))]"
-                : "border border-[rgb(var(--border))] text-[rgb(var(--muted))] hover:bg-[rgb(var(--border))]/40"
-            }`}
         >
           Comments{" "}
-          <span className="opacity-70">({activity.commentCount})</span>
-        </button>
+          <span className="opacity-60">({activity.commentCount})</span>
+        </TabButton>
       </div>
 
       {/* Items */}
@@ -80,23 +70,21 @@ export default function ProfileActivityTabs({
                 href={item.pageUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-medium leading-tight hover:underline truncate block"
+                className="font-medium text-sm leading-tight truncate block hover:underline"
               >
                 {item.itemName}
               </a>
 
               {"likedAt" in item && (
                 <p className="text-xs muted">
-                  Liked{" "}
-                  {new Date(item.likedAt).toLocaleString()}
+                  Liked {new Date(item.likedAt).toLocaleDateString()}
                 </p>
               )}
 
               {"commentedAt" in item && (
                 <>
                   <p className="text-xs muted">
-                    Commented{" "}
-                    {new Date(item.commentedAt).toLocaleString()}
+                    Commented {new Date(item.commentedAt).toLocaleDateString()}
                   </p>
                   <p className="text-sm leading-snug">
                     {(item as UserComment).comment}
@@ -105,19 +93,47 @@ export default function ProfileActivityTabs({
               )}
             </div>
 
-            {/* User avatar (comments only) */}
             {"userImage" in item && (
               <Image
                 src={item.userImage || "/avatar.png"}
                 alt="User"
-                width={32}
-                height={32}
-                className="rounded-full border border-[rgb(var(--border))]"
+                width={28}
+                height={28}
+                className="rounded-full border border-[rgb(var(--border))] flex-shrink-0"
               />
             )}
           </article>
         ))}
       </div>
     </section>
+  );
+}
+
+/* --------------------------------
+   Local tab primitive
+-------------------------------- */
+
+function TabButton({
+  active,
+  children,
+  ...props
+}: {
+  active?: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      {...props}
+      className={[
+        "px-4 py-2 rounded-md text-sm font-medium transition",
+        "focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40",
+        active
+          ? "bg-[rgb(var(--fg))] text-[rgb(var(--bg))]"
+          : "border border-[rgb(var(--border))] text-[rgb(var(--muted))] hover:bg-[rgb(var(--border))]/40",
+      ].join(" ")}
+    >
+      {children}
+    </button>
   );
 }
