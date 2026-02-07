@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { UserProfileActivity } from "@/lib/userActivityTypes";
+import type { UserActivityProfile } from "@/lib/userActivityTypes";
 
 const GAS_ENDPOINT = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
 
     const data = await res.json();
 
-    return NextResponse.json(data as UserProfileActivity, {
+    return NextResponse.json(data as UserActivityProfile, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (err) {
