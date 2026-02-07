@@ -1,10 +1,12 @@
-import ProfileActivityTabs from "./ProfileActivityTabs";
 import { getServerSession } from "next-auth";
 import Image from "next/image";
 import { authOptions } from "@/lib/auth";
 import LogoutButton from "./LogoutButton";
+import ProfileActivityTabs from "./ProfileActivityTabs";
+import { UserActivity } from "@/lib/userActivityTypes";
 
 export default async function ProfilePage() {
+  // ✅ Get session
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
@@ -14,30 +16,32 @@ export default async function ProfilePage() {
       </main>
     );
   }
-  
-  
-  const user = session.user;
-  
-  const activityRes = await fetch(
-    `${process.env.NEXTAUTH_URL}/api/user/activity`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: user.email }),
-      cache: "no-store",
-    }
-  );
-  
-  const activity = activityRes.ok
-    ? await activityRes.json()
-    : null;
-    
-  console.log("activity", activity);
 
   // ✅ user is explicitly defined here
   const user = session.user;
   const handle = user.email?.split("@")[0]; // TEMP, public-safe
 
+  // ✅ Fetch activity from API
+  let activity: UserActivity | null = null;
+  try {
+    const activityRes = await fetch(
+      `${process.env.NEXTAUTH_URL}/api/user/activity`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user.email }),
+        cache: "no-store",
+      }
+    );
+
+    if (activityRes.ok) {
+      activity = await activityRes.json();
+    }
+  } catch (err) {
+    console.error("Failed to fetch user activity:", err);
+  }
+  
+  console.log("activity", activity);
   return (
     <main className="max-w-4xl mx-auto px-6 py-10 space-y-10">
       {/* Header */}
@@ -51,13 +55,9 @@ export default async function ProfilePage() {
         />
 
         <div>
-          <h1 className="text-2xl font-bold">
-            {user.name || "Anonymous"}
-          </h1>
+          <h1 className="text-2xl font-bold">{user.name || "Anonymous"}</h1>
 
-          <p className="text-sm text-gray-400">
-            {user.email}
-          </p>
+          <p className="text-sm text-gray-400">{user.email}</p>
 
           {handle && (
             <a
@@ -74,8 +74,9 @@ export default async function ProfilePage() {
       <section className="flex items-center gap-4">
         <LogoutButton />
       </section>
+
       {/* Activity */}
-      <ProfileActivityTabs />
+      <ProfileActivityTabs activity={activity} />
     </main>
   );
 }
