@@ -10,6 +10,7 @@ const inter = Inter({
 const ptSerif = PT_Serif({
   subsets: ["latin"],
   variable: "--font-serif",
+  weight: "700",
   display: "swap",
 });
 

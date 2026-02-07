@@ -1,5 +1,5 @@
 import { Inter, PT_Serif, Caveat } from "next/font/google";
-import AuthProvider from "@/components/AuthProvider";
+import AuthProvider from "@/app/(auth)/_providers/AuthProvider";
 import "@/app/globals.css";
 
 const inter = Inter({
@@ -11,7 +11,9 @@ const inter = Inter({
 const ptSerif = PT_Serif({
   subsets: ["latin"],
   variable: "--font-serif",
+  weoght: "700",
   display: "swap",
+  
 });
 
 const caveat = Caveat({
