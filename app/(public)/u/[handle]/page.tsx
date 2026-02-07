@@ -179,7 +179,7 @@ function LikeRow({ item }: { item: UserLike }) {
       className="flex gap-4 items-center bg-white/5 hover:bg-white/10 transition rounded-xl p-4"
     >
       <Image
-        src={item.cdn || "/placeholder.png"}
+        src={item.itemImage || "/placeholder.png"}
         alt={item.itemName}
         width={64}
         height={64}
@@ -200,7 +200,7 @@ function CommentRow({ item }: { item: UserComment }) {
   return (
     <div className="flex gap-4 bg-white/5 rounded-xl p-4">
       <Image
-        src={item.cdn || "/placeholder.png"}
+        src={item.itemImage || "/placeholder.png"}
         alt={item.itemName}
         width={64}
         height={64}
