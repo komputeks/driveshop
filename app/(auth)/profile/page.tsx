@@ -22,7 +22,7 @@ export default async function ProfilePage() {
 
   // Fetch user activity
   const activityRes = await fetch(
-    `${process.env.NEXTAUTH_URL}/api/user/activity`,
+    `https//:driveshop-three.vercel.app/api/user/activity`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
