@@ -5,44 +5,32 @@
 
 /* =========================
    DESIGN TOKENS
-   Single source of truth
 ========================= */
 @layer base {
   :root {
-    /* Core colors (RGB for Tailwind) */
     --bg: 255 255 255;
     --fg: 15 23 42;
 
     --card: 255 255 255;
-    --border: 203 213 225; /* slate-300 */
-    --muted: 71 85 105;   /* slate-600 */
+    --border: 203 213 225;
+    --muted: 71 85 105;
 
-    /* Brand */
-    --primary: 37 99 235;   /* blue-600 */
-    --secondary: 79 70 229; /* indigo-600 */
+    --primary: 37 99 235;
+    --secondary: 79 70 229;
 
-    /* Radius */
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 14px;
     --radius-xl: 18px;
 
-    /* Shadows */
     --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 10px rgb(0 0 0 / 0.08);
     --shadow-lg: 0 12px 24px rgb(0 0 0 / 0.12);
 
-    /* Gradients */
     --grad-primary: linear-gradient(
       135deg,
       rgb(37 99 235),
       rgb(79 70 229)
-    );
-
-    --grad-soft: linear-gradient(
-      180deg,
-      rgb(248 250 252),
-      rgb(241 245 249)
     );
   }
 
@@ -51,8 +39,8 @@
     --fg: 226 232 240;
 
     --card: 30 41 59;
-    --border: 71 85 105;   /* slate-600 */
-    --muted: 148 163 184; /* slate-400 */
+    --border: 71 85 105;
+    --muted: 148 163 184;
   }
 }
 
@@ -65,7 +53,9 @@
   }
 
   body {
-    @apply bg-bg text-fg font-sans;
+    @apply font-sans;
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
   }
 
   h1 { @apply text-2xl font-serif font-semibold tracking-tight; }
@@ -77,40 +67,12 @@
    UTILITIES
 ========================= */
 @layer utilities {
+  .muted {
+    color: rgb(var(--muted));
+  }
+
   .container-page {
     @apply mx-auto max-w-7xl px-4;
-  }
-
-  .stack {
-    @apply flex flex-col gap-4;
-  }
-
-  .inline {
-    @apply flex items-center gap-2;
-  }
-
-  .muted {
-    @apply text-muted;
-  }
-
-  /* Skeleton loader */
-  .skeleton {
-    @apply relative overflow-hidden rounded-md
-           bg-slate-200 dark:bg-slate-800;
-  }
-
-  .skeleton::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    transform: translateX(-100%);
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(255,255,255,0.35),
-      transparent
-    );
-    animation: shimmer 1.2s infinite;
   }
 }
 
@@ -118,118 +80,32 @@
    COMPONENTS
 ========================= */
 @layer components {
-  /* Card */
   .card {
-    @apply rounded-lg bg-card border border-border shadow-sm;
+    @apply rounded-lg shadow-sm;
+    background-color: rgb(var(--card));
+    border: 1px solid rgb(var(--border));
   }
 
-  /* Buttons */
   .btn {
     @apply inline-flex items-center justify-center gap-2
            rounded-md px-4 py-2 text-sm font-medium
-           transition
-           active:scale-[0.98]
-           disabled:opacity-50 disabled:pointer-events-none
-           focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
-  }
-
-  .btn-lg {
-    @apply h-12 px-6;
+           transition active:scale-[0.98]
+           focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
 
   .btn-primary {
-    @apply btn bg-primary text-white hover:opacity-90;
+    @apply btn text-white;
+    background-color: rgb(var(--primary));
   }
 
   .btn-ghost {
-    @apply btn bg-transparent text-fg hover:bg-border/40;
+    @apply btn;
+    color: rgb(var(--fg));
   }
 
-  .btn-danger {
-    @apply btn bg-red-500/10 text-red-600 hover:bg-red-500/20;
-  }
-
-  /* Inputs */
   .input {
-    @apply w-full rounded-md
-           border border-border bg-bg
-           px-3 py-2 text-sm
-           outline-none transition
-           focus:ring-2 focus:ring-primary/40;
+    @apply w-full rounded-md px-3 py-2 text-sm outline-none;
+    background-color: rgb(var(--bg));
+    border: 1px solid rgb(var(--border));
   }
-
-  /* Badge */
-  .badge {
-    @apply inline-flex items-center rounded-full
-           px-2.5 py-0.5 text-xs font-medium;
-  }
-
-  .badge-primary {
-    @apply badge bg-primary/10 text-primary;
-  }
-}
-
-/* =========================
-   OVERLAYS
-========================= */
-@layer components {
-  .modal-backdrop {
-    @apply fixed inset-0 z-50
-           bg-black/50
-           flex items-center justify-center;
-  }
-
-  .modal-panel {
-    @apply card w-full max-w-lg p-6 animate-scale-in;
-  }
-
-  .drawer-backdrop {
-    @apply fixed inset-0 z-50 bg-black/40;
-  }
-
-  .drawer-panel {
-    @apply fixed right-0 top-0 h-full w-80
-           bg-card border-l border-border
-           shadow-lg animate-slide-in;
-  }
-
-  .popover {
-    @apply absolute z-50 mt-2 min-w-[10rem]
-           rounded-md bg-card border border-border
-           shadow-md animate-scale-in;
-  }
-}
-
-/* =========================
-   ANIMATIONS
-========================= */
-@keyframes fadeIn {
-  from { opacity: 0 }
-  to { opacity: 1 }
-}
-
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.96) }
-  to { opacity: 1; transform: scale(1) }
-}
-
-@keyframes slideIn {
-  from { transform: translateX(100%) }
-  to { transform: translateX(0) }
-}
-
-@keyframes shimmer {
-  100% { transform: translateX(100%) }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.25s ease-out both;
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.25s ease-out both;
-}
-
-.animate-slide-in {
-  animation: slideIn 0.3s ease-out both;
 }
