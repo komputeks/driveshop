@@ -18,9 +18,13 @@ export type UserLike = ItemPreview & {
 };
 
 export type UserComment = ItemPreview & {
+  itemId: string;
+  itemName: string;
+  itemImage: string;
+  pageUrl: string;
   comment: string;
-  commentedAt: ISODateString;
-  userImage: string; // avatar of the commenting user
+  commentedAt: string;
+  userImage: string;
 };
 
 export type PaginatedTimeline<T> = {
