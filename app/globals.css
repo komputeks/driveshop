@@ -4,43 +4,58 @@
 @tailwind utilities;
 
 /* =========================
-   DESIGN TOKENS
+   THEME TOKENS (v4)
+========================= */
+@theme {
+  /* Core colors */
+  --color-background: 255 255 255;
+  --color-foreground: 15 23 42;
+
+  --color-card: 255 255 255;
+  --color-border: 203 213 225;
+  --color-muted: 71 85 105;
+
+  --color-primary: 37 99 235;
+  --color-secondary: 79 70 229;
+
+  /* Semantic aliases */
+  --color-success: 22 163 74;
+  --color-warning: 234 179 8;
+  --color-danger: 220 38 38;
+  --color-info: 14 165 233;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 10px rgb(0 0 0 / 0.08);
+  --shadow-lg: 0 12px 24px rgb(0 0 0 / 0.12);
+
+  /* Fluid type */
+  --text-fluid-sm: clamp(0.875rem, 0.8rem + 0.3vw, 1rem);
+  --text-fluid: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+  --text-fluid-lg: clamp(1.125rem, 1rem + 0.8vw, 1.375rem);
+  --text-fluid-xl: clamp(1.375rem, 1.2rem + 1.2vw, 1.75rem);
+}
+
+/* =========================
+   DARK MODE
 ========================= */
 @layer base {
-  :root {
-    --bg: 255 255 255;
-    --fg: 15 23 42;
-
-    --card: 255 255 255;
-    --border: 203 213 225;
-    --muted: 71 85 105;
-
-    --primary: 37 99 235;
-    --secondary: 79 70 229;
-
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 14px;
-    --radius-xl: 18px;
-
-    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 10px rgb(0 0 0 / 0.08);
-    --shadow-lg: 0 12px 24px rgb(0 0 0 / 0.12);
-
-    --grad-primary: linear-gradient(
-      135deg,
-      rgb(37 99 235),
-      rgb(79 70 229)
-    );
-  }
-
   .dark {
-    --bg: 15 23 42;
-    --fg: 226 232 240;
+    --color-background: 15 23 42;
+    --color-foreground: 226 232 240;
 
-    --card: 30 41 59;
-    --border: 71 85 105;
-    --muted: 148 163 184;
+    --color-card: 30 41 59;
+    --color-border: 71 85 105;
+    --color-muted: 148 163 184;
+
+    --color-success: 34 197 94;
+    --color-danger: 248 113 113;
   }
 }
 
@@ -53,9 +68,8 @@
   }
 
   body {
-    @apply
-    background-color: rgb(var(--bg));
-    color: rgb(var(--fg));
+    background-color: rgb(var(--color-background));
+    color: rgb(var(--color-foreground));
   }
 
   h1 { @apply text-2xl font-semibold tracking-tight; }
@@ -68,44 +82,53 @@
 ========================= */
 @layer utilities {
   .muted {
-    color: rgb(var(--muted));
+    color: rgb(var(--color-muted));
   }
 
   .container-page {
     @apply mx-auto max-w-7xl px-4;
   }
+
+  /* Fluid type */
+  .text-fluid-sm { font-size: var(--text-fluid-sm); }
+  .text-fluid { font-size: var(--text-fluid); }
+  .text-fluid-lg { font-size: var(--text-fluid-lg); }
+  .text-fluid-xl { font-size: var(--text-fluid-xl); }
 }
 
 /* =========================
-   COMPONENTS
+   UTILITIES (v4 style)
+========================= */
+@layer utilities {
+  @utility btn {
+    @apply inline-flex items-center justify-center gap-2
+           rounded-md px-4 py-2 text-sm font-medium
+           transition active:scale-[0.98]
+           focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2;
+  }
+
+  @utility btn-primary {
+    @apply btn bg-primary text-white;
+  }
+
+  @utility btn-ghost {
+    @apply btn bg-transparent text-foreground;
+  }
+}
+
+/* =========================
+   COMPONENT PRIMITIVES
 ========================= */
 @layer components {
   .card {
     @apply rounded-lg shadow-sm;
-    background-color: rgb(var(--card));
-    border: 1px solid rgb(var(--border));
-  }
-
-  .btn {
-    @apply inline-flex items-center justify-center gap-2
-           rounded-md px-4 py-2 text-sm font-medium
-           transition active:scale-[0.98]
-           focus:outline-none focus:ring-2 focus:ring-offset-2;
-  }
-
-  .btn-primary {
-    @apply btn text-white;
-    background-color: rgb(var(--primary));
-  }
-
-  .btn-ghost {
-    @apply btn;
-    color: rgb(var(--fg));
+    background-color: rgb(var(--color-card));
+    border: 1px solid rgb(var(--color-border));
   }
 
   .input {
     @apply w-full rounded-md px-3 py-2 text-sm outline-none;
-    background-color: rgb(var(--bg));
-    border: 1px solid rgb(var(--border));
+    background-color: rgb(var(--color-background));
+    border: 1px solid rgb(var(--color-border));
   }
 }
