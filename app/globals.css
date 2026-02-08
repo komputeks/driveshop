@@ -1,1120 +1,162 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
+/* ======================================================================
+   GLOBALS — Tailwind CSS v4 (Clean / Production)
+   Modern UI: Buttons, Forms, Cards, Modals, Popovers, Drawers, Skeletons
+   ====================================================================== */
 @reference "tailwindcss";
+@tailwind base; @tailwind components; @tailwind utilities;
 
-/* =========================================================
-   BASE RESET + A11Y
-========================================================= */
+/* ======================================================================
+   Base Reset & Typography
+   ====================================================================== */
 @layer base {
-  html {
-    @apply antialiased h-full;
-  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html { @apply antialiased; font-feature-settings:"ss01","ss02","cv01","cv02"; text-rendering: optimizeLegibility; }
+  body { @apply min-h-screen bg-white text-slate-900; }
+  .dark body { @apply bg-slate-950 text-slate-100; }
+  img,video,canvas,svg{display:block;max-width:100%;}
+  button{font:inherit;}
 
-  body {
-    @apply h-full bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100;
-  }
-
-  /* Headings */
-  h1 {
-    @apply text-4xl font-bold tracking-tight;
-  }
-
-  h2 {
-    @apply text-3xl font-semibold tracking-tight;
-  }
-
-  h3 {
-    @apply text-2xl font-medium;
-  }
-
-  h4 {
-    @apply text-xl font-medium;
-  }
-
-  p {
-    @apply leading-relaxed;
-  }
-
-  /* Focus ring (accessible) */
-  :focus-visible {
-    @apply outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-950;
-  }
-
-  /* Disabled + ARIA */
-  [aria-disabled="true"] {
-    @apply opacity-50 pointer-events-none;
-  }
-
-  [aria-hidden="true"] {
-    @apply hidden;
-  }
-
-  /* Reduced motion */
-  @media (prefers-reduced-motion: reduce) {
-    * {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
-  }
+  h1{@apply text-3xl font-semibold tracking-tight leading-tight;}
+  h2{@apply text-2xl font-semibold tracking-tight leading-snug;}
+  h3{@apply text-xl font-medium leading-snug;}
+  h4{@apply text-lg font-medium;}
+  h5{@apply text-base font-medium;}
+  h6{@apply text-sm font-medium uppercase tracking-wide;}
+  p{@apply text-base leading-relaxed text-slate-700;}
+  .dark p{@apply text-slate-300;}
+  small{@apply text-sm text-slate-500;}
+  .dark small{@apply text-slate-400;}
+  strong{@apply font-semibold text-slate-900;}
+  .dark strong{@apply text-slate-100;}
+  a{@apply font-medium text-blue-600 underline-offset-4 hover:underline;}
+  .dark a{@apply text-blue-400;}
 }
 
-/* =========================================================
-   TYPOGRAPHY SCALE UTILITIES
-========================================================= */
+/* ======================================================================
+   Layout & Spacing
+   ====================================================================== */
 @layer utilities {
-  /* Fluid-ish but Tailwind-native sizes */
-  .text-xs  { @apply text-xs; }
-  .text-sm  { @apply text-sm; }
-  .text-md  { @apply text-base; }
-  .text-lg  { @apply text-lg; }
-  .text-xl  { @apply text-xl; }
-  .text-2xl { @apply text-2xl; }
-  .text-3xl { @apply text-3xl; }
-  .text-4xl { @apply text-4xl; }
-  .text-5xl { @apply text-5xl; }
-
-  /* Muted / secondary text */
-  .text-muted {
-    @apply text-slate-600 dark:text-slate-400;
-  }
-
-  /* Semantic text colors */
-  .text-success {
-    @apply text-emerald-600 dark:text-emerald-400;
-  }
-
-  .text-warning {
-    @apply text-amber-600 dark:text-amber-400;
-  }
-
-  .text-danger {
-    @apply text-red-600 dark:text-red-400;
-  }
-
-  .text-info {
-    @apply text-sky-600 dark:text-sky-400;
-  }
-
-  /* Truncation helpers */
-  .truncate-1 {
-    @apply truncate;
-  }
-
-  .truncate-2 {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .truncate-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
+  .container-app{@apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;}
+  .container-prose{@apply mx-auto w-full max-w-3xl px-4 sm:px-6;}
+  .section{@apply py-12 sm:py-16;}
+  .section-tight{@apply py-8 sm:py-10;}
+  .section-loose{@apply py-16 sm:py-24;}
+  .stack-xs>*+*{margin-top:.25rem;}
+  .stack-sm>*+*{margin-top:.5rem;}
+  .stack-md>*+*{margin-top:1rem;}
+  .stack-lg>*+*{margin-top:1.5rem;}
+  .stack-xl>*+*{margin-top:2.5rem;}
 }
 
-/* =========================================================
-   BUTTON SYSTEM
-========================================================= */
+/* ======================================================================
+   Surface & Card
+   ====================================================================== */
 @layer utilities {
-  /* Base button */
-  .btn {
-    @apply inline-flex items-center justify-center gap-2
-           rounded-md px-4 py-2
-           text-sm font-medium
-           transition
-           focus:outline-none focus-visible:ring-2
-           focus-visible:ring-offset-2
-           active:scale-[0.98]
-           disabled:opacity-50 disabled:pointer-events-none;
-  }
-
-  /* Sizes */
-  .btn-xs { @apply px-2 py-1 text-xs; }
-  .btn-sm { @apply px-3 py-1.5 text-sm; }
-  .btn-md { @apply px-4 py-2 text-sm; }
-  .btn-lg { @apply px-5 py-2.5 text-base; }
-
-  /* Primary */
-  .btn-primary {
-    @apply btn
-           bg-blue-600 text-white
-           hover:bg-blue-700
-           focus-visible:ring-blue-600
-           dark:bg-blue-500
-           dark:hover:bg-blue-400
-           dark:focus-visible:ring-blue-400;
-  }
-
-  /* Secondary */
-  .btn-secondary {
-    @apply btn
-           bg-slate-100 text-slate-900
-           hover:bg-slate-200
-           focus-visible:ring-slate-400
-           dark:bg-slate-800
-           dark:text-slate-100
-           dark:hover:bg-slate-700
-           dark:focus-visible:ring-slate-600;
-  }
-
-  /* Ghost */
-  .btn-ghost {
-    @apply btn
-           bg-transparent
-           text-slate-700
-           hover:bg-slate-100
-           focus-visible:ring-slate-400
-           dark:text-slate-300
-           dark:hover:bg-slate-800
-           dark:focus-visible:ring-slate-600;
-  }
-
-  /* Danger */
-  .btn-danger {
-    @apply btn
-           bg-red-600 text-white
-           hover:bg-red-700
-           focus-visible:ring-red-600
-           dark:bg-red-500
-           dark:hover:bg-red-400
-           dark:focus-visible:ring-red-400;
-  }
-
-  /* Loading state */
-  .btn-loading {
-    @apply relative pointer-events-none text-transparent;
-  }
-
-  .btn-loading::after {
-    content: "";
-    @apply absolute h-4 w-4 animate-spin rounded-full border-2
-           border-current border-t-transparent;
-  }
+  .surface{@apply rounded-lg border border-border bg-background text-foreground shadow-sm;}
+  .surface-elevated{@apply surface shadow-md;}
+  .surface-card{@apply surface p-4;}
+  .surface-hover{@apply transition-colors hover:bg-muted/60;}
+  .surface-clickable{@apply surface surface-hover cursor-pointer;}
+  .surface-glass{@apply rounded-xl border border-border/50 bg-background/80 backdrop-blur-md;}
+  .surface-inset{@apply rounded-lg border border-border bg-muted;}
+  .card-sm{@apply p-3;} .card-md{@apply p-4;} .card-lg{@apply p-6;}
+  .card-header{@apply mb-2 flex items-center justify-between gap-2 font-semibold text-lg;}
+  .card-title{@apply text-lg font-bold;} .card-subtitle{@apply text-sm text-muted-foreground;}
+  .card-content{@apply space-y-3 text-sm;} .card-footer{@apply mt-4 flex items-center justify-end gap-2;}
+  @container card(min-width:24rem){.card{@apply p-5;} .card-header{@apply text-xl;}}
+  @container card(min-width:32rem){.card{@apply p-6;} .card-content{@apply text-base;}}
+  @container card(min-width:40rem){.card{@apply grid grid-cols-[1fr_auto] gap-6 items-start;} .card-footer{@apply mt-0 flex-col;}}
 }
 
-
-
-/* =========================================================
-   CARDS & SURFACES
-========================================================= */
-@layer utilities {
-  /* Base surface */
-  .surface {
-    @apply rounded-lg border
-           bg-white text-slate-900
-           border-slate-200
-           dark:bg-slate-900
-           dark:text-slate-100
-           dark:border-slate-800;
-  }
-
-  /* Elevated surface */
-  .surface-elevated {
-    @apply surface shadow-sm
-           dark:shadow-none;
-  }
-
-  /* Card */
-  .card {
-    @apply surface p-4;
-  }
-
-  .card-sm { @apply p-3; }
-  .card-md { @apply p-4; }
-  .card-lg { @apply p-6; }
-
-  /* Card sections */
-  .card-header {
-    @apply mb-3 flex items-center justify-between gap-2;
-  }
-
-  .card-title {
-    @apply text-sm font-semibold;
-  }
-
-  .card-description {
-    @apply text-xs text-slate-500 dark:text-slate-400;
-  }
-
-  .card-content {
-    @apply space-y-3;
-  }
-
-  .card-footer {
-    @apply mt-4 flex items-center justify-end gap-2;
-  }
-}
-
-
-
-/* =========================================================
-   LAYOUT HELPERS
-========================================================= */
-@layer utilities {
-  .stack {
-    @apply flex flex-col gap-3;
-  }
-
-  .stack-sm { @apply gap-2; }
-  .stack-md { @apply gap-3; }
-  .stack-lg { @apply gap-5; }
-
-  .inline {
-    @apply flex items-center gap-2;
-  }
-
-  .center {
-    @apply flex items-center justify-center;
-  }
-
-  .grid-auto {
-    @apply grid gap-4;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  }
-
-  .divider {
-    @apply h-px w-full bg-slate-200 dark:bg-slate-800;
-  }
-}
-
-
-
-/* =========================================================
-   FORMS
-========================================================= */
-@layer utilities {
-  /* Form wrapper */
-  .form {
-    @apply space-y-4;
-  }
-
-  .form-group {
-    @apply space-y-1.5;
-  }
-
-  /* Labels */
-  .label {
-    @apply text-xs font-medium
-           text-slate-700
-           dark:text-slate-300;
-  }
-
-  /* Base input */
-  .input {
-    @apply w-full rounded-md border px-3 py-2 text-sm
-           bg-white text-slate-900
-           border-slate-300
-           placeholder:text-slate-400
-           focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2
-           dark:bg-slate-900 dark:text-slate-100
-           dark:border-slate-700
-           dark:placeholder:text-slate-500
-           dark:focus:ring-slate-100
-           dark:focus:ring-offset-slate-950;
-  }
-
-  /* Textarea */
-  .textarea {
-    @apply input resize-none min-h-[96px];
-  }
-
-  /* Select */
-  .select {
-    @apply input pr-8;
-  }
-
-  /* Checkbox & radio */
-  .check {
-    @apply h-4 w-4 rounded border
-           border-slate-300 text-slate-900
-           focus:ring-2 focus:ring-slate-900 focus:ring-offset-2
-           dark:border-slate-700 dark:text-slate-100
-           dark:focus:ring-slate-100 dark:focus:ring-offset-slate-950;
-  }
-
-  /* Disabled */
-  .input:disabled,
-  .textarea:disabled,
-  .select:disabled {
-    @apply opacity-50 cursor-not-allowed;
-  }
-
-  /* Error state */
-  .input-error {
-    @apply border-red-500 focus:ring-red-500
-           dark:border-red-500 dark:focus:ring-red-500;
-  }
-
-  .error-text {
-    @apply text-xs text-red-600 dark:text-red-500;
-  }
-
-  /* Help text */
-  .help-text {
-    @apply text-xs text-slate-500 dark:text-slate-400;
-  }
-}
-
-
-/* =========================================================
-   BUTTONS
-========================================================= */
-@layer utilities {
-  .btn {
-    @apply inline-flex items-center justify-center gap-2
-           rounded-md px-4 py-2 text-sm font-medium
-           transition-colors
-           focus:outline-none focus:ring-2 focus:ring-offset-2
-           disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-primary {
-    @apply btn
-           bg-slate-900 text-white
-           hover:bg-slate-800
-           focus:ring-slate-900 focus:ring-offset-white
-           dark:bg-slate-100 dark:text-slate-900
-           dark:hover:bg-slate-200
-           dark:focus:ring-slate-100 dark:focus:ring-offset-slate-950;
-  }
-
-  .btn-secondary {
-    @apply btn
-           bg-slate-100 text-slate-900
-           hover:bg-slate-200
-           focus:ring-slate-400 focus:ring-offset-white
-           dark:bg-slate-800 dark:text-slate-100
-           dark:hover:bg-slate-700
-           dark:focus:ring-slate-600 dark:focus:ring-offset-slate-950;
-  }
-
-  .btn-ghost {
-    @apply btn
-           bg-transparent
-           hover:bg-slate-100
-           dark:hover:bg-slate-800;
-  }
-
-  .btn-danger {
-    @apply btn
-           bg-red-600 text-white
-           hover:bg-red-700
-           focus:ring-red-600;
-  }
-}
-
-/* =========================================================
-   TABLES
-========================================================= */
+/* ======================================================================
+   Buttons
+   ====================================================================== */
 @layer components {
-  .table-wrapper {
-    @apply overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700;
-  }
-
-  table {
-    @apply w-full border-collapse text-sm;
-  }
-
-  thead {
-    @apply bg-slate-50 dark:bg-slate-800;
-  }
-
-  th, td {
-    @apply px-4 py-2 text-left border-b border-slate-200 dark:border-slate-700;
-  }
-
-  th {
-    @apply font-medium text-slate-700 dark:text-slate-300;
-  }
-
-  tr:hover {
-    @apply bg-slate-100 dark:bg-slate-900;
-  }
-
-  tbody tr:last-child td {
-    @apply border-b-0;
-  }
-
-  /* Zebra stripes optional */
-  tbody tr:nth-child(odd) {
-    @apply bg-white dark:bg-slate-900;
-  }
-  tbody tr:nth-child(even) {
-    @apply bg-slate-50 dark:bg-slate-800;
-  }
+  .btn{@apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;}
+  .btn-xs{@apply px-2 py-1 text-xs;} .btn-sm{@apply px-3 py-1.5 text-sm;} .btn-md{@apply px-4 py-2 text-sm;} .btn-lg{@apply px-5 py-2.5 text-base;}
+  .btn-primary{@apply btn bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus-visible:ring-blue-400;}
+  .btn-secondary{@apply btn bg-slate-100 text-slate-900 hover:bg-slate-200 focus-visible:ring-slate-400 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 dark:focus-visible:ring-slate-600;}
+  .btn-ghost{@apply btn bg-transparent text-slate-900 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-700;}
+  .btn-danger{@apply btn bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600 dark:bg-red-500 dark:hover:bg-red-600 dark:focus-visible:ring-red-400;}
+  .btn-loading{@apply relative text-transparent pointer-events-none;} .btn-loading::after{content:"";@apply absolute h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent;}
 }
 
-/* =========================================================
-   LISTS
-========================================================= */
-@layer utilities {
-  .list-reset {
-    @apply list-none m-0 p-0;
-  }
-
-  .list-disc {
-    @apply list-disc pl-5;
-  }
-
-  .list-decimal {
-    @apply list-decimal pl-5;
-  }
-
-  .list-item {
-    @apply py-1 text-slate-900 dark:text-slate-100;
-  }
-
-  /* Interactive list items */
-  .list-item-hover:hover {
-    @apply bg-slate-100 dark:bg-slate-800 rounded-md;
-  }
-
-  .list-item-selected {
-    @apply bg-slate-200 dark:bg-slate-700 rounded-md font-semibold;
-  }
-}
-
-
-
-/* =========================================================
-   CARDS
-========================================================= */
+/* ======================================================================
+   Forms
+   ====================================================================== */
 @layer components {
-  .card {
-    @apply rounded-lg shadow-md p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700;
-    container-type: inline-size;
-    container-name: card;
-  }
-
-  .card-header {
-    @apply font-semibold text-lg mb-2 text-slate-900 dark:text-slate-100;
-  }
-
-  .card-body {
-    @apply text-sm text-slate-700 dark:text-slate-300;
-  }
-
-  .card-footer {
-    @apply mt-4 flex justify-end gap-2;
-  }
+  .form{@apply space-y-4;} .form-group{@apply flex flex-col gap-1.5;} .form-label{@apply font-medium text-slate-900 dark:text-slate-100 text-sm;}
+  .form-help{@apply text-xs text-slate-500 dark:text-slate-400;} .form-error{@apply text-xs text-red-600 dark:text-red-400;}
+  .input{@apply w-full px-3 py-2 rounded-md border border-slate-300 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-slate-800 dark:text-slate-100 dark:border-slate-600 dark:placeholder-slate-500 dark:focus:ring-blue-400;}
+  .textarea{@apply input resize-none min-h-[96px];} .select{@apply input pr-8;}
+  .checkbox,.radio{@apply w-4 h-4 rounded border border-slate-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-slate-600 dark:text-blue-400 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-900;}
+  .radio{@apply rounded-full;}
+  .input:disabled,.textarea:disabled,.select:disabled{@apply opacity-50 cursor-not-allowed;}
+  .input-error{@apply border-red-500 focus:ring-red-500 dark:border-red-500 dark:focus:ring-red-400;}
+  .error-text{@apply text-xs text-red-600 dark:text-red-400;} .help-text{@apply text-xs text-slate-500 dark:text-slate-400;}
 }
 
-/* =========================================================
-   CARD CONTAINER QUERIES
-========================================================= */
-@container card (min-width: 24rem) {
-  .card {
-    @apply p-5;
-  }
-  .card-header {
-    @apply text-xl;
-  }
-}
-
-@container card (min-width: 32rem) {
-  .card {
-    @apply p-6;
-  }
-  .card-body {
-    @apply text-base;
-  }
-  .card-footer {
-    @apply justify-end;
-  }
-}
-
-@container card (min-width: 40rem) {
-  .card {
-    @apply grid grid-cols-[1fr_auto] gap-6 items-start;
-  }
-  .card-footer {
-    @apply mt-0 flex-col;
-  }
-}
-
-/* =========================================================
-   LAYOUT HELPERS
-========================================================= */
-@layer utilities {
-  .container-page {
-    @apply mx-auto max-w-7xl px-4;
-  }
-
-  .card-grid {
-    @apply grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
-  }
-
-  .flex-center {
-    @apply flex items-center justify-center;
-  }
-
-  .flex-between {
-    @apply flex items-center justify-between;
-  }
-
-  .stack {
-    @apply flex flex-col gap-2;
-  }
-
-  .stack-lg {
-    @apply flex flex-col gap-4;
-  }
-
-  .stack-xl {
-    @apply flex flex-col gap-6;
-  }
-}
-
-
-/* =========================================================
-   BUTTONS
-========================================================= */
-@layer utilities {
-  .btn {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition
-           focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 active:scale-[0.98];
-  }
-
-  .btn-primary {
-    @apply btn bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600;
-  }
-
-  .btn-secondary {
-    @apply btn bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600;
-  }
-
-  .btn-ghost {
-    @apply btn bg-transparent text-slate-900 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-700;
-  }
-
-  .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600;
-  }
-}
-
-/* =========================================================
-   INPUTS & TEXTAREAS
-========================================================= */
+/* ======================================================================
+   Modals, Drawers, Popovers & Skeletons
+   ====================================================================== */
 @layer components {
-  .input {
-    @apply w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100
-           placeholder-slate-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400;
-  }
-
-  .textarea {
-    @apply w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100
-           placeholder-slate-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 resize-none;
-  }
+  .modal,.drawer,.popover{@apply fixed inset-0 z-50 flex items-center justify-center;}
+  .modal-backdrop,.drawer-backdrop,.popover-backdrop{@apply fixed inset-0 bg-black/40;}
+  .modal-content,.drawer-content,.popover-content{@apply bg-background text-foreground rounded-lg shadow-lg p-6 max-w-full max-h-full overflow-auto;}
+  .drawer{@apply top-0 right-0 h-full w-80 sm:w-96 flex-col items-stretch justify-start;}
+  .drawer-content{@apply h-full;}
+  .popover{@apply relative;}
+  .popover-content{@apply absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50;}
+  .tooltip{@apply absolute px-2 py-1 text-xs rounded bg-slate-900 text-white shadow-sm;}
+  .skeleton{@apply animate-pulse bg-slate-200 dark:bg-slate-700 rounded;} 
+  .skeleton-text{@apply h-4 mb-2 w-full rounded;} .skeleton-title{@apply h-6 mb-3 w-3/4 rounded;} .skeleton-circle{@apply w-10 h-10 rounded-full;}
 }
 
-/* =========================================================
-   SELECTS & CHECKBOXES
-========================================================= */
+/* ======================================================================
+   Tabs, Accordions, Toasts, Alerts
+   ====================================================================== */
 @layer components {
-  .select {
-    @apply w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100
-           focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400;
-  }
-
-  .checkbox {
-    @apply w-4 h-4 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400;
-  }
-
-  .radio {
-    @apply w-4 h-4 rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400;
-  }
+  .tabs{@apply flex border-b border-border;} .tab{@apply px-4 py-2 cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300 border-b-2 border-transparent transition-colors;} 
+  .tab-active{@apply border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400;} .tab-content{@apply mt-4;}
+  .accordion{@apply border border-border rounded-lg overflow-hidden;} .accordion-item+.accordion-item{@apply mt-2;} 
+  .accordion-header{@apply flex justify-between items-center px-4 py-3 cursor-pointer bg-muted hover:bg-muted/80 transition-colors font-medium;}
+  .accordion-body{@apply px-4 py-3 hidden;} .accordion-open .accordion-body{@apply block;}
+  .toast-container{@apply fixed bottom-4 right-4 flex flex-col gap-2 z-50;}
+  .toast{@apply min-w-[250px] max-w-sm rounded-lg shadow-lg px-4 py-3 bg-background text-foreground border border-border flex items-start justify-between gap-2;}
+  .toast-success{@apply border-green-500 bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300;}
+  .toast-error{@apply border-red-500 bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300;}
+  .toast-warning{@apply border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300;}
+  .toast-info{@apply border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300;}
+  .toast-close{@apply ml-auto cursor-pointer text-sm font-semibold hover:text-slate-600 dark:hover:text-slate-200;}
+  .alert{@apply rounded-lg border px-4 py-3 flex items-start gap-3 text-sm;}
+  .alert-success{@apply border-green-500 bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300;}
+  .alert-error{@apply border-red-500 bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300;}
+  .alert-warning{@apply border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300;}
+  .alert-info{@apply border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300;}
+  .alert-icon{@apply flex-shrink-0 mt-0.5;} .alert-content{@apply flex-1;} .alert-close{@apply ml-4 cursor-pointer font-semibold hover:text-slate-600 dark:hover:text-slate-200;}
 }
 
-/* =========================================================
-   FORM GROUPS & LABELS
-========================================================= */
-@layer utilities {
-  .form-group {
-    @apply flex flex-col gap-1 mb-4;
-  }
-
-  .form-label {
-    @apply font-medium text-slate-900 dark:text-slate-100;
-  }
-
-  .form-help {
-    @apply text-xs text-slate-500 dark:text-slate-400;
-  }
-
-  .form-error {
-    @apply text-xs text-red-600 dark:text-red-400;
-  }
-}
-
-/* =========================================================
-   MODALS
-========================================================= */
+/* ======================================================================
+   Dropdowns, Context Menus, Badges
+   ====================================================================== */
 @layer components {
-  .modal-backdrop {
-    @apply fixed inset-0 bg-black/50 z-40;
-  }
-
-  .modal {
-    @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100
-           rounded-lg shadow-lg w-full max-w-lg p-6 z-50 outline-none;
-  }
-
-  .modal-header {
-    @apply flex items-center justify-between mb-4;
-  }
-
-  .modal-title {
-    @apply text-lg font-semibold;
-  }
-
-  .modal-close {
-    @apply btn-ghost p-1 rounded-full;
-  }
-
-  .modal-body {
-    @apply mb-4;
-  }
-
-  .modal-footer {
-    @apply flex justify-end gap-2;
-  }
+  .dropdown{@apply relative inline-block;} .dropdown-btn{@apply inline-flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-background border border-border text-foreground cursor-pointer hover:bg-muted transition-colors;}
+  .dropdown-menu{@apply absolute left-0 mt-2 w-48 rounded-lg shadow-lg border border-border bg-background text-foreground divide-y divide-border hidden z-50;}
+  .dropdown-item{@apply px-4 py-2 text-sm cursor-pointer hover:bg-muted rounded-md;} .dropdown-open .dropdown-menu{@apply block;}
+  .context-menu{@apply absolute rounded-lg shadow-lg border border-border bg-background text-foreground divide-y divide-border hidden z-50;}
+  .context-menu-item{@apply px-4 py-2 text-sm cursor-pointer hover:bg-muted rounded-md;} .context-menu-open{@apply block;}
+  .badge{@apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-slate-700 dark:bg-muted/80 dark:text-slate-200;}
+  .badge-success{@apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300;} .badge-error{@apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300;}
+  .badge-warning{@apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300;} .badge-info{@apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300;}
 }
 
-/* =========================================================
-   SHEETS / DRAWERS
-========================================================= */
+/* ======================================================================
+   Progress, Stepper, FAB
+   ====================================================================== */
 @layer components {
-  .sheet-backdrop {
-    @apply fixed inset-0 bg-black/40 z-40;
-  }
-
-  .sheet {
-    @apply fixed bottom-0 left-0 w-full bg-white dark:bg-slate-800 rounded-t-lg shadow-xl z-50 p-4 outline-none;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-
-  .sheet-header {
-    @apply flex items-center justify-between mb-2;
-  }
-
-  .sheet-title {
-    @apply text-md font-semibold;
-  }
-
-  .sheet-close {
-    @apply btn-ghost p-1 rounded-full;
-  }
-
-  .sheet-body {
-    @apply text-sm text-slate-700 dark:text-slate-200;
-  }
-
-  .sheet-footer {
-    @apply flex justify-end gap-2 mt-4;
-  }
+  .progress{@apply w-full h-3 bg-muted rounded-full overflow-hidden;} .progress-bar{@apply h-full bg-blue-600 transition-all duration-300 ease-in-out;} .dark .progress-bar{@apply bg-blue-400;}
+  .stepper{@apply flex items-center justify-between w-full;} .step{@apply flex-1 flex items-center relative;} .step-circle{@apply h-8 w-8 rounded-full flex items-center justify-center border-2 border-muted bg-background text-sm font-medium;}
+  .step-active .step-circle{@apply border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400;} .step-line{@apply absolute top-1/2 left-1/2 w-full h-0.5 bg-muted -z-10;} .step-active .step-line{@apply bg-blue-600 dark:bg-blue-400;}
+  .fab{@apply fixed bottom-6 right-6 inline-flex items-center justify-center h-14 w-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 active:scale-95 transition-transform cursor-pointer z-50;} 
+  .fab-icon{@apply w-6 h-6;} .dark .fab{@apply bg-blue-500 hover:bg-blue-600;}
 }
-
-/* =========================================================
-   OVERLAY HELPERS
-========================================================= */
-@layer utilities {
-  .overlay-center {
-    @apply fixed inset-0 flex items-center justify-center z-50;
-  }
-
-  .overlay-scrollable {
-    @apply overflow-y-auto max-h-full;
-  }
-}
-
-
-/* =========================================================
-   TOAST SYSTEM
-========================================================= */
-@layer components {
-  .toast-viewport {
-    @apply fixed bottom-4 right-4 z-50 flex flex-col gap-2;
-  }
-
-  .toast {
-    @apply pointer-events-auto rounded-md shadow-lg px-4 py-3 flex items-start gap-3 text-sm bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700;
-    transition: transform 0.15s ease-out, opacity 0.15s ease-out;
-  }
-
-  .toast-success {
-    @apply border-l-4 border-green-500;
-  }
-
-  .toast-danger {
-    @apply border-l-4 border-red-500;
-  }
-
-  .toast-warning {
-    @apply border-l-4 border-yellow-400;
-  }
-
-  .toast-info {
-    @apply border-l-4 border-blue-500;
-  }
-
-  .toast-title {
-    @apply font-medium;
-  }
-
-  .toast-description {
-    @apply text-xs text-gray-600 dark:text-gray-300;
-  }
-
-  /* Swipe dismiss states */
-  .toast[data-swipe="move"] {
-    transform: translateX(var(--swipe-x));
-  }
-
-  .toast[data-swipe="end"] {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
-
-/* =========================================================
-   LOADING SKELETONS / PLACEHOLDERS
-========================================================= */
-@layer components {
-  .skeleton {
-    @apply animate-pulse bg-gray-200 dark:bg-slate-700 rounded;
-  }
-
-  .skeleton-text {
-    @apply h-4 w-full mb-2 rounded;
-  }
-
-  .skeleton-title {
-    @apply h-6 w-3/4 mb-3 rounded;
-  }
-
-  .skeleton-avatar {
-    @apply h-10 w-10 rounded-full;
-  }
-
-  .skeleton-card {
-    @apply p-4 rounded-lg shadow-sm bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700;
-  }
-
-  .skeleton-button {
-    @apply h-10 w-24 rounded-md bg-gray-300 dark:bg-slate-600;
-  }
-}
-
-/* =========================================================
-   TABLES (RESPONSIVE + CONTAINER QUERIES)
-========================================================= */
-@layer components {
-  .table-container {
-    @apply overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800;
-    container-type: inline-size;
-    container-name: table;
-  }
-
-  table {
-    @apply w-full border-collapse text-sm;
-  }
-
-  th, td {
-    @apply px-4 py-2 text-left border-b border-gray-200 dark:border-slate-700;
-  }
-
-  th {
-    @apply font-semibold bg-gray-50 dark:bg-slate-900;
-  }
-
-  tr:hover {
-    @apply bg-gray-100 dark:bg-slate-700;
-  }
-
-  /* Container query: adjust font size and padding for wider tables */
-  @container table (min-width: 32rem) {
-    th, td {
-      @apply px-6 py-3 text-base;
-    }
-  }
-
-  @container table (min-width: 48rem) {
-    th, td {
-      @apply px-8 py-4 text-lg;
-    }
-  }
-}
-
-
-/* =========================================================
-   MODALS & SHEETS
-========================================================= */
-@layer components {
-  /* Modal Overlay */
-  .modal-overlay {
-    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  }
-
-  .modal-overlay.open {
-    @apply opacity-100 pointer-events-auto;
-  }
-
-  /* Modal Content */
-  .modal-content {
-    @apply bg-white dark:bg-slate-800 rounded-lg shadow-lg max-w-lg w-full p-6;
-    transform: translateY(-20px);
-    transition: transform 0.3s ease, opacity 0.3s ease;
-    opacity: 0;
-  }
-
-  .modal-overlay.open .modal-content {
-    @apply opacity-100;
-    transform: translateY(0);
-  }
-
-  /* Sheet (Bottom Drawer) */
-  .sheet {
-    @apply fixed inset-x-0 bottom-0 bg-white dark:bg-slate-800 rounded-t-lg shadow-lg p-4 z-50;
-    max-height: 90vh;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
-    overflow-y: auto;
-  }
-
-  .sheet.open {
-    transform: translateY(0);
-  }
-
-  /* Sheet Handle */
-  .sheet-handle {
-    @apply w-12 h-1.5 bg-gray-300 dark:bg-slate-600 rounded-full mx-auto mb-3;
-  }
-
-  /* Modal & Sheet Header / Body / Footer */
-  .modal-header, .sheet-header {
-    @apply flex items-center justify-between mb-4;
-  }
-
-  .modal-body, .sheet-body {
-    @apply mb-4;
-  }
-
-  .modal-footer, .sheet-footer {
-    @apply flex justify-end gap-2;
-  }
-}
-
-
-/* =========================================================
-   LOADING SKELETONS / PLACEHOLDERS
-========================================================= */
-@layer components {
-  .skeleton {
-    @apply bg-gray-200 dark:bg-slate-700 rounded animate-pulse;
-  }
-
-  /* Variants */
-  .skeleton-text {
-    @apply h-4 mb-2;
-  }
-
-  .skeleton-title {
-    @apply h-6 mb-3 w-3/4;
-  }
-
-  .skeleton-avatar {
-    @apply rounded-full w-10 h-10;
-  }
-
-  .skeleton-card {
-    @apply p-4 rounded-lg shadow-sm bg-gray-100 dark:bg-slate-700;
-  }
-
-  .skeleton-line {
-    @apply h-3 mb-2 rounded w-full;
-  }
-
-  .skeleton-rect {
-    @apply rounded w-full h-24;
-  }
-}
-
-/* =========================================================
-   TABLES (RESPONSIVE + CONTAINER QUERIES)
-========================================================= */
-@layer components {
-  .table-container {
-    @apply overflow-x-auto w-full rounded-lg border border-gray-200 dark:border-slate-600;
-    container-type: inline-size;
-    container-name: table;
-  }
-
-  table {
-    @apply w-full text-left border-collapse;
-  }
-
-  thead {
-    @apply bg-gray-50 dark:bg-slate-800;
-  }
-
-  th, td {
-    @apply px-4 py-2 border-b border-gray-200 dark:border-slate-600;
-  }
-
-  th {
-    @apply font-medium text-gray-700 dark:text-slate-300;
-  }
-
-  td {
-    @apply text-gray-600 dark:text-slate-400;
-  }
-
-  /* Hover and stripe variants */
-  tr:nth-child(even) {
-    @apply bg-gray-50 dark:bg-slate-700/50;
-  }
-
-  tr:hover {
-    @apply bg-gray-100 dark:bg-slate-600/40;
-  }
-
-  /* ---------- Container Queries for Table ---------- */
-  @container table (min-width: 24rem) {
-    th, td {
-      @apply px-3 py-2 text-sm;
-    }
-  }
-
-  @container table (min-width: 40rem) {
-    th, td {
-      @apply px-4 py-3 text-base;
-    }
-  }
-}
-
-
-
-/* =========================================================
-   MODAL & SHEET PRIMITIVES
-========================================================= */
-@layer components {
-  /* Modal Overlay */
-  .modal-overlay {
-    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center;
-  }
-
-  /* Modal Content */
-  .modal {
-    @apply bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 max-w-lg w-full relative;
-    outline: none;
-  }
-
-  /* Modal Header */
-  .modal-header {
-    @apply flex justify-between items-center mb-4;
-  }
-
-  .modal-title {
-    @apply text-xl font-semibold text-gray-900 dark:text-gray-100;
-  }
-
-  .modal-close {
-    @apply text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 cursor-pointer;
-  }
-
-  /* Modal Body */
-  .modal-body {
-    @apply text-gray-700 dark:text-gray-300 text-sm leading-relaxed;
-  }
-
-  /* Modal Footer / Actions */
-  .modal-footer {
-    @apply mt-4 flex justify-end gap-2;
-  }
-
-  /* Sheet (Bottom Panel) */
-  .sheet {
-    @apply fixed inset-x-0 bottom-0 bg-white dark:bg-slate-800 rounded-t-lg shadow-lg p-4 z-50;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-
-  .sheet-header {
-    @apply flex justify-between items-center mb-2;
-  }
-
-  .sheet-title {
-    @apply text-lg font-medium text-gray-900 dark:text-gray-100;
-  }
-
-  .sheet-close {
-    @apply text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 cursor-pointer;
-  }
-
-  .sheet-body {
-    @apply text-gray-700 dark:text-gray-300 text-sm leading-relaxed;
-  }
-
-  .sheet-footer {
-    @apply mt-4 flex justify-end gap-2;
-  }
-}
-
-
-/* =========================================================
-   LOADING SKELETONS / PLACEHOLDERS
-========================================================= */
-@layer components {
-  .skeleton {
-    @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded-md;
-  }
-
-  /* Variants */
-  .skeleton-text {
-    @apply h-4 w-full mb-2;
-  }
-
-  .skeleton-heading {
-    @apply h-6 w-3/4 mb-3;
-  }
-
-  .skeleton-avatar {
-    @apply rounded-full h-10 w-10;
-  }
-
-  .skeleton-button {
-    @apply h-10 w-24 rounded-md;
-  }
-
-  .skeleton-card {
-    @apply p-4 rounded-lg shadow-sm bg-gray-100 dark:bg-gray-800;
-  }
-
-  /* Container query example */
-  @container (min-width: 24rem) {
-    .skeleton-card {
-      @apply p-5;
-    }
-  }
-
-  @container (min-width: 32rem) {
-    .skeleton-card {
-      @apply p-6;
-    }
-  }
-}
-
-
-
