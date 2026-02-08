@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@reference "tailwindcss";
+
 /* =========================================================
    BASE RESET + A11Y
 ========================================================= */
