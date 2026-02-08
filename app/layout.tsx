@@ -1,11 +1,20 @@
-import "@/app/globals.css";
-import { Providers } from "@/providers/ThemeProvider";
+import "./globals.css";
+import type { Metadata } from "next";
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export const metadata: Metadata = {
+  title: "App",
+  description: "Next.js + Tailwind v4",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html suppressHydrationWarning>
-      <body>
-        <Providers>{children}</Providers>
+    <html lang="en" className="h-full" suppressHydrationWarning>
+      <body className="h-full">
+        {children}
       </body>
     </html>
   );

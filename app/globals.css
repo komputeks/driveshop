@@ -3,124 +3,53 @@
 @tailwind utilities;
 
 /* =========================================================
-   THEME PRESETS
+   BASE RESET + A11Y
 ========================================================= */
 @layer base {
-  /* Default / Branding */
-  .theme-default { 
-    --color-primary: 37 99 235;
-    --color-secondary: 79 70 229;
-    --color-success: 22 163 74;
-    --color-warning: 234 179 8;
-    --color-danger: 220 38 38;
-    --color-info: 14 165 233;
+  html {
+    @apply antialiased h-full;
   }
 
-  .theme-ocean {
-    --color-primary: 14 165 233;
-    --color-secondary: 2 132 199;
-    --color-success: 6 182 212;
-    --color-warning: 252 211 77;
-    --color-danger: 248 113 113;
-    --color-info: 56 189 248;
+  body {
+    @apply h-full bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100;
   }
 
-  .theme-sunset {
-    --color-primary: 249 115 22;
-    --color-secondary: 239 68 68;
-    --color-success: 234 179 8;
-    --color-warning: 245 158 11;
-    --color-danger: 220 38 38;
-    --color-info: 251 146 60;
+  /* Headings */
+  h1 {
+    @apply text-4xl font-bold tracking-tight;
   }
 
-  .theme-forest {
-    --color-primary: 22 163 74;
-    --color-secondary: 21 128 61;
-    --color-success: 34 197 94;
-    --color-warning: 202 138 4;
-    --color-danger: 220 38 38;
-    --color-info: 74 222 128;
+  h2 {
+    @apply text-3xl font-semibold tracking-tight;
   }
 
-  .theme-slate {
-    --color-primary: 71 85 105;
-    --color-secondary: 100 116 139;
-    --color-success: 22 163 74;
-    --color-warning: 234 179 8;
-    --color-danger: 220 38 38;
-    --color-info: 56 189 248;
+  h3 {
+    @apply text-2xl font-medium;
   }
-}
 
-/* =========================================================
-   CORE THEME TOKENS (v4)
-========================================================= */
-@theme {
-  --color-background: 255 255 255;
-  --color-foreground: 15 23 42;
-  --color-card: 255 255 255;
-  --color-border: 203 213 225;
-  --color-muted: 71 85 105;
-
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
-
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 10px rgb(0 0 0 / 0.08);
-  --shadow-lg: 0 12px 24px rgb(0 0 0 / 0.12);
-
-  --text-xs: clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem);
-  --text-sm: clamp(0.875rem, 0.8rem + 0.3vw, 1rem);
-  --text-md: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
-  --text-lg: clamp(1.125rem, 1rem + 0.8vw, 1.375rem);
-  --text-xl: clamp(1.375rem, 1.2rem + 1.2vw, 1.75rem);
-  --text-2xl: clamp(1.75rem, 1.5rem + 1.8vw, 2.25rem);
-  --text-3xl: clamp(2rem, 1.7rem + 2vw, 2.5rem);
-  --text-4xl: clamp(2.5rem, 2rem + 2.5vw, 3rem);
-  --text-5xl: clamp(3rem, 2.5rem + 3vw, 3.5rem);
-}
-
-/* =========================================================
-   DARK MODE
-========================================================= */
-@layer base {
-  .dark {
-    --color-background: 15 23 42;
-    --color-foreground: 226 232 240;
-
-    --color-card: 30 41 59;
-    --color-border: 71 85 105;
-    --color-muted: 148 163 184;
-
-    --color-success: 34 197 94;
-    --color-warning: 250 204 21;
-    --color-danger: 248 113 113;
-    --color-info: 56 189 248;
+  h4 {
+    @apply text-xl font-medium;
   }
-}
 
-/* =========================================================
-   BASE + A11Y
-========================================================= */
-@layer base {
-  html { @apply antialiased; }
-  body { background-color: rgb(var(--color-background)); color: rgb(var(--color-foreground)); }
+  p {
+    @apply leading-relaxed;
+  }
 
-  h1 { font-size: var(--text-4xl); @apply font-bold tracking-tight; }
-  h2 { font-size: var(--text-3xl); @apply font-semibold tracking-tight; }
-  h3 { font-size: var(--text-2xl); @apply font-medium; }
-
+  /* Focus ring (accessible) */
   :focus-visible {
-    outline: 2px solid rgb(var(--color-primary));
-    outline-offset: 2px;
+    @apply outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-slate-950;
   }
 
-  [aria-disabled="true"] { opacity: 0.5; pointer-events: none; }
-  [aria-hidden="true"] { display: none; }
+  /* Disabled + ARIA */
+  [aria-disabled="true"] {
+    @apply opacity-50 pointer-events-none;
+  }
 
+  [aria-hidden="true"] {
+    @apply hidden;
+  }
+
+  /* Reduced motion */
   @media (prefers-reduced-motion: reduce) {
     * {
       animation-duration: 0.01ms !important;
@@ -132,819 +61,1058 @@
 }
 
 /* =========================================================
-   TYPOGRAPHY SCALE SYSTEM
+   TYPOGRAPHY SCALE UTILITIES
 ========================================================= */
 @layer utilities {
-  .text-xs  { font-size: var(--text-xs); }
-  .text-sm  { font-size: var(--text-sm); }
-  .text-md  { font-size: var(--text-md); }
-  .text-lg  { font-size: var(--text-lg); }
-  .text-xl  { font-size: var(--text-xl); }
-  .text-2xl { font-size: var(--text-2xl); }
-  .text-3xl { font-size: var(--text-3xl); }
-  .text-4xl { font-size: var(--text-4xl); }
-  .text-5xl { font-size: var(--text-5xl); }
+  /* Fluid-ish but Tailwind-native sizes */
+  .text-xs  { @apply text-xs; }
+  .text-sm  { @apply text-sm; }
+  .text-md  { @apply text-base; }
+  .text-lg  { @apply text-lg; }
+  .text-xl  { @apply text-xl; }
+  .text-2xl { @apply text-2xl; }
+  .text-3xl { @apply text-3xl; }
+  .text-4xl { @apply text-4xl; }
+  .text-5xl { @apply text-5xl; }
 
-  .muted { color: rgb(var(--color-muted)); }
-  .text-success { color: rgb(var(--color-success)); }
-  .text-warning { color: rgb(var(--color-warning)); }
-  .text-danger { color: rgb(var(--color-danger)); }
-  .text-info { color: rgb(var(--color-info)); }
+  /* Muted / secondary text */
+  .text-muted {
+    @apply text-slate-600 dark:text-slate-400;
+  }
+
+  /* Semantic text colors */
+  .text-success {
+    @apply text-emerald-600 dark:text-emerald-400;
+  }
+
+  .text-warning {
+    @apply text-amber-600 dark:text-amber-400;
+  }
+
+  .text-danger {
+    @apply text-red-600 dark:text-red-400;
+  }
+
+  .text-info {
+    @apply text-sky-600 dark:text-sky-400;
+  }
+
+  /* Truncation helpers */
+  .truncate-1 {
+    @apply truncate;
+  }
+
+  .truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .truncate-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 }
 
 /* =========================================================
-   BUTTONS (v4 utility)
+   BUTTON SYSTEM
 ========================================================= */
 @layer utilities {
-  @utility btn { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2; }
-  @utility btn-primary { @apply btn text-white; background-color: rgb(var(--color-primary)); }
-  @utility btn-ghost   { @apply btn bg-transparent; color: rgb(var(--color-foreground)); }
-  @utility btn-danger  { @apply btn text-white; background-color: rgb(var(--color-danger)); }
-  @utility btn-success { @apply btn text-white; background-color: rgb(var(--color-success)); }
+  /* Base button */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2
+           rounded-md px-4 py-2
+           text-sm font-medium
+           transition
+           focus:outline-none focus-visible:ring-2
+           focus-visible:ring-offset-2
+           active:scale-[0.98]
+           disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  /* Sizes */
+  .btn-xs { @apply px-2 py-1 text-xs; }
+  .btn-sm { @apply px-3 py-1.5 text-sm; }
+  .btn-md { @apply px-4 py-2 text-sm; }
+  .btn-lg { @apply px-5 py-2.5 text-base; }
+
+  /* Primary */
+  .btn-primary {
+    @apply btn
+           bg-blue-600 text-white
+           hover:bg-blue-700
+           focus-visible:ring-blue-600
+           dark:bg-blue-500
+           dark:hover:bg-blue-400
+           dark:focus-visible:ring-blue-400;
+  }
+
+  /* Secondary */
+  .btn-secondary {
+    @apply btn
+           bg-slate-100 text-slate-900
+           hover:bg-slate-200
+           focus-visible:ring-slate-400
+           dark:bg-slate-800
+           dark:text-slate-100
+           dark:hover:bg-slate-700
+           dark:focus-visible:ring-slate-600;
+  }
+
+  /* Ghost */
+  .btn-ghost {
+    @apply btn
+           bg-transparent
+           text-slate-700
+           hover:bg-slate-100
+           focus-visible:ring-slate-400
+           dark:text-slate-300
+           dark:hover:bg-slate-800
+           dark:focus-visible:ring-slate-600;
+  }
+
+  /* Danger */
+  .btn-danger {
+    @apply btn
+           bg-red-600 text-white
+           hover:bg-red-700
+           focus-visible:ring-red-600
+           dark:bg-red-500
+           dark:hover:bg-red-400
+           dark:focus-visible:ring-red-400;
+  }
+
+  /* Loading state */
+  .btn-loading {
+    @apply relative pointer-events-none text-transparent;
+  }
+
+  .btn-loading::after {
+    content: "";
+    @apply absolute h-4 w-4 animate-spin rounded-full border-2
+           border-current border-t-transparent;
+  }
+}
+
+
+
+/* =========================================================
+   CARDS & SURFACES
+========================================================= */
+@layer utilities {
+  /* Base surface */
+  .surface {
+    @apply rounded-lg border
+           bg-white text-slate-900
+           border-slate-200
+           dark:bg-slate-900
+           dark:text-slate-100
+           dark:border-slate-800;
+  }
+
+  /* Elevated surface */
+  .surface-elevated {
+    @apply surface shadow-sm
+           dark:shadow-none;
+  }
+
+  /* Card */
+  .card {
+    @apply surface p-4;
+  }
+
+  .card-sm { @apply p-3; }
+  .card-md { @apply p-4; }
+  .card-lg { @apply p-6; }
+
+  /* Card sections */
+  .card-header {
+    @apply mb-3 flex items-center justify-between gap-2;
+  }
+
+  .card-title {
+    @apply text-sm font-semibold;
+  }
+
+  .card-description {
+    @apply text-xs text-slate-500 dark:text-slate-400;
+  }
+
+  .card-content {
+    @apply space-y-3;
+  }
+
+  .card-footer {
+    @apply mt-4 flex items-center justify-end gap-2;
+  }
+}
+
+
+
+/* =========================================================
+   LAYOUT HELPERS
+========================================================= */
+@layer utilities {
+  .stack {
+    @apply flex flex-col gap-3;
+  }
+
+  .stack-sm { @apply gap-2; }
+  .stack-md { @apply gap-3; }
+  .stack-lg { @apply gap-5; }
+
+  .inline {
+    @apply flex items-center gap-2;
+  }
+
+  .center {
+    @apply flex items-center justify-center;
+  }
+
+  .grid-auto {
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+
+  .divider {
+    @apply h-px w-full bg-slate-200 dark:bg-slate-800;
+  }
+}
+
+
+
+/* =========================================================
+   FORMS
+========================================================= */
+@layer utilities {
+  /* Form wrapper */
+  .form {
+    @apply space-y-4;
+  }
+
+  .form-group {
+    @apply space-y-1.5;
+  }
+
+  /* Labels */
+  .label {
+    @apply text-xs font-medium
+           text-slate-700
+           dark:text-slate-300;
+  }
+
+  /* Base input */
+  .input {
+    @apply w-full rounded-md border px-3 py-2 text-sm
+           bg-white text-slate-900
+           border-slate-300
+           placeholder:text-slate-400
+           focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2
+           dark:bg-slate-900 dark:text-slate-100
+           dark:border-slate-700
+           dark:placeholder:text-slate-500
+           dark:focus:ring-slate-100
+           dark:focus:ring-offset-slate-950;
+  }
+
+  /* Textarea */
+  .textarea {
+    @apply input resize-none min-h-[96px];
+  }
+
+  /* Select */
+  .select {
+    @apply input pr-8;
+  }
+
+  /* Checkbox & radio */
+  .check {
+    @apply h-4 w-4 rounded border
+           border-slate-300 text-slate-900
+           focus:ring-2 focus:ring-slate-900 focus:ring-offset-2
+           dark:border-slate-700 dark:text-slate-100
+           dark:focus:ring-slate-100 dark:focus:ring-offset-slate-950;
+  }
+
+  /* Disabled */
+  .input:disabled,
+  .textarea:disabled,
+  .select:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+
+  /* Error state */
+  .input-error {
+    @apply border-red-500 focus:ring-red-500
+           dark:border-red-500 dark:focus:ring-red-500;
+  }
+
+  .error-text {
+    @apply text-xs text-red-600 dark:text-red-500;
+  }
+
+  /* Help text */
+  .help-text {
+    @apply text-xs text-slate-500 dark:text-slate-400;
+  }
+}
+
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+@layer utilities {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2
+           rounded-md px-4 py-2 text-sm font-medium
+           transition-colors
+           focus:outline-none focus:ring-2 focus:ring-offset-2
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn
+           bg-slate-900 text-white
+           hover:bg-slate-800
+           focus:ring-slate-900 focus:ring-offset-white
+           dark:bg-slate-100 dark:text-slate-900
+           dark:hover:bg-slate-200
+           dark:focus:ring-slate-100 dark:focus:ring-offset-slate-950;
+  }
+
+  .btn-secondary {
+    @apply btn
+           bg-slate-100 text-slate-900
+           hover:bg-slate-200
+           focus:ring-slate-400 focus:ring-offset-white
+           dark:bg-slate-800 dark:text-slate-100
+           dark:hover:bg-slate-700
+           dark:focus:ring-slate-600 dark:focus:ring-offset-slate-950;
+  }
+
+  .btn-ghost {
+    @apply btn
+           bg-transparent
+           hover:bg-slate-100
+           dark:hover:bg-slate-800;
+  }
+
+  .btn-danger {
+    @apply btn
+           bg-red-600 text-white
+           hover:bg-red-700
+           focus:ring-red-600;
+  }
 }
 
 /* =========================================================
-   CARD PRIMITIVES (CONTAINER QUERIES)
+   TABLES
 ========================================================= */
 @layer components {
-  .card { @apply rounded-lg shadow-sm p-4; background-color: rgb(var(--color-card)); border: 1px solid rgb(var(--color-border)); container-type: inline-size; container-name: card; }
-  .card-title { font-size: var(--text-md); @apply font-semibold tracking-tight; }
-  .card-body { @apply text-sm leading-relaxed; color: rgb(var(--color-muted)); }
-  .card-actions { @apply mt-4 flex gap-2; }
+  .table-wrapper {
+    @apply overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700;
+  }
 
-  @container card (min-width: 24rem) {
-    .card { @apply p-5; }
-    .card-title { font-size: var(--text-lg); }
+  table {
+    @apply w-full border-collapse text-sm;
   }
-  @container card (min-width: 32rem) {
-    .card { @apply p-6; }
-    .card-body { @apply text-md; }
-    .card-actions { @apply justify-end; }
-  }
-  @container card (min-width: 40rem) {
-    .card { @apply grid grid-cols-[1fr_auto] gap-6 items-start; }
-    .card-actions { @apply mt-0 flex-col; }
-  }
-}
 
-/* =========================================================
-   INPUTS & FORMS
-========================================================= */
-@layer components {
-  .input { @apply w-full rounded-md px-3 py-2 text-sm outline-none; background-color: rgb(var(--color-background)); border: 1px solid rgb(var(--color-border)); }
-  .textarea { @apply w-full rounded-md px-3 py-2 text-sm outline-none resize-y; background-color: rgb(var(--color-background)); border: 1px solid rgb(var(--color-border)); }
-  .select { @apply w-full rounded-md px-3 py-2 text-sm outline-none bg-white border border-gray-300; }
-  .label { @apply block text-sm font-medium mb-1; }
-}
-
-/* =========================================================
-   TABLES (Container Queries)
-========================================================= */
-@layer components {
-  .table-container { @apply overflow-x-auto w-full; container-type: inline-size; container-name: table; }
-  table { @apply w-full border-collapse text-sm; }
-  th, td { @apply border px-3 py-2 text-left; }
-  th { @apply font-semibold bg-gray-50; }
-  @container table (min-width: 32rem) {
-    th { @apply px-4 py-3; }
-    td { @apply px-4 py-3; }
+  thead {
+    @apply bg-slate-50 dark:bg-slate-800;
   }
-  @container table (min-width: 48rem) {
-    th, td { @apply text-md; }
+
+  th, td {
+    @apply px-4 py-2 text-left border-b border-slate-200 dark:border-slate-700;
+  }
+
+  th {
+    @apply font-medium text-slate-700 dark:text-slate-300;
+  }
+
+  tr:hover {
+    @apply bg-slate-100 dark:bg-slate-900;
+  }
+
+  tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  /* Zebra stripes optional */
+  tbody tr:nth-child(odd) {
+    @apply bg-white dark:bg-slate-900;
+  }
+  tbody tr:nth-child(even) {
+    @apply bg-slate-50 dark:bg-slate-800;
   }
 }
 
 /* =========================================================
-   MODALS & SHEETS (PRIMITIVES)
+   LISTS
+========================================================= */
+@layer utilities {
+  .list-reset {
+    @apply list-none m-0 p-0;
+  }
+
+  .list-disc {
+    @apply list-disc pl-5;
+  }
+
+  .list-decimal {
+    @apply list-decimal pl-5;
+  }
+
+  .list-item {
+    @apply py-1 text-slate-900 dark:text-slate-100;
+  }
+
+  /* Interactive list items */
+  .list-item-hover:hover {
+    @apply bg-slate-100 dark:bg-slate-800 rounded-md;
+  }
+
+  .list-item-selected {
+    @apply bg-slate-200 dark:bg-slate-700 rounded-md font-semibold;
+  }
+}
+
+
+
+/* =========================================================
+   CARDS
 ========================================================= */
 @layer components {
-  .modal-backdrop { @apply fixed inset-0 bg-black/50 z-40; }
-  .modal { @apply fixed inset-0 z-50 flex items-center justify-center p-4; }
-  .modal-content { @apply bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-lg; }
-  .sheet { @apply fixed inset-x-0 bottom-0 z-50 bg-white dark:bg-gray-800 rounded-t-lg shadow-lg p-4 max-h-[90vh]; }
-  .sheet-header { @apply flex justify-between items-center mb-4; }
-  .sheet-body { @apply overflow-y-auto max-h-[70vh]; }
-  .sheet-footer { @apply mt-4 flex justify-end gap-2; }
+  .card {
+    @apply rounded-lg shadow-md p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700;
+    container-type: inline-size;
+    container-name: card;
+  }
+
+  .card-header {
+    @apply font-semibold text-lg mb-2 text-slate-900 dark:text-slate-100;
+  }
+
+  .card-body {
+    @apply text-sm text-slate-700 dark:text-slate-300;
+  }
+
+  .card-footer {
+    @apply mt-4 flex justify-end gap-2;
+  }
 }
 
 /* =========================================================
-   TOAST SYSTEM
+   CARD CONTAINER QUERIES
 ========================================================= */
-@layer components {
-  .toast-viewport { @apply fixed bottom-4 right-4 z-50 flex flex-col gap-2; container-type: inline-size; container-name: toast; }
-  .toast { @apply pointer-events-auto rounded-md shadow-lg px-4 py-3 flex items-start gap-3 text-sm; background-color: rgb(var(--color-card)); border: 1px solid rgb(var(--color-border)); touch-action: pan-y; }
-  .toast-success { border-left: 4px solid rgb(var(--color-success)); }
-  .toast-danger  { border-left: 4px solid rgb(var(--color-danger)); }
-  .toast-title { @apply font-medium; }
-  .toast-description { @apply text-xs text-muted; }
-  .toast[data-swipe="move"] { transform: translateX(var(--swipe-x)); }
-  .toast[data-swipe="end"] { transition: transform 150ms ease-out; transform: translateX(100%); }
+@container card (min-width: 24rem) {
+  .card {
+    @apply p-5;
+  }
+  .card-header {
+    @apply text-xl;
+  }
+}
+
+@container card (min-width: 32rem) {
+  .card {
+    @apply p-6;
+  }
+  .card-body {
+    @apply text-base;
+  }
+  .card-footer {
+    @apply justify-end;
+  }
+}
+
+@container card (min-width: 40rem) {
+  .card {
+    @apply grid grid-cols-[1fr_auto] gap-6 items-start;
+  }
+  .card-footer {
+    @apply mt-0 flex-col;
+  }
 }
 
 /* =========================================================
    LAYOUT HELPERS
 ========================================================= */
 @layer utilities {
-  .container-page { @apply mx-auto max-w-7xl px-4; }
-  .card-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); }
-  .stack { @apply flex flex-col gap-2; }
-  .stack-inline { @apply flex flex-row gap-2; }
-  .divider { @apply border-t border-gray-200 dark:border-gray-700 my-4; }
+  .container-page {
+    @apply mx-auto max-w-7xl px-4;
+  }
+
+  .card-grid {
+    @apply grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4;
+  }
+
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+
+  .flex-between {
+    @apply flex items-center justify-between;
+  }
+
+  .stack {
+    @apply flex flex-col gap-2;
+  }
+
+  .stack-lg {
+    @apply flex flex-col gap-4;
+  }
+
+  .stack-xl {
+    @apply flex flex-col gap-6;
+  }
 }
 
+
 /* =========================================================
-   BADGE / PILL VARIANTS
+   BUTTONS
 ========================================================= */
 @layer utilities {
-  .badge { @apply inline-block px-2 py-1 rounded-full text-xs font-semibold; }
-  .badge-primary   { background-color: rgb(var(--color-primary)); color: white; }
-  .badge-secondary { background-color: rgb(var(--color-secondary)); color: white; }
-  .badge-success   { background-color: rgb(var(--color-success)); color: white; }
-  .badge-warning   { background-color: rgb(var(--color-warning)); color: black; }
-  .badge-danger    { background-color: rgb(var(--color-danger)); color: white; }
-  .badge-info      { background-color: rgb(var(--color-info)); color: white; }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition
+           focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 active:scale-[0.98];
+  }
+
+  .btn-primary {
+    @apply btn bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600;
+  }
+
+  .btn-secondary {
+    @apply btn bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600;
+  }
+
+  .btn-ghost {
+    @apply btn bg-transparent text-slate-900 hover:bg-slate-100 dark:text-slate-100 dark:hover:bg-slate-700;
+  }
+
+  .btn-danger {
+    @apply btn bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600;
+  }
 }
 
 /* =========================================================
-   ALERTS / NOTIFICATIONS
+   INPUTS & TEXTAREAS
 ========================================================= */
 @layer components {
-  .alert { @apply p-4 rounded-md shadow-sm flex items-start gap-3 text-sm; border: 1px solid rgb(var(--color-border)); background-color: rgb(var(--color-card)); }
-  .alert-success { border-left: 4px solid rgb(var(--color-success)); }
-  .alert-danger  { border-left: 4px solid rgb(var(--color-danger)); }
-  .alert-warning { border-left: 4px solid rgb(var(--color-warning)); }
-  .alert-info    { border-left: 4px solid rgb(var(--color-info)); }
-  .alert-title { @apply font-medium; }
-  .alert-description { @apply text-xs text-muted; }
+  .input {
+    @apply w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100
+           placeholder-slate-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400;
+  }
+
+  .textarea {
+    @apply w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100
+           placeholder-slate-400 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 resize-none;
+  }
 }
 
 /* =========================================================
-   BADGE ICONS / TOOLTIP VARIANTS
+   SELECTS & CHECKBOXES
+========================================================= */
+@layer components {
+  .select {
+    @apply w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100
+           focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400;
+  }
+
+  .checkbox {
+    @apply w-4 h-4 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400;
+  }
+
+  .radio {
+    @apply w-4 h-4 rounded-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400;
+  }
+}
+
+/* =========================================================
+   FORM GROUPS & LABELS
 ========================================================= */
 @layer utilities {
-  .tooltip { @apply relative group cursor-help; }
-  .tooltip-content { @apply absolute z-50 hidden bg-gray-700 text-white text-xs rounded px-2 py-1 group-hover:block; }
+  .form-group {
+    @apply flex flex-col gap-1 mb-4;
+  }
+
+  .form-label {
+    @apply font-medium text-slate-900 dark:text-slate-100;
+  }
+
+  .form-help {
+    @apply text-xs text-slate-500 dark:text-slate-400;
+  }
+
+  .form-error {
+    @apply text-xs text-red-600 dark:text-red-400;
+  }
 }
 
 /* =========================================================
-   PROGRESS & SLIDER
+   MODALS
 ========================================================= */
 @layer components {
-  .progress { @apply w-full h-2 bg-gray-200 rounded-full overflow-hidden; }
-  .progress-bar { @apply h-2 rounded-full bg-primary; width: var(--progress); }
-  .slider { @apply w-full h-2 bg-gray-200 rounded-full; }
-  .slider-thumb { @apply w-4 h-4 bg-primary rounded-full -mt-1 cursor-pointer; }
+  .modal-backdrop {
+    @apply fixed inset-0 bg-black/50 z-40;
+  }
+
+  .modal {
+    @apply fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100
+           rounded-lg shadow-lg w-full max-w-lg p-6 z-50 outline-none;
+  }
+
+  .modal-header {
+    @apply flex items-center justify-between mb-4;
+  }
+
+  .modal-title {
+    @apply text-lg font-semibold;
+  }
+
+  .modal-close {
+    @apply btn-ghost p-1 rounded-full;
+  }
+
+  .modal-body {
+    @apply mb-4;
+  }
+
+  .modal-footer {
+    @apply flex justify-end gap-2;
+  }
 }
 
 /* =========================================================
-   SPINNER / LOADING
+   SHEETS / DRAWERS
 ========================================================= */
 @layer components {
-  .spinner { @apply border-4 border-gray-200 border-t-primary rounded-full w-6 h-6 animate-spin; }
+  .sheet-backdrop {
+    @apply fixed inset-0 bg-black/40 z-40;
+  }
+
+  .sheet {
+    @apply fixed bottom-0 left-0 w-full bg-white dark:bg-slate-800 rounded-t-lg shadow-xl z-50 p-4 outline-none;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .sheet-header {
+    @apply flex items-center justify-between mb-2;
+  }
+
+  .sheet-title {
+    @apply text-md font-semibold;
+  }
+
+  .sheet-close {
+    @apply btn-ghost p-1 rounded-full;
+  }
+
+  .sheet-body {
+    @apply text-sm text-slate-700 dark:text-slate-200;
+  }
+
+  .sheet-footer {
+    @apply flex justify-end gap-2 mt-4;
+  }
 }
 
 /* =========================================================
-   AVATAR / USER ELEMENTS
-========================================================= */
-@layer components {
-  .avatar { @apply rounded-full overflow-hidden w-10 h-10; }
-  .avatar-lg { @apply w-16 h-16; }
-  .avatar-online { @apply ring-2 ring-success; }
-}
-
-/* =========================================================
-   BADGES / LABELS SYSTEM
+   OVERLAY HELPERS
 ========================================================= */
 @layer utilities {
-  .label { @apply text-xs font-medium text-muted mb-1 block; }
+  .overlay-center {
+    @apply fixed inset-0 flex items-center justify-center z-50;
+  }
+
+  .overlay-scrollable {
+    @apply overflow-y-auto max-h-full;
+  }
 }
 
+
 /* =========================================================
-   DIV / BOX VARIANTS
+   TOAST SYSTEM
 ========================================================= */
 @layer components {
-  .box { @apply rounded-lg p-4 border border-gray-200 dark:border-gray-700 bg-card shadow-sm; }
-  .box-title { @apply font-semibold mb-2; }
-  .box-body { @apply text-sm text-muted; }
+  .toast-viewport {
+    @apply fixed bottom-4 right-4 z-50 flex flex-col gap-2;
+  }
+
+  .toast {
+    @apply pointer-events-auto rounded-md shadow-lg px-4 py-3 flex items-start gap-3 text-sm bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700;
+    transition: transform 0.15s ease-out, opacity 0.15s ease-out;
+  }
+
+  .toast-success {
+    @apply border-l-4 border-green-500;
+  }
+
+  .toast-danger {
+    @apply border-l-4 border-red-500;
+  }
+
+  .toast-warning {
+    @apply border-l-4 border-yellow-400;
+  }
+
+  .toast-info {
+    @apply border-l-4 border-blue-500;
+  }
+
+  .toast-title {
+    @apply font-medium;
+  }
+
+  .toast-description {
+    @apply text-xs text-gray-600 dark:text-gray-300;
+  }
+
+  /* Swipe dismiss states */
+  .toast[data-swipe="move"] {
+    transform: translateX(var(--swipe-x));
+  }
+
+  .toast[data-swipe="end"] {
+    transform: translateX(100%);
+    opacity: 0;
+  }
 }
 
+
 /* =========================================================
-   TABS COMPONENT
+   LOADING SKELETONS / PLACEHOLDERS
 ========================================================= */
 @layer components {
-  .tabs { @apply flex border-b border-gray-200 dark:border-gray-700; }
-  .tab { @apply px-4 py-2 cursor-pointer text-sm font-medium transition-colors; }
-  .tab-active { @apply border-b-2 border-primary text-primary; }
-  .tab-panel { @apply hidden p-4; }
-  .tab-panel-active { @apply block; }
-}
-
-/* =========================================================
-   ACCORDION
-========================================================= */
-@layer components {
-  .accordion { @apply border border-gray-200 dark:border-gray-700 rounded-md divide-y divide-gray-200 dark:divide-gray-700; }
-  .accordion-item { @apply w-full; }
-  .accordion-header { @apply cursor-pointer px-4 py-2 font-medium text-sm flex justify-between items-center; }
-  .accordion-content { @apply hidden px-4 py-2 text-sm text-muted; }
-  .accordion-content-open { @apply block; }
-}
-
-/* =========================================================
-   POPOVER
-========================================================= */
-@layer components {
-  .popover { @apply relative inline-block; }
-  .popover-trigger { @apply cursor-pointer; }
-  .popover-content { @apply absolute z-50 hidden bg-card border border-gray-200 dark:border-gray-700 shadow-lg rounded-md p-3 w-64; }
-  .popover-content-show { @apply block; }
-}
-
-/* =========================================================
-   TIMELINE
-========================================================= */
-@layer components {
-  .timeline { @apply relative border-l-2 border-gray-200 dark:border-gray-700 ml-4 pl-4; }
-  .timeline-item { @apply relative mb-6; }
-  .timeline-item::before { content:""; @apply absolute -left-3 w-3 h-3 rounded-full bg-primary top-1; }
-  .timeline-content { @apply text-sm text-muted pl-2; }
-}
-
-/* =========================================================
-   BREADCRUMBS
-========================================================= */
-@layer components {
-  .breadcrumb { @apply flex items-center text-sm text-muted gap-2; }
-  .breadcrumb-item { @apply hover:text-primary transition-colors; }
-  .breadcrumb-separator { @apply select-none; }
-}
-
-/* =========================================================
-   FILE UPLOAD
-========================================================= */
-@layer components {
-  .file-upload { @apply flex flex-col gap-2 border-2 border-dashed border-gray-300 dark:border-gray-600 p-4 rounded-md cursor-pointer; }
-  .file-upload:hover { @apply border-primary; }
-  .file-upload-input { @apply hidden; }
-  .file-upload-label { @apply text-sm text-muted; }
-}
-
-/* =========================================================
-   DROPDOWN / MENU
-========================================================= */
-@layer components {
-  .dropdown { @apply relative inline-block; }
-  .dropdown-trigger { @apply cursor-pointer; }
-  .dropdown-menu { @apply absolute z-50 hidden bg-card border border-gray-200 dark:border-gray-700 rounded-md shadow-lg py-2 w-48; }
-  .dropdown-menu-show { @apply block; }
-  .dropdown-item { @apply px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors; }
-}
-
-/* =========================================================
-   TOOLTIP EXTENSIONS
-========================================================= */
-@layer utilities {
-  .tooltip-top    { @apply bottom-full left-1/2 transform -translate-x-1/2 mb-2; }
-  .tooltip-right  { @apply left-full top-1/2 transform -translate-y-1/2 ml-2; }
-  .tooltip-bottom { @apply top-full left-1/2 transform -translate-x-1/2 mt-2; }
-  .tooltip-left   { @apply right-full top-1/2 transform -translate-y-1/2 mr-2; }
-}
-
-/* =========================================================
-   PAGINATION
-========================================================= */
-@layer components {
-  .pagination { @apply inline-flex items-center gap-2; }
-  .pagination-btn { @apply px-3 py-1 rounded-md border border-gray-200 dark:border-gray-700 text-sm hover:bg-gray-100 dark:hover:bg-gray-700; }
-  .pagination-btn-active { @apply bg-primary text-white border-primary; }
-}
-
-/* =========================================================
-   BADGE / LABEL VARIANTS (ADVANCED)
-========================================================= */
-@layer utilities {
-  .badge-outline { @apply border rounded-full px-2 py-1 text-xs font-semibold; border-current; }
-  .badge-pill { @apply rounded-full px-3 py-1 text-sm font-medium; }
-}
-
-/* =========================================================
-   AVATAR BADGE / STATUS
-========================================================= */
-@layer components {
-  .avatar-status { @apply relative; }
-  .avatar-status-dot { @apply absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-card; }
-  .avatar-status-online { @apply bg-success; }
-  .avatar-status-offline { @apply bg-muted; }
-  .avatar-status-away { @apply bg-warning; }
-}
-
-/* =========================================================
-   PROGRESS BARS
-========================================================= */
-@layer components {
-  .progress { @apply w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700; overflow-hidden; }
-  .progress-bar { @apply h-2 rounded-full bg-primary; width: var(--progress); }
-}
-
-/* =========================================================
-   SLIDERS
-========================================================= */
-@layer components {
-  .slider { @apply w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full relative; }
-  .slider-thumb { @apply absolute w-4 h-4 bg-primary rounded-full -mt-1 cursor-pointer; }
-}
-
-/* =========================================================
-   SPINNER / LOADER
-========================================================= */
-@layer components {
-  .spinner { @apply border-4 border-gray-200 border-t-primary rounded-full w-6 h-6 animate-spin; }
-}
-
-/* =========================================================
-   NOTIFICATIONS / ALERT EXTENSIONS
-========================================================= */
-@layer components {
-  .notification { @apply p-4 rounded-md shadow-sm flex items-start gap-3 text-sm bg-card border border-gray-200 dark:border-gray-700; }
-  .notification-success { border-left: 4px solid rgb(var(--color-success)); }
-  .notification-danger { border-left: 4px solid rgb(var(--color-danger)); }
-  .notification-warning { border-left: 4px solid rgb(var(--color-warning)); }
-  .notification-info { border-left: 4px solid rgb(var(--color-info)); }
-  .notification-title { @apply font-medium; }
-  .notification-description { @apply text-xs text-muted; }
-}
-
-/* =========================================================
-   AVATAR GROUPS
-========================================================= */
-@layer components {
-  .avatar-group { @apply flex -space-x-2; }
-}
-
-/* =========================================================
-   CHIPS / TAGS
-========================================================= */
-@layer utilities {
-  .chip { @apply inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700; }
-  .chip-primary { @apply bg-primary text-white; }
-  .chip-success { @apply bg-success text-white; }
-  .chip-warning { @apply bg-warning text-black; }
-  .chip-danger { @apply bg-danger text-white; }
-}
-
-/* =========================================================
-   DIV / BOX / PANEL
-========================================================= */
-@layer components {
-  .panel { @apply rounded-lg p-4 border border-gray-200 dark:border-gray-700 bg-card shadow-sm; }
-  .panel-title { @apply font-semibold mb-2; }
-  .panel-body { @apply text-sm text-muted; }
-}
-/* =========================================================
-   DRAWER / SLIDE-OVER
-========================================================= */
-@layer components {
-  .drawer-backdrop { @apply fixed inset-0 bg-black/30 z-40; }
-  .drawer { @apply fixed top-0 right-0 h-full w-80 bg-card shadow-lg z-50 transform translate-x-full transition-transform; }
-  .drawer-open { @apply translate-x-0; }
-  .drawer-header { @apply p-4 font-semibold border-b border-gray-200 dark:border-gray-700; }
-  .drawer-body { @apply p-4 overflow-y-auto; }
-  .drawer-footer { @apply p-4 border-t border-gray-200 dark:border-gray-700; }
-}
-
-/* =========================================================
-   SIDEBAR NAVIGATION
-========================================================= */
-@layer components {
-  .sidebar { @apply w-64 h-full bg-card shadow-lg flex flex-col; }
-  .sidebar-header { @apply p-4 font-bold text-lg border-b border-gray-200 dark:border-gray-700; }
-  .sidebar-nav { @apply flex flex-col flex-1 p-2 gap-1 overflow-y-auto; }
-  .sidebar-link { @apply px-4 py-2 rounded-md text-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors; }
-  .sidebar-link-active { @apply bg-primary text-white; }
-}
-
-/* =========================================================
-   TABBED LAYOUT
-========================================================= */
-@layer components {
-  .tabs-container { @apply flex flex-col; }
-  .tabs-header { @apply flex border-b border-gray-200 dark:border-gray-700; }
-  .tab-btn { @apply px-4 py-2 cursor-pointer text-sm font-medium transition-colors; }
-  .tab-btn-active { @apply border-b-2 border-primary text-primary; }
-  .tabs-content { @apply p-4; }
-}
-
-/* =========================================================
-   CALENDAR GRID
-========================================================= */
-@layer components {
-  .calendar { @apply grid grid-cols-7 gap-1 text-sm; }
-  .calendar-day { @apply p-2 rounded-md text-center cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors; }
-  .calendar-day-today { @apply bg-primary text-white; }
-  .calendar-day-selected { @apply bg-secondary text-white; }
-}
-
-/* =========================================================
-   DATA TABLE / GRID
-========================================================= */
-@layer components {
-  .table { @apply w-full border-collapse; }
-  .table th, .table td { @apply border border-gray-200 dark:border-gray-700 px-4 py-2 text-sm; }
-  .table th { @apply font-medium bg-gray-50 dark:bg-gray-800 text-left; }
-  .table-row-hover:hover { @apply bg-gray-100 dark:bg-gray-700; }
-  .table-striped tr:nth-child(even) { @apply bg-gray-50 dark:bg-gray-800; }
-}
-
-/* =========================================================
-   CARD VARIANTS
-========================================================= */
-@layer components {
-  .card-compact { @apply p-2 shadow-sm rounded-md border border-gray-200 dark:border-gray-700 bg-card; }
-  .card-featured { @apply p-6 shadow-lg rounded-xl border border-gray-200 dark:border-gray-700 bg-card; }
-  .card-bordered { @apply p-4 border-2 border-primary shadow-sm rounded-lg bg-card; }
-}
-
-/* =========================================================
-   BADGES / LABEL VARIANTS
-========================================================= */
-@layer utilities {
-  .badge { @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold; }
-  .badge-primary { @apply bg-primary text-white; }
-  .badge-secondary { @apply bg-secondary text-white; }
-  .badge-success { @apply bg-success text-white; }
-  .badge-warning { @apply bg-warning text-black; }
-  .badge-danger { @apply bg-danger text-white; }
-  .badge-info { @apply bg-info text-white; }
-}
-
-/* =========================================================
-   ALERT / NOTIFICATION VARIANTS
-========================================================= */
-@layer components {
-  .alert { @apply rounded-md p-4 shadow-sm flex items-start gap-3 text-sm bg-card border border-gray-200 dark:border-gray-700; }
-  .alert-success { border-left: 4px solid rgb(var(--color-success)); }
-  .alert-danger { border-left: 4px solid rgb(var(--color-danger)); }
-  .alert-warning { border-left: 4px solid rgb(var(--color-warning)); }
-  .alert-info { border-left: 4px solid rgb(var(--color-info)); }
-  .alert-title { @apply font-medium; }
-  .alert-description { @apply text-xs text-muted; }
-}
-
-/* =========================================================
-   MODAL PRIMITIVES
-========================================================= */
-@layer components {
-  .modal-backdrop { @apply fixed inset-0 bg-black/30 z-40; }
-  .modal { @apply fixed inset-1/2 -translate-x-1/2 -translate-y-1/2 bg-card rounded-lg shadow-lg z-50 max-w-lg w-full p-6; }
-  .modal-header { @apply font-semibold mb-4; }
-  .modal-body { @apply text-sm text-muted mb-4; }
-  .modal-footer { @apply flex justify-end gap-2; }
-  .modal-close { @apply absolute top-2 right-2 cursor-pointer; }
-}
-
-/* =========================================================
-   SHEET / BOTTOM DRAWER
-========================================================= */
-@layer components {
-  .sheet-backdrop { @apply fixed inset-0 bg-black/30 z-40; }
-  .sheet { @apply fixed bottom-0 left-0 w-full max-h-[80vh] bg-card rounded-t-xl shadow-lg z-50 transform translate-y-full transition-transform; }
-  .sheet-open { @apply translate-y-0; }
-  .sheet-header { @apply p-4 font-semibold border-b border-gray-200 dark:border-gray-700; }
-  .sheet-body { @apply p-4 overflow-y-auto; }
-  .sheet-footer { @apply p-4 border-t border-gray-200 dark:border-gray-700; }
-}
-
-/* =========================================================
-   AVATAR / PROFILE CARD
-========================================================= */
-@layer components {
-  .avatar { @apply w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700; }
-  .avatar-lg { @apply w-16 h-16; }
-  .avatar-xl { @apply w-24 h-24; }
-  .profile-card { @apply p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 bg-card; }
-  .profile-name { @apply font-semibold; }
-  .profile-role { @apply text-xs text-muted; }
-}
-
-/* =========================================================
-   TOOLBAR / ACTION BAR
-========================================================= */
-@layer components {
-  .toolbar { @apply flex items-center gap-2 p-2 bg-card border-b border-gray-200 dark:border-gray-700; }
-  .toolbar-btn { @apply btn text-sm; }
-}
-
-/* =========================================================
-   SWITCH / TOGGLE
-========================================================= */
-@layer components {
-  .switch { @apply relative inline-flex items-center cursor-pointer; width: 40px; height: 20px; }
-  .switch-input { @apply sr-only; }
-  .switch-slider { @apply absolute w-full h-full bg-gray-300 dark:bg-gray-600 rounded-full transition-colors; }
-  .switch-slider::before { content: ''; @apply absolute w-4 h-4 bg-white rounded-full left-0 top-1 transition-transform; }
-  .switch-input:checked + .switch-slider::before { transform: translateX(20px); }
-  .switch-input:checked + .switch-slider { @apply bg-primary; }
-}
-
-/* =========================================================
-   MULTILEVEL SIDEBAR / NAVIGATION
-========================================================= */
-@layer components {
-  .sidebar-group { @apply flex flex-col; }
-  .sidebar-group-title { @apply px-4 py-2 text-xs font-semibold text-muted uppercase; }
-  .sidebar-group-link { @apply px-4 py-2 rounded-md text-sm hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors; }
-  .sidebar-group-link-active { @apply bg-primary text-white; }
-  .sidebar-submenu { @apply ml-4 flex flex-col gap-1; }
-}
-
-/* =========================================================
-   MEGA MENU
-========================================================= */
-@layer components {
-  .mega-menu { @apply absolute left-0 top-full w-screen bg-card shadow-lg grid grid-cols-4 gap-4 p-6 z-50; }
-  .mega-menu-col { @apply flex flex-col gap-2; }
-  .mega-menu-title { @apply font-semibold text-sm mb-2; }
-  .mega-menu-link { @apply text-sm px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors; }
-}
-
-/* =========================================================
-   CHAT / MESSAGING UI
-========================================================= */
-@layer components {
-  .chat-container { @apply flex flex-col gap-2 max-h-[400px] overflow-y-auto p-4 bg-card border border-gray-200 dark:border-gray-700 rounded-lg; }
-  .chat-message { @apply flex gap-2 items-start; }
-  .chat-message-incoming { @apply justify-start; }
-  .chat-message-outgoing { @apply justify-end; }
-  .chat-avatar { @apply w-8 h-8 rounded-full; }
-  .chat-bubble { @apply max-w-xs px-3 py-2 rounded-lg text-sm; }
-  .chat-bubble-incoming { @apply bg-gray-100 dark:bg-gray-700; }
-  .chat-bubble-outgoing { @apply bg-primary text-white; }
-  .chat-timestamp { @apply text-xs text-muted mt-1; }
-}
-
-/* =========================================================
-   TIMELINE / ACTIVITY FEED
-========================================================= */
-@layer components {
-  .timeline { @apply relative border-l border-gray-200 dark:border-gray-700 pl-6; }
-  .timeline-event { @apply relative mb-6; }
-  .timeline-event::before { content: ''; @apply absolute w-3 h-3 bg-primary rounded-full left-[-0.4rem] top-2; }
-  .timeline-title { @apply font-semibold text-sm; }
-  .timeline-time { @apply text-xs text-muted; }
-  .timeline-content { @apply text-sm text-muted mt-1; }
-}
-
-/* =========================================================
-   KANBAN / BOARD UI
-========================================================= */
-@layer components {
-  .kanban-board { @apply flex gap-4 overflow-x-auto; }
-  .kanban-column { @apply w-64 flex-shrink-0 bg-card rounded-lg shadow p-2 flex flex-col gap-2; }
-  .kanban-column-title { @apply font-semibold text-sm; }
-  .kanban-card { @apply bg-card p-3 rounded-md shadow-sm cursor-pointer hover:shadow-md transition-shadow; }
-}
-
-/* =========================================================
-   FILE MANAGER / LIST
-========================================================= */
-@layer components {
-  .file-manager { @apply w-full border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden; }
-  .file-header { @apply bg-gray-50 dark:bg-gray-800 px-4 py-2 font-semibold text-sm; }
-  .file-row { @apply flex items-center gap-2 px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors; }
-  .file-name { @apply flex-1; }
-  .file-size { @apply text-xs text-muted; }
-  .file-icon { @apply w-5 h-5; }
-}
-
-/* =========================================================
-   TOOLTIP / HOVER HELP
-========================================================= */
-@layer components {
-  .tooltip { @apply absolute bg-card text-sm text-muted px-3 py-1 rounded shadow-lg z-50 opacity-0 pointer-events-none transition-opacity; }
-  .tooltip-show { @apply opacity-100 pointer-events-auto; }
-}
-
-/* =========================================================
-   MODAL VARIANTS
-========================================================= */
-@layer components {
-  .modal-lg { @apply max-w-3xl; }
-  .modal-sm { @apply max-w-md; }
-  .modal-xl { @apply max-w-5xl; }
-}
-
-/* =========================================================
-   TAB VARIANTS
-========================================================= */
-@layer components {
-  .tabs-pill .tab-btn { @apply rounded-full px-4 py-1; }
-  .tabs-pill .tab-btn-active { @apply bg-primary text-white; }
-}
-
-/* =========================================================
-   BADGES / PILL VARIANTS
-========================================================= */
-@layer utilities {
-  .badge-outline { @apply bg-transparent border border-current text-xs; }
-  .badge-pill { @apply rounded-full px-3 py-1 text-xs font-semibold; }
-}
-
-/* =========================================================
-   AVATAR / STATUS INDICATORS
-========================================================= */
-@layer components {
-  .avatar-online::after { content: ''; @apply absolute w-2 h-2 bg-success rounded-full bottom-0 right-0 border-2 border-card; }
-  .avatar-offline::after { content: ''; @apply absolute w-2 h-2 bg-muted rounded-full bottom-0 right-0 border-2 border-card; }
-}
-
-/* =========================================================
-   NOTIFICATION BANNER
-========================================================= */
-@layer components {
-  .banner { @apply w-full px-4 py-2 rounded shadow-sm text-sm flex items-center gap-2; }
-  .banner-success { @apply bg-success text-white; }
-  .banner-warning { @apply bg-warning text-black; }
-  .banner-danger { @apply bg-danger text-white; }
-  .banner-info { @apply bg-info text-white; }
-}
-
-/* =========================================================
-   FORM ELEMENT VARIANTS
-========================================================= */
-@layer components {
-  .select { @apply w-full rounded-md px-3 py-2 border border-gray-200 dark:border-gray-700 bg-card text-sm; }
-  .checkbox { @apply h-4 w-4 text-primary rounded border-gray-300 dark:border-gray-600; }
-  .radio { @apply h-4 w-4 text-primary border-gray-300 dark:border-gray-600; }
-}
-
-/* =========================================================
-   PROGRESS / LOADING
-========================================================= */
-@layer components {
-  .progress-bar { @apply w-full h-2 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden; }
-  .progress-fill { @apply h-full bg-primary transition-all; }
-}
-
-/* =========================================================
-   PAGINATION
-========================================================= */
-@layer components {
-  .pagination { @apply flex gap-1 items-center justify-center mt-4; }
-  .pagination-btn { @apply px-3 py-1 rounded-md border border-gray-200 dark:border-gray-700 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors; }
-  .pagination-btn-active { @apply bg-primary text-white border-none; }
-}
-
-/* =========================================================
-   SPINNER / LOADING INDICATOR
-========================================================= */
-@layer components {
-  .spinner { @apply w-6 h-6 border-4 border-gray-200 border-t-primary rounded-full animate-spin; }
-}
-
-/* =========================================================
-   EMPTY STATES
-========================================================= */
-@layer components {
-  .empty-state { @apply flex flex-col items-center justify-center text-center py-12 px-4 bg-card rounded-lg border border-gray-200 dark:border-gray-700; }
-  .empty-state-title { @apply font-semibold text-lg; }
-  .empty-state-description { @apply text-sm text-muted; }
-}
-
-/* =========================================================
-   FULL SKELETON SYSTEM (20+ COMPONENTS)
-========================================================= */
-@layer components {
-
-  /* ---------- BASIC SKELETON ---------- */
   .skeleton {
-    @apply bg-gray-200 dark:bg-gray-700 rounded animate-pulse;
+    @apply animate-pulse bg-gray-200 dark:bg-slate-700 rounded;
   }
 
-  /* ---------- TEXT SKELETONS ---------- */
-  .skeleton-text-xs  { @apply h-3 w-16 mb-2; }
-  .skeleton-text-sm  { @apply h-4 w-24 mb-2; }
-  .skeleton-text-md  { @apply h-4 w-32 mb-2; }
-  .skeleton-text-lg  { @apply h-5 w-48 mb-2; }
-  .skeleton-text-xl  { @apply h-6 w-64 mb-2; }
-
-  /* ---------- CIRCLES / AVATARS ---------- */
-  .skeleton-circle-sm  { @apply w-6 h-6 rounded-full; }
-  .skeleton-circle-md  { @apply w-10 h-10 rounded-full; }
-  .skeleton-circle-lg  { @apply w-16 h-16 rounded-full; }
-
-  /* ---------- RECTANGLES / CARDS ---------- */
-  .skeleton-rect-sm  { @apply h-16 w-full rounded-md; }
-  .skeleton-rect-md  { @apply h-24 w-full rounded-md; }
-  .skeleton-rect-lg  { @apply h-32 w-full rounded-lg; }
-
-  /* ---------- GRID / LIST ---------- */
-  .skeleton-grid {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  .skeleton-text {
+    @apply h-4 w-full mb-2 rounded;
   }
 
-  /* ---------- CARD CONTAINER QUERIES ---------- */
-  @container card (min-width: 24rem) {
-    .skeleton-rect-sm { @apply h-20; }
-    .skeleton-rect-md { @apply h-28; }
-    .skeleton-rect-lg { @apply h-36; }
-  }
-  @container card (min-width: 32rem) {
-    .skeleton-rect-sm { @apply h-24; }
-    .skeleton-rect-md { @apply h-32; }
-    .skeleton-rect-lg { @apply h-40; }
-  }
-  @container card (min-width: 40rem) {
-    .skeleton-rect-sm { @apply h-28; }
-    .skeleton-rect-md { @apply h-36; }
-    .skeleton-rect-lg { @apply h-48; }
+  .skeleton-title {
+    @apply h-6 w-3/4 mb-3 rounded;
   }
 
-  /* ---------- TABLE SKELETON ---------- */
-  .skeleton-table { @apply w-full border-collapse; }
-  .skeleton-table thead th { @apply skeleton h-6; }
-  .skeleton-table tbody td { @apply skeleton h-4 py-2; }
-
-  /* ---------- CHAT / MESSAGE ---------- */
-  .skeleton-chat { @apply flex items-start gap-3; }
-  .skeleton-chat-avatar { @apply skeleton-circle-md; }
-  .skeleton-chat-content { @apply flex-1 space-y-2; }
-  .skeleton-chat-line { @apply skeleton h-4 rounded-md w-full; }
-  .skeleton-chat-line.short { @apply w-3/5; }
-
-  /* ---------- MODAL / SHEET ---------- */
-  .skeleton-modal {
-    @apply bg-gray-100 dark:bg-gray-800 rounded-lg shadow-lg p-6 animate-pulse;
-  }
-  .skeleton-modal-header { @apply skeleton h-6 w-2/3 mb-4; }
-  .skeleton-modal-body { @apply skeleton-rect-md mb-4; }
-  .skeleton-modal-footer { @apply flex gap-2; }
-
-  /* ---------- LOADING TOASTS ---------- */
-  .toast-skeleton {
-    @apply skeleton px-4 py-3 rounded-md shadow-lg mb-2 w-64;
+  .skeleton-avatar {
+    @apply h-10 w-10 rounded-full;
   }
 
-  /* ---------- DASHBOARD STAT CARD ---------- */
-  .skeleton-stat {
-    @apply skeleton-rect-sm rounded-lg p-4;
-  }
-  .skeleton-stat-title { @apply skeleton-text-sm w-2/3; }
-  .skeleton-stat-value { @apply skeleton-text-xl w-1/2; }
-
-  /* ---------- KANBAN BOARD ---------- */
-  .skeleton-kanban-column { @apply skeleton-rect-lg p-3 rounded-md; }
-  .skeleton-kanban-card { @apply skeleton-rect-sm mb-2 rounded-md; }
-
-  /* ---------- ACCORDION / COLLAPSIBLE ---------- */
-  .skeleton-accordion-header { @apply skeleton-text-md w-full h-6 mb-1; }
-  .skeleton-accordion-content { @apply skeleton-rect-sm; }
-
-  /* ---------- FORM / INPUT ---------- */
-  .skeleton-input { @apply skeleton-rect-sm rounded-md w-full mb-2; }
-  .skeleton-textarea { @apply skeleton-rect-md rounded-md w-full; }
-
-  /* ---------- BUTTON SKELETON ---------- */
-  .skeleton-btn { @apply skeleton rounded-md px-4 py-2 inline-block w-24; }
-
-  /* ---------- BADGE / LABEL ---------- */
-  .skeleton-badge { @apply skeleton inline-block rounded-full px-2 py-1 w-12 h-6; }
-
-  /* ---------- LOADING AVATAR GRID ---------- */
-  .skeleton-avatar-grid {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fill, minmax(3rem, 1fr));
+  .skeleton-card {
+    @apply p-4 rounded-lg shadow-sm bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700;
   }
 
-  /* ---------- IMAGE / MEDIA ---------- */
-  .skeleton-img { @apply skeleton-rect-lg rounded-lg w-full; }
-
-  /* ---------- SIDEBAR ITEM ---------- */
-  .skeleton-sidebar-item { @apply skeleton h-8 w-full mb-2 rounded-md; }
-
-  /* ---------- NOTIFICATION / ALERT ---------- */
-  .skeleton-alert { @apply skeleton-rect-sm rounded-md p-3 mb-2; }
-
-  /* ---------- DARK MODE OVERRIDES ---------- */
-  .dark .skeleton,
-  .dark .skeleton-circle-sm,
-  .dark .skeleton-circle-md,
-  .dark .skeleton-circle-lg,
-  .dark .skeleton-rect-sm,
-  .dark .skeleton-rect-md,
-  .dark .skeleton-rect-lg,
-  .dark .skeleton-table th,
-  .dark .skeleton-table td,
-  .dark .skeleton-chat-line,
-  .dark .skeleton-modal,
-  .dark .toast-skeleton,
-  .dark .skeleton-btn,
-  .dark .skeleton-input,
-  .dark .skeleton-alert {
-    @apply bg-gray-700;
+  .skeleton-button {
+    @apply h-10 w-24 rounded-md bg-gray-300 dark:bg-slate-600;
   }
 }
+
+/* =========================================================
+   TABLES (RESPONSIVE + CONTAINER QUERIES)
+========================================================= */
+@layer components {
+  .table-container {
+    @apply overflow-x-auto rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800;
+    container-type: inline-size;
+    container-name: table;
+  }
+
+  table {
+    @apply w-full border-collapse text-sm;
+  }
+
+  th, td {
+    @apply px-4 py-2 text-left border-b border-gray-200 dark:border-slate-700;
+  }
+
+  th {
+    @apply font-semibold bg-gray-50 dark:bg-slate-900;
+  }
+
+  tr:hover {
+    @apply bg-gray-100 dark:bg-slate-700;
+  }
+
+  /* Container query: adjust font size and padding for wider tables */
+  @container table (min-width: 32rem) {
+    th, td {
+      @apply px-6 py-3 text-base;
+    }
+  }
+
+  @container table (min-width: 48rem) {
+    th, td {
+      @apply px-8 py-4 text-lg;
+    }
+  }
+}
+
+
+/* =========================================================
+   MODALS & SHEETS
+========================================================= */
+@layer components {
+  /* Modal Overlay */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .modal-overlay.open {
+    @apply opacity-100 pointer-events-auto;
+  }
+
+  /* Modal Content */
+  .modal-content {
+    @apply bg-white dark:bg-slate-800 rounded-lg shadow-lg max-w-lg w-full p-6;
+    transform: translateY(-20px);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0;
+  }
+
+  .modal-overlay.open .modal-content {
+    @apply opacity-100;
+    transform: translateY(0);
+  }
+
+  /* Sheet (Bottom Drawer) */
+  .sheet {
+    @apply fixed inset-x-0 bottom-0 bg-white dark:bg-slate-800 rounded-t-lg shadow-lg p-4 z-50;
+    max-height: 90vh;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+  }
+
+  .sheet.open {
+    transform: translateY(0);
+  }
+
+  /* Sheet Handle */
+  .sheet-handle {
+    @apply w-12 h-1.5 bg-gray-300 dark:bg-slate-600 rounded-full mx-auto mb-3;
+  }
+
+  /* Modal & Sheet Header / Body / Footer */
+  .modal-header, .sheet-header {
+    @apply flex items-center justify-between mb-4;
+  }
+
+  .modal-body, .sheet-body {
+    @apply mb-4;
+  }
+
+  .modal-footer, .sheet-footer {
+    @apply flex justify-end gap-2;
+  }
+}
+
+
+/* =========================================================
+   LOADING SKELETONS / PLACEHOLDERS
+========================================================= */
+@layer components {
+  .skeleton {
+    @apply bg-gray-200 dark:bg-slate-700 rounded animate-pulse;
+  }
+
+  /* Variants */
+  .skeleton-text {
+    @apply h-4 mb-2;
+  }
+
+  .skeleton-title {
+    @apply h-6 mb-3 w-3/4;
+  }
+
+  .skeleton-avatar {
+    @apply rounded-full w-10 h-10;
+  }
+
+  .skeleton-card {
+    @apply p-4 rounded-lg shadow-sm bg-gray-100 dark:bg-slate-700;
+  }
+
+  .skeleton-line {
+    @apply h-3 mb-2 rounded w-full;
+  }
+
+  .skeleton-rect {
+    @apply rounded w-full h-24;
+  }
+}
+
+/* =========================================================
+   TABLES (RESPONSIVE + CONTAINER QUERIES)
+========================================================= */
+@layer components {
+  .table-container {
+    @apply overflow-x-auto w-full rounded-lg border border-gray-200 dark:border-slate-600;
+    container-type: inline-size;
+    container-name: table;
+  }
+
+  table {
+    @apply w-full text-left border-collapse;
+  }
+
+  thead {
+    @apply bg-gray-50 dark:bg-slate-800;
+  }
+
+  th, td {
+    @apply px-4 py-2 border-b border-gray-200 dark:border-slate-600;
+  }
+
+  th {
+    @apply font-medium text-gray-700 dark:text-slate-300;
+  }
+
+  td {
+    @apply text-gray-600 dark:text-slate-400;
+  }
+
+  /* Hover and stripe variants */
+  tr:nth-child(even) {
+    @apply bg-gray-50 dark:bg-slate-700/50;
+  }
+
+  tr:hover {
+    @apply bg-gray-100 dark:bg-slate-600/40;
+  }
+
+  /* ---------- Container Queries for Table ---------- */
+  @container table (min-width: 24rem) {
+    th, td {
+      @apply px-3 py-2 text-sm;
+    }
+  }
+
+  @container table (min-width: 40rem) {
+    th, td {
+      @apply px-4 py-3 text-base;
+    }
+  }
+}
+
+
+
+/* =========================================================
+   MODAL & SHEET PRIMITIVES
+========================================================= */
+@layer components {
+  /* Modal Overlay */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center;
+  }
+
+  /* Modal Content */
+  .modal {
+    @apply bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 max-w-lg w-full relative;
+    outline: none;
+  }
+
+  /* Modal Header */
+  .modal-header {
+    @apply flex justify-between items-center mb-4;
+  }
+
+  .modal-title {
+    @apply text-xl font-semibold text-gray-900 dark:text-gray-100;
+  }
+
+  .modal-close {
+    @apply text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 cursor-pointer;
+  }
+
+  /* Modal Body */
+  .modal-body {
+    @apply text-gray-700 dark:text-gray-300 text-sm leading-relaxed;
+  }
+
+  /* Modal Footer / Actions */
+  .modal-footer {
+    @apply mt-4 flex justify-end gap-2;
+  }
+
+  /* Sheet (Bottom Panel) */
+  .sheet {
+    @apply fixed inset-x-0 bottom-0 bg-white dark:bg-slate-800 rounded-t-lg shadow-lg p-4 z-50;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .sheet-header {
+    @apply flex justify-between items-center mb-2;
+  }
+
+  .sheet-title {
+    @apply text-lg font-medium text-gray-900 dark:text-gray-100;
+  }
+
+  .sheet-close {
+    @apply text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-100 cursor-pointer;
+  }
+
+  .sheet-body {
+    @apply text-gray-700 dark:text-gray-300 text-sm leading-relaxed;
+  }
+
+  .sheet-footer {
+    @apply mt-4 flex justify-end gap-2;
+  }
+}
+
+
+/* =========================================================
+   LOADING SKELETONS / PLACEHOLDERS
+========================================================= */
+@layer components {
+  .skeleton {
+    @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded-md;
+  }
+
+  /* Variants */
+  .skeleton-text {
+    @apply h-4 w-full mb-2;
+  }
+
+  .skeleton-heading {
+    @apply h-6 w-3/4 mb-3;
+  }
+
+  .skeleton-avatar {
+    @apply rounded-full h-10 w-10;
+  }
+
+  .skeleton-button {
+    @apply h-10 w-24 rounded-md;
+  }
+
+  .skeleton-card {
+    @apply p-4 rounded-lg shadow-sm bg-gray-100 dark:bg-gray-800;
+  }
+
+  /* Container query example */
+  @container (min-width: 24rem) {
+    .skeleton-card {
+      @apply p-5;
+    }
+  }
+
+  @container (min-width: 32rem) {
+    .skeleton-card {
+      @apply p-6;
+    }
+  }
+}
+
 
 
