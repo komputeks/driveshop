@@ -5,31 +5,44 @@ import { ReactNode, useEffect, useRef } from "react";
 interface PopoverProps {
   isOpen: boolean;
   onClose: () => void;
-  anchorRef: React.RefObject<HTMLElement>;
+  anchorRef: React.RefObject<HTMLElement | null>;
   children: ReactNode;
 }
 
-export function Popover({ isOpen, onClose, anchorRef, children }: PopoverProps) {
-  const ref = useRef<HTMLDivElement>(null);
+export function Popover({
+  isOpen,
+  onClose,
+  anchorRef,
+  children,
+}: PopoverProps) {
+  const popoverRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    function onClick(e: MouseEvent) {
+    if (!isOpen) return;
+
+    function onMouseDown(e: MouseEvent) {
+      const target = e.target as Node;
+
       if (
-        ref.current &&
-        !ref.current.contains(e.target as Node) &&
-        !anchorRef.current?.contains(e.target as Node)
+        popoverRef.current &&
+        !popoverRef.current.contains(target) &&
+        anchorRef.current &&
+        !anchorRef.current.contains(target)
       ) {
         onClose();
       }
     }
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, [onClose, anchorRef]);
+
+    document.addEventListener("mousedown", onMouseDown);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+    };
+  }, [isOpen, onClose, anchorRef]);
 
   if (!isOpen) return null;
 
   return (
-    <div ref={ref} className="popover-content">
+    <div ref={popoverRef} className="popover-content">
       {children}
     </div>
   );
