@@ -50,36 +50,42 @@
 }
 
 /* ======================================================================
-   Surface & Card
+   Surface & Card — production safe
    ====================================================================== */
 @layer utilities {
+  /* Base surface */
   .surface {@apply rounded-lg border border-gray-200 bg-white text-slate-900 shadow-sm;}
-  .surface-elevated {@apply surface shadow-md;}
-  .surface-card {@apply surface p-4;}
-  .surface-hover {@apply surface transition-colors hover:bg-gray-100;}
-  .surface-clickable {@apply surface surface-hover cursor-pointer;}
+
+  /* Surface variants (flattened) */
+  .surface-elevated {@apply rounded-lg border border-gray-200 bg-white text-slate-900 shadow-md;}
+  .surface-card {@apply rounded-lg border border-gray-200 bg-white text-slate-900 shadow-sm p-4;}
+  .surface-hover {@apply rounded-lg border border-gray-200 bg-white text-slate-900 shadow-sm transition-colors hover:bg-gray-100;}
+  .surface-clickable {@apply rounded-lg border border-gray-200 bg-white text-slate-900 shadow-sm transition-colors hover:bg-gray-100 cursor-pointer;}
   .surface-glass {@apply rounded-xl border border-gray-200/50 bg-white/80 backdrop-blur-md;}
   .surface-inset {@apply rounded-lg border border-gray-200 bg-gray-100;}
 
+  /* Card padding sizes */
   .card-sm {@apply p-3;}
   .card-md {@apply p-4;}
   .card-lg {@apply p-6;}
 
+  /* Card sections */
   .card-header {@apply mb-2 flex items-center justify-between gap-2 font-semibold text-lg;}
   .card-title {@apply text-lg font-bold;}
   .card-subtitle {@apply text-sm text-gray-500;}
   .card-content {@apply space-y-3 text-sm;}
   .card-footer {@apply mt-4 flex items-center justify-end gap-2;}
 
-  @container card(min-width:24rem) {
+  /* Card responsive containers */
+  @container card (min-width:24rem) {
     .card {@apply p-5;}
     .card-header {@apply text-xl;}
   }
-  @container card(min-width:32rem) {
+  @container card (min-width:32rem) {
     .card {@apply p-6;}
     .card-content {@apply text-base;}
   }
-  @container card(min-width:40rem) {
+  @container card (min-width:40rem) {
     .card {@apply grid grid-cols-[1fr_auto] gap-6 items-start;}
     .card-footer {@apply mt-0 flex-col;}
   }
