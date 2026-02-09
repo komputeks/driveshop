@@ -11,11 +11,11 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   const user = session?.user;
   
+
+  return (
   window.onerror = function (msg, url, line, col, error) {
   alert(`Error: ${msg}\nLine: ${line}`);
 };
-
-  return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-white dark:bg-slate-950 shadow-md">
         <div className="container-app flex items-center justify-between h-16">
