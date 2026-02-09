@@ -38,10 +38,12 @@ export function Overlay({
 
   // Prevent background scroll
   useEffect(() => {
-    if (!isOpen) return;
-    document.body.style.overflow = "hidden";
-    return () => (document.body.style.overflow = "");
-  }, [isOpen]);
+  if (!isOpen) return;
+  document.body.style.overflow = "hidden";
+  return () => {
+    document.body.style.overflow = "";
+  };
+}, [isOpen]);
 
   if (!isOpen && !closing) return null;
 
