@@ -10,6 +10,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const { data: session, status } = useSession();
 
   const user = session?.user;
+  
+  window.onerror = function (msg, url, line, col, error) {
+  alert(`Error: ${msg}\nLine: ${line}`);
+};
 
   return (
     <div className="min-h-screen flex flex-col">
