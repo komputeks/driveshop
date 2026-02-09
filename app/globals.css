@@ -1,9 +1,10 @@
 /* ======================================================================
    GLOBALS — Tailwind CSS v4 (Clean / Production)
-   Modern UI: Buttons, Forms, Cards, Modals, Popovers, Drawers, Skeletons
    ====================================================================== */
 @reference "tailwindcss";
-@tailwind base; @tailwind components; @tailwind utilities;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* ======================================================================
    Base Reset & Typography
@@ -52,111 +53,156 @@
    Surface & Card
    ====================================================================== */
 @layer utilities {
-  .surface{@apply rounded-lg border border-gray-200 bg-white text-slate-900 shadow-sm;}
-  .surface-elevated{@apply surface shadow-md;}
-  .surface-card{@apply surface p-4;}
-  .surface-hover{@apply transition-colors hover:bg-gray-100;}
-  .surface-clickable{@apply surface surface-hover cursor-pointer;}
-  .surface-glass{@apply rounded-xl border border-gray-200/50 bg-white/80 backdrop-blur-md;}
-  .surface-inset{@apply rounded-lg border border-gray-200 bg-gray-100;}
-  .card-sm{@apply p-3;} .card-md{@apply p-4;} .card-lg{@apply p-6;}
-  .card-header{@apply mb-2 flex items-center justify-between gap-2 font-semibold text-lg;}
-  .card-title{@apply text-lg font-bold;} .card-subtitle{@apply text-sm text-gray-500;}
-  .card-content{@apply space-y-3 text-sm;} .card-footer{@apply mt-4 flex items-center justify-end gap-2;}
-  @container card(min-width:24rem){.card{@apply p-5;} .card-header{@apply text-xl;}}
-  @container card(min-width:32rem){.card{@apply p-6;} .card-content{@apply text-base;}}
-  @container card(min-width:40rem){.card{@apply grid grid-cols-[1fr_auto] gap-6 items-start;} .card-footer{@apply mt-0 flex-col;}}
+  .surface {@apply rounded-lg border border-gray-200 bg-white text-slate-900 shadow-sm;}
+  .surface-elevated {@apply surface shadow-md;}
+  .surface-card {@apply surface p-4;}
+  .surface-hover {@apply surface transition-colors hover:bg-gray-100;}
+  .surface-clickable {@apply surface surface-hover cursor-pointer;}
+  .surface-glass {@apply rounded-xl border border-gray-200/50 bg-white/80 backdrop-blur-md;}
+  .surface-inset {@apply rounded-lg border border-gray-200 bg-gray-100;}
+
+  .card-sm {@apply p-3;}
+  .card-md {@apply p-4;}
+  .card-lg {@apply p-6;}
+
+  .card-header {@apply mb-2 flex items-center justify-between gap-2 font-semibold text-lg;}
+  .card-title {@apply text-lg font-bold;}
+  .card-subtitle {@apply text-sm text-gray-500;}
+  .card-content {@apply space-y-3 text-sm;}
+  .card-footer {@apply mt-4 flex items-center justify-end gap-2;}
+
+  @container card(min-width:24rem) {
+    .card {@apply p-5;}
+    .card-header {@apply text-xl;}
+  }
+  @container card(min-width:32rem) {
+    .card {@apply p-6;}
+    .card-content {@apply text-base;}
+  }
+  @container card(min-width:40rem) {
+    .card {@apply grid grid-cols-[1fr_auto] gap-6 items-start;}
+    .card-footer {@apply mt-0 flex-col;}
+  }
 }
 
 /* ======================================================================
    Buttons
    ====================================================================== */
 @layer components {
-  .btn{@apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;}
-  .btn-xs{@apply px-2 py-1 text-xs;} .btn-sm{@apply px-3 py-1.5 text-sm;} .btn-md{@apply px-4 py-2 text-sm;} .btn-lg{@apply px-5 py-2.5 text-base;}
-  .btn-primary{@apply btn bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus-visible:ring-blue-400;}
-  .btn-secondary{@apply btn bg-gray-100 text-slate-900 hover:bg-gray-200 focus-visible:ring-gray-400 dark:bg-gray-800 dark:text-slate-100 dark:hover:bg-gray-700 dark:focus-visible:ring-gray-600;}
-  .btn-ghost{@apply btn bg-transparent text-slate-900 hover:bg-gray-100 dark:text-slate-100 dark:hover:bg-gray-700;}
-  .btn-danger{@apply btn bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600 dark:bg-red-500 dark:hover:bg-red-600 dark:focus-visible:ring-red-400;}
-  .btn-loading{@apply relative text-transparent pointer-events-none;} .btn-loading::after{content:"";@apply absolute h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent;}
+  .btn {@apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md font-medium text-sm transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;}
+  .btn-xs {@apply px-2 py-1 text-xs;}
+  .btn-sm {@apply px-3 py-1.5 text-sm;}
+  .btn-md {@apply px-4 py-2 text-sm;}
+  .btn-lg {@apply px-5 py-2.5 text-base;}
+  .btn-primary {@apply btn bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus-visible:ring-blue-400;}
+  .btn-secondary {@apply btn bg-gray-100 text-slate-900 hover:bg-gray-200 focus-visible:ring-gray-400 dark:bg-gray-800 dark:text-slate-100 dark:hover:bg-gray-700 dark:focus-visible:ring-gray-600;}
+  .btn-ghost {@apply btn bg-transparent text-slate-900 hover:bg-gray-100 dark:text-slate-100 dark:hover:bg-gray-700;}
+  .btn-danger {@apply btn bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600 dark:bg-red-500 dark:hover:bg-red-600 dark:focus-visible:ring-red-400;}
+  .btn-loading {@apply relative text-transparent pointer-events-none;}
+  .btn-loading::after { content:""; @apply absolute h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent; }
 }
 
 /* ======================================================================
    Forms
    ====================================================================== */
 @layer components {
-  .form{@apply space-y-4;} .form-group{@apply flex flex-col gap-1.5;} .form-label{@apply font-medium text-slate-900 dark:text-slate-100 text-sm;}
-  .form-help{@apply text-xs text-slate-500 dark:text-slate-400;} .form-error{@apply text-xs text-red-600 dark:text-red-400;}
-  .input{@apply w-full px-3 py-2 rounded-md border border-gray-300 bg-white text-slate-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-slate-800 dark:text-slate-100 dark:border-gray-600 dark:placeholder-gray-500 dark:focus:ring-blue-400;}
-  .textarea{@apply input resize-none min-h-[96px];} .select{@apply input pr-8;}
-  .checkbox,.radio{@apply w-4 h-4 rounded border border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-gray-600 dark:text-blue-400 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-900;}
-  .radio{@apply rounded-full;}
-  .input:disabled,.textarea:disabled,.select:disabled{@apply opacity-50 cursor-not-allowed;}
-  .input-error{@apply border-red-500 focus:ring-red-500 dark:border-red-500 dark:focus:ring-red-400;}
-  .error-text{@apply text-xs text-red-600 dark:text-red-400;} .help-text{@apply text-xs text-slate-500 dark:text-slate-400;}
+  .form {@apply space-y-4;}
+  .form-group {@apply flex flex-col gap-1.5;}
+  .form-label {@apply font-medium text-slate-900 dark:text-slate-100 text-sm;}
+  .form-help {@apply text-xs text-slate-500 dark:text-slate-400;}
+  .form-error {@apply text-xs text-red-600 dark:text-red-400;}
+  .input {@apply w-full px-3 py-2 rounded-md border border-gray-300 bg-white text-slate-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-slate-800 dark:text-slate-100 dark:border-gray-600 dark:placeholder-gray-500 dark:focus:ring-blue-400;}
+  .textarea {@apply input resize-none min-h-[96px];}
+  .select {@apply input pr-8;}
+  .checkbox,.radio {@apply w-4 h-4 rounded border border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-gray-600 dark:text-blue-400 dark:focus:ring-blue-400 dark:focus:ring-offset-slate-900;}
+  .radio {@apply rounded-full;}
+  .input:disabled,.textarea:disabled,.select:disabled {@apply opacity-50 cursor-not-allowed;}
+  .input-error {@apply border-red-500 focus:ring-red-500 dark:border-red-500 dark:focus:ring-red-400;}
+  .error-text {@apply text-xs text-red-600 dark:text-red-400;}
+  .help-text {@apply text-xs text-slate-500 dark:text-slate-400;}
 }
 
 /* ======================================================================
    Modals, Drawers, Popovers & Skeletons
    ====================================================================== */
 @layer components {
-  .modal,.drawer,.popover{@apply fixed inset-0 z-50 flex items-center justify-center;}
-  .modal-backdrop,.drawer-backdrop,.popover-backdrop{@apply fixed inset-0 bg-black/40;}
-  .modal-content,.drawer-content,.popover-content{@apply bg-white text-slate-900 rounded-lg shadow-lg p-6 max-w-full max-h-full overflow-auto;}
-  .drawer{@apply top-0 right-0 h-full w-80 sm:w-96 flex-col items-stretch justify-start;}
-  .drawer-content{@apply h-full;}
-  .popover{@apply relative;}
-  .popover-content{@apply absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50;}
-  .tooltip{@apply absolute px-2 py-1 text-xs rounded bg-slate-900 text-white shadow-sm;}
-  .skeleton{@apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded;} 
-  .skeleton-text{@apply h-4 mb-2 w-full rounded;} .skeleton-title{@apply h-6 mb-3 w-3/4 rounded;} .skeleton-circle{@apply w-10 h-10 rounded-full;}
+  .modal,.drawer,.popover {@apply fixed inset-0 z-50 flex items-center justify-center;}
+  .modal-backdrop,.drawer-backdrop,.popover-backdrop {@apply fixed inset-0 bg-black/40;}
+  .modal-content,.drawer-content,.popover-content {@apply bg-white text-slate-900 rounded-lg shadow-lg p-6 max-w-full max-h-full overflow-auto;}
+  .drawer {@apply top-0 right-0 h-full w-80 sm:w-96 flex-col items-stretch justify-start;}
+  .drawer-content {@apply h-full;}
+  .popover {@apply relative;}
+  .popover-content {@apply absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50;}
+  .tooltip {@apply absolute px-2 py-1 text-xs rounded bg-slate-900 text-white shadow-sm;}
+  .skeleton {@apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded;} 
+  .skeleton-text {@apply h-4 mb-2 w-full rounded;}
+  .skeleton-title {@apply h-6 mb-3 w-3/4 rounded;}
+  .skeleton-circle {@apply w-10 h-10 rounded-full;}
 }
 
 /* ======================================================================
    Tabs, Accordions, Toasts, Alerts
    ====================================================================== */
 @layer components {
-  .tabs{@apply flex border-b border-gray-200;} .tab{@apply px-4 py-2 cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300 border-b-2 border-transparent transition-colors;} 
-  .tab-active{@apply border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400;} .tab-content{@apply mt-4;}
-  .accordion{@apply border border-gray-200 rounded-lg overflow-hidden;} .accordion-item+.accordion-item{@apply mt-2;} 
-  .accordion-header{@apply flex justify-between items-center px-4 py-3 cursor-pointer bg-gray-100 hover:bg-gray-200 transition-colors font-medium;}
-  .accordion-body{@apply px-4 py-3 hidden;} .accordion-open .accordion-body{@apply block;}
-  .toast-container{@apply fixed bottom-4 right-4 flex flex-col gap-2 z-50;}
-  .toast{@apply min-w-[250px] max-w-sm rounded-lg shadow-lg px-4 py-3 bg-white text-slate-900 border border-gray-200 flex items-start justify-between gap-2;}
-  .toast-success{@apply border-green-500 bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300;}
-  .toast-error{@apply border-red-500 bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300;}
-  .toast-warning{@apply border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300;}
-  .toast-info{@apply border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300;}
-  .toast-close{@apply ml-auto cursor-pointer text-sm font-semibold hover:text-slate-600 dark:hover:text-slate-200;}
-  .alert{@apply rounded-lg border px-4 py-3 flex items-start gap-3 text-sm;}
-  .alert-success{@apply border-green-500 bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300;}
-  .alert-error{@apply border-red-500 bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300;}
-  .alert-warning{@apply border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300;}
-  .alert-info{@apply border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300;}
-  .alert-icon{@apply flex-shrink-0 mt-0.5;} .alert-content{@apply flex-1;} .alert-close{@apply ml-4 cursor-pointer font-semibold hover:text-slate-600 dark:hover:text-slate-200;}
+  .tabs {@apply flex border-b border-gray-200;}
+  .tab {@apply px-4 py-2 cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300 border-b-2 border-transparent transition-colors;}
+  .tab-active {@apply border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400;}
+  .tab-content {@apply mt-4;}
+  .accordion {@apply border border-gray-200 rounded-lg overflow-hidden;}
+  .accordion-item+.accordion-item {@apply mt-2;}
+  .accordion-header {@apply flex justify-between items-center px-4 py-3 cursor-pointer bg-gray-100 hover:bg-gray-200 transition-colors font-medium;}
+  .accordion-body {@apply px-4 py-3 hidden;}
+  .accordion-open .accordion-body {@apply block;}
+  .toast-container {@apply fixed bottom-4 right-4 flex flex-col gap-2 z-50;}
+  .toast {@apply min-w-[250px] max-w-sm rounded-lg shadow-lg px-4 py-3 bg-white text-slate-900 border border-gray-200 flex items-start justify-between gap-2;}
+  .toast-success {@apply border-green-500 bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300;}
+  .toast-error {@apply border-red-500 bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300;}
+  .toast-warning {@apply border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300;}
+  .toast-info {@apply border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300;}
+  .toast-close {@apply ml-auto cursor-pointer text-sm font-semibold hover:text-slate-600 dark:hover:text-slate-200;}
+  .alert {@apply rounded-lg border px-4 py-3 flex items-start gap-3 text-sm;}
+  .alert-success {@apply border-green-500 bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300;}
+  .alert-error {@apply border-red-500 bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300;}
+  .alert-warning {@apply border-yellow-500 bg-yellow-50 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300;}
+  .alert-info {@apply border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900 dark:text-blue-300;}
+  .alert-icon {@apply flex-shrink-0 mt-0.5;}
+  .alert-content {@apply flex-1;}
+  .alert-close {@apply ml-4 cursor-pointer font-semibold hover:text-slate-600 dark:hover:text-slate-200;}
 }
 
 /* ======================================================================
    Dropdowns, Context Menus, Badges
    ====================================================================== */
 @layer components {
-  .dropdown{@apply relative inline-block;} .dropdown-btn{@apply inline-flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-white border border-gray-200 text-slate-900 cursor-pointer hover:bg-gray-100 transition-colors;}
-  .dropdown-menu{@apply absolute left-0 mt-2 w-48 rounded-lg shadow-lg border border-gray-200 bg-white text-slate-900 divide-y divide-gray-200 hidden z-50;}
-  .dropdown-item{@apply px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded-md;} .dropdown-open .dropdown-menu{@apply block;}
-  .context-menu{@apply absolute rounded-lg shadow-lg border border-gray-200 bg-white text-slate-900 divide-y divide-gray-200 hidden z-50;}
-  .context-menu-item{@apply px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded-md;} .context-menu-open{@apply block;}
-  .badge{@apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-slate-700 dark:bg-gray-700 dark:text-slate-200;}
-  .badge-success{@apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300;} .badge-error{@apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300;}
-  .badge-warning{@apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300;} .badge-info{@apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300;}
+  .dropdown {@apply relative inline-block;}
+  .dropdown-btn {@apply inline-flex items-center justify-between gap-2 px-3 py-2 rounded-md bg-white border border-gray-200 text-slate-900 cursor-pointer hover:bg-gray-100 transition-colors;}
+  .dropdown-menu {@apply absolute left-0 mt-2 w-48 rounded-lg shadow-lg border border-gray-200 bg-white text-slate-900 divide-y divide-gray-200 hidden z-50;}
+  .dropdown-item {@apply px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded-md;}
+  .dropdown-open .dropdown-menu {@apply block;}
+  .context-menu {@apply absolute rounded-lg shadow-lg border border-gray-200 bg-white text-slate-900 divide-y divide-gray-200 hidden z-50;}
+  .context-menu-item {@apply px-4 py-2 text-sm cursor-pointer hover:bg-gray-100 rounded-md;}
+  .context-menu-open {@apply block;}
+  .badge {@apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-slate-700 dark:bg-gray-700 dark:text-slate-200;}
+  .badge-success {@apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300;}
+  .badge-error {@apply bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300;}
+  .badge-warning {@apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300;}
+  .badge-info {@apply bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300;}
 }
 
 /* ======================================================================
    Progress, Stepper, FAB
    ====================================================================== */
 @layer components {
-  .progress{@apply w-full h-3 bg-gray-100 rounded-full overflow-hidden;} .progress-bar{@apply h-full bg-blue-600 transition-all duration-300 ease-in-out;} .dark .progress-bar{@apply bg-blue-400;}
-  .stepper{@apply flex items-center justify-between w-full;} .step{@apply flex-1 flex items-center relative;} .step-circle{@apply h-8 w-8 rounded-full flex items-center justify-center border-2 border-gray-200 bg-white text-sm font-medium;}
-  .step-active .step-circle{@apply border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400;} .step-line{@apply absolute top-1/2 left-1/2 w-full h-0.5 bg-gray-200 -z-10;} .step-active .step-line{@apply bg-blue-600 dark:bg-blue-400;}
-  .fab{@apply fixed bottom-6 right-6 inline-flex items-center justify-center h-14 w-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 active:scale-95 transition-transform cursor-pointer z-50;} 
-  .fab-icon{@apply w-6 h-6;} .dark .fab{@apply bg-blue-500 hover:bg-blue-600;}
+  .progress {@apply w-full h-3 bg-gray-100 rounded-full overflow-hidden;}
+  .progress-bar {@apply h-full bg-blue-600 transition-all duration-300 ease-in-out;}
+  .dark .progress-bar {@apply bg-blue-400;}
+  .stepper {@apply flex items-center justify-between w-full;}
+  .step {@apply flex-1 flex items-center relative;}
+  .step-circle {@apply h-8 w-8 rounded-full flex items-center justify-center border-2 border-gray-200 bg-white text-sm font-medium;}
+  .step-active .step-circle {@apply border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400;}
+  .step-line {@apply absolute top-1/2 left-1/2 w-full h-0.5 bg-gray-200 -z-10;}
+  .step-active .step-line {@apply bg-blue-600 dark:bg-blue-400;}
+  .fab {@apply fixed bottom-6 right-6 inline-flex items-center justify-center h-14 w-14 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 active:scale-95 transition-transform cursor-pointer z-50;}
+  .fab-icon {@apply w-6 h-6;}
+  .dark .fab {@apply bg-blue-500 hover:bg-blue-600;}
 }
