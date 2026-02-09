@@ -38,12 +38,12 @@ export function Modal({ isOpen, onClose, children, title }: ModalProps) {
           className="surface-card w-full max-w-lg"
           onClick={(e) => e.stopPropagation()}
         >
-          {(title || onClose) && (
-            <div className="flex items-center justify-between mb-4">
-              {title && <h3>{title}</h3>}
-              <button onClick={onClose} className="btn-ghost">✕</button>
-            </div>
-          )}
+          {/* header */}
+          <div className="flex items-center justify-between mb-4">
+            {title ? <h3>{title}</h3> : <span />}
+            <button onClick={onClose} className="btn-ghost">✕</button>
+          </div>
+
           {children}
         </div>
       </div>
