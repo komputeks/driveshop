@@ -1,75 +1,98 @@
+// components/CategoryDropdown.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { CategoryTreeNode } from "@/lib/types";
+import { CategoryTree, CategoryTreeNode, CategoryTreeResponse } from "@/lib/types";
 
-export default function CategoryMenu() {
-  const [categories, setCategories] = useState<CategoryTreeNode[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export default function CategoryDropdown() {
+  const [categories, setCategories] = useState<CategoryTree>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
+  // Fetch category tree from API
   useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const res = await fetch("/api/categories");
-        const data = await res.json();
-
-        if (!data.ok || !data.data?.categories) {
-          throw new Error("Failed to fetch categories");
-        }
-
-        setCategories(data.data.categories);
-      } catch (err: any) {
-        setError(err.message || "Unknown error");
-      } finally {
+    setLoading(true);
+    fetch("/api/categories")
+      .then(res => res.json())
+      .then((data: CategoryTreeResponse) => {
+        if (data.ok) setCategories(data.data.categories);
         setLoading(false);
-      }
-    }
-
-    fetchCategories();
+      })
+      .catch(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="p-4">Loading categories…</div>;
-  if (error) return <div className="p-4 text-red-600">Error: {error}</div>;
+  const toggleMenu = () => setOpen(prev => !prev);
 
-  return (
-    <ul className="space-y-2">
-      {categories.map(cat => (
-        <CategoryItem key={cat.slug} node={cat} />
-      ))}
-    </ul>
-  );
-}
-
-interface CategoryItemProps {
-  node: CategoryTreeNode;
-}
-
-function CategoryItem({ node }: CategoryItemProps) {
-  const hasChildren = node.children && node.children.length > 0;
-  const [open, setOpen] = useState(false);
-
-  return (
-    <li>
-      <div
-        className="flex justify-between items-center surface-clickable p-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
-        onClick={() => hasChildren && setOpen(!open)}
-      >
-        <a href={`/${node.slug}`} className="font-medium text-slate-900 dark:text-slate-100">
-          {node.name}
+  const renderChildren = (children: CategoryTreeNode[]) => {
+    return children.map(c => (
+      <li key={c.slug}>
+        <a href={`/category/${c.slug}`} className="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
+          {c.name}
         </a>
-        {hasChildren && (
-          <span className={`ml-2 transition-transform ${open ? "rotate-90" : ""}`}>▶</span>
+        {c.children.length > 0 && (
+          <ul className="pl-4">{renderChildren(c.children)}</ul>
         )}
+      </li>
+    ));
+  };
+
+  return (
+    <div className="relative inline-block text-left">
+      {/* Mobile / Toggle button */}
+      <button
+        onClick={toggleMenu}
+        className="btn btn-primary md:hidden"
+        aria-expanded={open}
+      >
+        Categories
+      </button>
+
+      {/* Desktop / Menu */}
+      <div className="hidden md:block">
+        <ul className="flex space-x-4">
+          {loading ? (
+            <li className="text-gray-500">Loading...</li>
+          ) : (
+            categories.map(cat => (
+              <li key={cat.slug} className="relative group">
+                <a
+                  href={`/category/${cat.slug}`}
+                  className="px-3 py-2 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  {cat.name}
+                </a>
+                {cat.children.length > 0 && (
+                  <ul className="absolute left-0 mt-2 w-48 rounded-md bg-white dark:bg-slate-950 shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                    {renderChildren(cat.children)}
+                  </ul>
+                )}
+              </li>
+            ))
+          )}
+        </ul>
       </div>
 
-      {hasChildren && open && (
-        <ul className="ml-4 mt-1 border-l border-gray-200 dark:border-gray-700 pl-2 space-y-1">
-          {node.children.map(child => (
-            <CategoryItem key={child.slug} node={child} />
-          ))}
-        </ul>
+      {/* Mobile / Dropdown Panel */}
+      {open && (
+        <div className="absolute top-full left-0 w-56 bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md mt-2 z-50 animate-slide-in">
+          <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+            {loading ? (
+              <li className="px-4 py-2 text-gray-500">Loading...</li>
+            ) : (
+              categories.map(cat => (
+                <li key={cat.slug} className="px-4 py-2">
+                  <a href={`/category/${cat.slug}`} className="block font-medium">
+                    {cat.name}
+                  </a>
+                  {cat.children.length > 0 && (
+                    <ul className="pl-4 mt-1">{renderChildren(cat.children)}</ul>
+                  )}
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
       )}
-    </li>
+    </div>
   );
 }

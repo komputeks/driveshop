@@ -1,20 +1,23 @@
-import "./globals.css";
+// app/layout.tsx
+import MainLayout from "@/components/MainLayout";
+import AuthProvider from "@/providers/AuthProvider";
+import "@/app/globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "App",
-  description: "Next.js + Tailwind v4",
+  title: "Simon Wokabi Codes",
+  description: "Next.js 16 + React 19 + Tailwind v4",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
       <body className="h-full">
-        {children}
+        <AuthProvider>
+          <MainLayout>
+            {children}
+          </MainLayout>
+        </AuthProvider>
       </body>
     </html>
   );
