@@ -1,100 +1,61 @@
 "use client";
 
-import { useState } from "react";
-import { Overlay } from "@/components/Overlays";
+import { useRef, useState } from "react";
+import { Modal } from "@/components/overlays/Modal";
+import { Drawer } from "@/components/overlays/Drawer";
+import { Popover } from "@/components/overlays/Popover";
+import { Toast } from "@/components/overlays/Toast";
 
-export default function Demo() {
-  // State for bottom sheet
-  const [isSheetOpen, setSheetOpen] = useState(false);
-
-  // State for drawers
-  const [isLeftDrawerOpen, setLeftDrawerOpen] = useState(false);
-  const [isRightDrawerOpen, setRightDrawerOpen] = useState(false);
+export default function OverlayDemo() {
+  const [modal, setModal] = useState(false);
+  const [drawer, setDrawer] = useState(false);
+  const [toast, setToast] = useState(false);
+  const [popover, setPopover] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Overlay Demo</h1>
+    <div className="p-8 space-y-4">
+      <button className="btn btn-primary" onClick={() => setModal(true)}>
+        Open Modal
+      </button>
 
-      {/* Buttons to open overlays */}
-      <div className="flex flex-wrap gap-4">
-        <button
-          className="btn btn-primary"
-          onClick={() => setSheetOpen(true)}
-        >
-          Open Bottom Sheet
-        </button>
+      <button className="btn btn-secondary" onClick={() => setDrawer(true)}>
+        Open Drawer
+      </button>
 
-        <button
-          className="btn btn-secondary"
-          onClick={() => setLeftDrawerOpen(true)}
-        >
-          Open Left Drawer
-        </button>
-
-        <button
-          className="btn btn-ghost"
-          onClick={() => setRightDrawerOpen(true)}
-        >
-          Open Right Drawer
-        </button>
-      </div>
-
-      {/* Bottom Sheet */}
-      <Overlay
-        isOpen={isSheetOpen}
-        onClose={() => setSheetOpen(false)}
-        type="bottomSheet"
-        snapPoints={[0.3, 0.5, 0.9]}
-        header={<div className="font-semibold text-lg">Bottom Sheet Header</div>}
+      <button
+        ref={btnRef}
+        className="btn btn-ghost"
+        onClick={() => setPopover((v) => !v)}
       >
-        <div className="space-y-4">
-          <p>
-            This is the content of the bottom sheet. You can drag it up or down
-            between snap points!
-          </p>
-          <button className="btn btn-primary">Confirm</button>
-        </div>
-      </Overlay>
+        Toggle Popover
+      </button>
 
-      {/* Left Drawer */}
-      <Overlay
-        type="drawer"
-        position="left"
-        width="w-80"
-        isOpen={isLeftDrawerOpen}
-        onClose={() => setLeftDrawerOpen(false)}
-        header={<div className="font-semibold">Left Drawer</div>}
-      >
-        <div className="p-4 space-y-3">
-          <p>This is a left drawer.</p>
-          <button
-            className="btn btn-primary"
-            onClick={() => setLeftDrawerOpen(false)}
-          >
-            Close Drawer
-          </button>
-        </div>
-      </Overlay>
+      <button className="btn btn-danger" onClick={() => setToast(true)}>
+        Show Toast
+      </button>
 
-      {/* Right Drawer */}
-      <Overlay
-        type="drawer"
-        position="right"
-        width="w-96"
-        isOpen={isRightDrawerOpen}
-        onClose={() => setRightDrawerOpen(false)}
-        header={<div className="font-semibold">Right Drawer</div>}
+      <Modal isOpen={modal} onClose={() => setModal(false)} title="Modal">
+        Modal content here
+      </Modal>
+
+      <Drawer isOpen={drawer} onClose={() => setDrawer(false)}>
+        Drawer content here
+      </Drawer>
+
+      <Popover
+        isOpen={popover}
+        onClose={() => setPopover(false)}
+        anchorRef={btnRef}
       >
-        <div className="p-4 space-y-3">
-          <p>This is a right drawer.</p>
-          <button
-            className="btn btn-primary"
-            onClick={() => setRightDrawerOpen(false)}
-          >
-            Close Drawer
-          </button>
+        <div className="surface-card">Popover content</div>
+      </Popover>
+
+      {toast && (
+        <div className="toast-container">
+          <Toast message="Action completed" onClose={() => setToast(false)} />
         </div>
-      </Overlay>
+      )}
     </div>
   );
 }
