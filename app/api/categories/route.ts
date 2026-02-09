@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { CategoryTreeResponse } from "@/types";
+import type { CategoryTreeResponse } from "@/lib/types";
 
 export async function GET() {
   try {
