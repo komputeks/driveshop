@@ -9,36 +9,27 @@ export default function CategoryDropdown() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Fetch category tree from API
   useEffect(() => {
     setLoading(true);
+
     fetch("/api/categories")
       .then(res => res.json())
       .then((data: CategoryTreeResponse) => {
-        if (data.ok) setCategories(data.data.categories);
+        if (data.ok && Array.isArray(data.data.categories)) {
+          // 🛡️ Normalize children at runtime
+          const normalized = data.data.categories.map(normalizeNode);
+          setCategories(normalized);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
   }, []);
 
-  const toggleMenu = () => setOpen(prev => !prev);
-
-  const renderChildren = (children: CategoryTreeNode[]) => {
-    return children.map(c => (
-      <li key={c.slug}>
-        <a href={`/category/${c.slug}`} className="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800">
-          {c.name}
-        </a>
-        {c.children.length > 0 && (
-          <ul className="pl-4">{renderChildren(c.children)}</ul>
-        )}
-      </li>
-    ));
-  };
+  const toggleMenu = () => setOpen(v => !v);
 
   return (
     <div className="relative inline-block text-left">
-      {/* Mobile / Toggle button */}
+      {/* Mobile toggle */}
       <button
         onClick={toggleMenu}
         className="btn btn-primary md:hidden"
@@ -47,7 +38,7 @@ export default function CategoryDropdown() {
         Categories
       </button>
 
-      {/* Desktop / Menu */}
+      {/* Desktop */}
       <div className="hidden md:block">
         <ul className="flex space-x-4">
           {loading ? (
@@ -61,9 +52,19 @@ export default function CategoryDropdown() {
                 >
                   {cat.name}
                 </a>
+
                 {cat.children.length > 0 && (
                   <ul className="absolute left-0 mt-2 w-48 rounded-md bg-white dark:bg-slate-950 shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
-                    {renderChildren(cat.children)}
+                    {cat.children.map(child => (
+                      <li key={child.slug}>
+                        <a
+                          href={`/category/${child.slug}`}
+                          className="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
+                        >
+                          {child.name}
+                        </a>
+                      </li>
+                    ))}
                   </ul>
                 )}
               </li>
@@ -72,9 +73,9 @@ export default function CategoryDropdown() {
         </ul>
       </div>
 
-      {/* Mobile / Dropdown Panel */}
+      {/* Mobile dropdown */}
       {open && (
-        <div className="absolute top-full left-0 w-56 bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md mt-2 z-50 animate-slide-in">
+        <div className="absolute top-full left-0 w-56 bg-white dark:bg-slate-950 border border-gray-200 dark:border-gray-700 shadow-lg rounded-md mt-2 z-50">
           <ul className="divide-y divide-gray-200 dark:divide-gray-700">
             {loading ? (
               <li className="px-4 py-2 text-gray-500">Loading...</li>
@@ -84,8 +85,20 @@ export default function CategoryDropdown() {
                   <a href={`/category/${cat.slug}`} className="block font-medium">
                     {cat.name}
                   </a>
+
                   {cat.children.length > 0 && (
-                    <ul className="pl-4 mt-1">{renderChildren(cat.children)}</ul>
+                    <ul className="pl-4 mt-1">
+                      {cat.children.map(child => (
+                        <li key={child.slug}>
+                          <a
+                            href={`/category/${child.slug}`}
+                            className="block py-1 text-sm"
+                          >
+                            {child.name}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </li>
               ))
@@ -95,4 +108,18 @@ export default function CategoryDropdown() {
       )}
     </div>
   );
+}
+
+/* =========================
+   RUNTIME NORMALIZER
+========================= */
+
+function normalizeNode(node: CategoryTreeNode): CategoryTreeNode {
+  return {
+    slug: node.slug,
+    name: node.name,
+    children: Array.isArray(node.children)
+      ? node.children.map(normalizeNode)
+      : [],
+  };
 }
