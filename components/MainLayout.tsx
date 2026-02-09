@@ -13,9 +13,6 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   
 
   return (
-  window.onerror = function (msg, url, line, col, error) {
-  alert(`Error: ${msg}\nLine: ${line}`);
-};
     <div className="min-h-screen flex flex-col">
       <header className="bg-white dark:bg-slate-950 shadow-md">
         <div className="container-app flex items-center justify-between h-16">
@@ -61,4 +58,17 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <main className="flex-1">{children}</main>
     </div>
   );
+}
+
+
+export function DebugWrapper({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    try {
+      console.log("App mounted");
+    } catch (e) {
+      alert("Runtime error: " + String(e));
+    }
+  }, []);
+
+  return <>{children}</>;
 }
