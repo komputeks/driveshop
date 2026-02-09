@@ -1,6 +1,6 @@
 // app/layout.tsx
 import MainLayout from "@/components/MainLayout";
-import AuthProvider from "@/providers/AuthProvider";
+import Providers from "@/providers/AuthProvider";
 import "@/app/globals.css";
 import type { Metadata } from "next";
 
@@ -13,11 +13,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
       <body className="h-full">
-        <AuthProvider>
+        <Providers>
           <MainLayout>
             {children}
           </MainLayout>
-        </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

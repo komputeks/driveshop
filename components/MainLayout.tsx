@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import CategoryDropdown from "./CategoryDropdown";
 
@@ -11,9 +11,15 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   const user = session?.user;
   
+  useEffect(() => {
+    window.onerror = function (msg, url, line) {
+      alert(`JS Error: ${msg}\nLine: ${line}`);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Header */}
       <header className="bg-white dark:bg-slate-950 shadow-md">
         <div className="container-app flex items-center justify-between h-16">
           <Link
@@ -23,15 +29,20 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             Simon Wokabi Codes
           </Link>
 
+          {/* Desktop menu */}
           <nav className="hidden md:flex items-center space-x-6">
             <CategoryDropdown />
           </nav>
 
+          {/* Right side */}
           <div className="flex items-center space-x-4">
             {status === "loading" ? (
               <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
             ) : user ? (
-              <Link href="/profile" className="flex items-center gap-2 text-sm">
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 text-sm font-medium"
+              >
                 <img
                   src={user.image || "/default-avatar.png"}
                   alt={user.name || "Profile"}
@@ -48,27 +59,25 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <button
               className="md:hidden btn btn-ghost btn-sm"
               onClick={() => setMobileMenuOpen(v => !v)}
+              aria-label="Toggle Menu"
             >
               ☰
             </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white">
+            <div className="px-4 py-3">
+              <CategoryDropdown />
+            </div>
+          </div>
+        )}
       </header>
 
+      {/* Main */}
       <main className="flex-1">{children}</main>
     </div>
   );
-}
-
-
-export function DebugWrapper({ children }: { children: React.ReactNode }) {
-  useEffect(() => {
-    try {
-      console.log("App mounted");
-    } catch (e) {
-      alert("Runtime error: " + String(e));
-    }
-  }, []);
-
-  return <>{children}</>;
 }
