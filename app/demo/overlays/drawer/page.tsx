@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Drawer } from "@/components/Drawer";
+import { Drawer } from "@/components/Overlays/Drawer";
 
 export default function Demo() {
   const [isOpen, setOpen] = useState(false);
