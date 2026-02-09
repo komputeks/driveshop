@@ -2,39 +2,31 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CategoryTree, CategoryTreeNode, CategoryTreeResponse } from "@/lib/types";
+import type {
+  CategoryTree,
+  CategoryTreeResponse,
+} from "@/lib/types";
 
 export default function CategoryDropdown() {
   const [categories, setCategories] = useState<CategoryTree>([]);
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-
-    fetch("/api/categories")
+    fetch("/api/category-tree", { cache: "no-store" })
       .then(res => res.json())
       .then((data: CategoryTreeResponse) => {
-        if (data.ok && Array.isArray(data.data.categories)) {
-          // ✅ HARD normalize to exactly 2 levels
-          const normalized: CategoryTree = data.data.categories.map(cat => ({
-            slug: cat.slug,
-            name: cat.name,
-            children: Array.isArray(cat.children)
-              ? cat.children.map(child => ({
-                  slug: child.slug,
-                  name: child.name,
-                  children: [], // 🚫 no deeper levels allowed
-                }))
-              : [],
-          }));
-
-          setCategories(normalized);
+        if (data.ok) {
+          setCategories(data.data.categories);
         } else {
+          console.error("CategoryTree error:", data.error);
           setCategories([]);
         }
       })
-      .catch(() => setCategories([]))
+      .catch(err => {
+        console.error("CategoryTree fetch failed:", err);
+        setCategories([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -51,7 +43,7 @@ export default function CategoryDropdown() {
         Categories
       </button>
 
-      {/* Desktop */}
+      {/* Desktop menu */}
       <div className="hidden md:block">
         <ul className="flex space-x-4">
           {loading ? (
@@ -67,7 +59,9 @@ export default function CategoryDropdown() {
                 </a>
 
                 {cat.children.length > 0 && (
-                  <ul className="absolute left-0 mt-2 w-48 rounded-md bg-white dark:bg-slate-950 shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                  <ul className="absolute left-0 mt-2 w-48 rounded-md bg-white dark:bg-slate-950 shadow-lg border border-gray-200 dark:border-gray-700
+                                 opacity-0 group-hover:opacity-100 transition-opacity
+                                 pointer-events-none group-hover:pointer-events-auto">
                     {cat.children.map(child => (
                       <li key={child.slug}>
                         <a
