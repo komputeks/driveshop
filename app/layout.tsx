@@ -1,10 +1,23 @@
+// app/layout.tsx
+import MainLayout from "@/components/MainLayout";
 import AuthProvider from "@/providers/AuthProvider";
+import "@/app/globals.css";
+import type { Metadata } from "next";
 
-export default function RootLayout({ children }) {
+export const metadata: Metadata = {
+  title: "Simon Wokabi Codes",
+  description: "Next.js 16 + React 19 + Tailwind v4",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>
-        <AuthProvider>{children}</AuthProvider>
+    <html lang="en" className="h-full" suppressHydrationWarning>
+      <body className="h-full">
+        <AuthProvider>
+          <MainLayout>
+            {children}
+          </MainLayout>
+        </AuthProvider>
       </body>
     </html>
   );
