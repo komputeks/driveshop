@@ -219,10 +219,10 @@
    ====================================================================== */
 @layer utilities {
   .surface { @apply rounded-lg border border-gray-200 bg-white text-slate-900 shadow-sm; }
-  .surface-elevated { @apply surface shadow-md; }
-  .surface-card { @apply surface p-4; }
-  .surface-hover { @apply surface transition-colors hover:bg-gray-100; }
-  .surface-clickable { @apply surface surface-hover cursor-pointer; }
+  .surface-elevated { @apply shadow-md; }
+  .surface-card { @apply p-4; }
+  .surface-hover { @apply transition-colors hover:bg-gray-100; }
+  .surface-clickable { @apply cursor-pointer; }
   .surface-glass { @apply rounded-xl border border-gray-200/50 bg-white/80 backdrop-blur-md; }
   .surface-inset { @apply rounded-lg border border-gray-200 bg-gray-100; }
 
