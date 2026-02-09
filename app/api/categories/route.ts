@@ -1,24 +1,25 @@
+// app/api/categories/route.ts
 import { NextResponse } from "next/server";
 import type { CategoryTreeResponse } from "@/lib/types";
 
+const GAS_ENDPOINT = process.env.NEXT_PUBLIC_API_BASE_URL!;
+
 export async function GET() {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}?action=category-tree`
-    );
-    const data = await res.json();
+    const url = `${GAS_ENDPOINT}?action=category-tree`;
 
-    if (!data.ok || !data.categories) {
-      return NextResponse.json(
-        { ok: false, error: "Failed to fetch categories" },
-        { status: 500 }
-      );
-    }
+    const res = await fetch(url, {
+      headers: { Accept: "application/json" },
+      cache: "force-cache",
+    });
 
-    const categories: CategoryTreeResponse["data"]["categories"] = data.categories;
-
-    return NextResponse.json({ ok: true, data: { categories } });
+    const json = (await res.json()) as CategoryTreeResponse;
+    return NextResponse.json(json);
   } catch (err: any) {
-    return NextResponse.json({ ok: false, error: err.message || "Unknown error" }, { status: 500 });
+    console.error("GET /api/categories", err);
+    return NextResponse.json(
+      { ok: false, error: err.message ?? "Internal error" },
+      { status: 500 }
+    );
   }
 }

@@ -16,13 +16,26 @@ export default function CategoryDropdown() {
       .then(res => res.json())
       .then((data: CategoryTreeResponse) => {
         if (data.ok && Array.isArray(data.data.categories)) {
-          // 🛡️ Normalize children at runtime
-          const normalized = data.data.categories.map(normalizeNode);
+          // ✅ HARD normalize to exactly 2 levels
+          const normalized: CategoryTree = data.data.categories.map(cat => ({
+            slug: cat.slug,
+            name: cat.name,
+            children: Array.isArray(cat.children)
+              ? cat.children.map(child => ({
+                  slug: child.slug,
+                  name: child.name,
+                  children: [], // 🚫 no deeper levels allowed
+                }))
+              : [],
+          }));
+
           setCategories(normalized);
+        } else {
+          setCategories([]);
         }
-        setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => setCategories([]))
+      .finally(() => setLoading(false));
   }, []);
 
   const toggleMenu = () => setOpen(v => !v);
@@ -58,7 +71,7 @@ export default function CategoryDropdown() {
                     {cat.children.map(child => (
                       <li key={child.slug}>
                         <a
-                          href={`/category/${child.slug}`}
+                          href={`/category/${cat.slug}/${child.slug}`}
                           className="block px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800"
                         >
                           {child.name}
@@ -82,7 +95,10 @@ export default function CategoryDropdown() {
             ) : (
               categories.map(cat => (
                 <li key={cat.slug} className="px-4 py-2">
-                  <a href={`/category/${cat.slug}`} className="block font-medium">
+                  <a
+                    href={`/category/${cat.slug}`}
+                    className="block font-medium"
+                  >
                     {cat.name}
                   </a>
 
@@ -91,7 +107,7 @@ export default function CategoryDropdown() {
                       {cat.children.map(child => (
                         <li key={child.slug}>
                           <a
-                            href={`/category/${child.slug}`}
+                            href={`/category/${cat.slug}/${child.slug}`}
                             className="block py-1 text-sm"
                           >
                             {child.name}
@@ -108,18 +124,4 @@ export default function CategoryDropdown() {
       )}
     </div>
   );
-}
-
-/* =========================
-   RUNTIME NORMALIZER
-========================= */
-
-function normalizeNode(node: CategoryTreeNode): CategoryTreeNode {
-  return {
-    slug: node.slug,
-    name: node.name,
-    children: Array.isArray(node.children)
-      ? node.children.map(normalizeNode)
-      : [],
-  };
 }
