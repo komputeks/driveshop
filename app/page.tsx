@@ -1,13 +1,9 @@
 import Link from "next/link";
-import CategoryMenu from "@/components/CategoryMenu";
 
 export default function HomePage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center">
-      <section>
-        <CategoryMenu />
-      </section>
       <section className="section bg-grad-soft">
         <div className="container grid lg:grid-cols-2 gap-12 items-center">
           <div>
