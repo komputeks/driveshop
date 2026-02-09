@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import CategoryDropdown from "./CategoryDropdown";
-import { Providers} from "@/providers/AuthProvider";
+import Providers from "@/providers/AuthProvider";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
