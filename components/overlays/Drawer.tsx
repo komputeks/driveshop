@@ -10,7 +10,7 @@ interface ModalProps {
   title?: ReactNode;
 }
 
-export function Modal({ isOpen, onClose, children, title }: ModalProps) {
+export function Drawer({ isOpen, onClose, children, title }: ModalProps) {
   const ref = useRef<HTMLDivElement>(null);
   useFocusTrap(ref, isOpen, onClose);
 
