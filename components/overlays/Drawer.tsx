@@ -27,23 +27,25 @@ export function Drawer({ isOpen, onClose, children, title }: ModalProps) {
 
   return (
     <>
+      {/* backdrop */}
       <div
         className="fixed inset-0 z-40 bg-black/40"
         onClick={onClose}
       />
 
+      {/* container */}
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         <div
           ref={ref}
           className="surface-card w-full max-w-lg"
           onClick={(e) => e.stopPropagation()}
         >
-          {(title || onClose) && (
-            <div className="flex items-center justify-between mb-4">
-              {title && <h3>{title}</h3>}
-              <button onClick={onClose} className="btn-ghost">✕</button>
-            </div>
-          )}
+          {/* header */}
+          <div className="flex items-center justify-between mb-4">
+            {title && <h3>{title}</h3>}
+            <button onClick={onClose} className="btn-ghost">✕</button>
+          </div>
+
           {children}
         </div>
       </div>
