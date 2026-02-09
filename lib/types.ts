@@ -1,13 +1,12 @@
 /* ======================================================
    GLOBAL CANONICAL TYPES
-   GAS ↔ Internal API ↔ UI
 ====================================================== */
 
 /* =========================
    PRIMITIVES
 ========================= */
 
-export type ISODateString = string;
+export type ISODateString = string & { __isoDate: true };
 export type Cursor = ISODateString | null;
 export type UUID = string;
 export type Signature = string;
@@ -29,7 +28,7 @@ export interface User {
 ========================= */
 
 export interface Item {
-  id: string;                 // Drive file ID
+  id: string; // Drive file ID (stable primary key)
   name: string;
 
   cat1: string;
@@ -77,7 +76,8 @@ export type CategoryTree = CategoryTreeNode[];
    EVENTS
 ========================= */
 
-export type EventType = "view" | "like" | "comment";
+export const EVENT_TYPES = ["view", "like", "comment"] as const;
+export type EventType = (typeof EVENT_TYPES)[number];
 
 export interface EventRow {
   id: UUID;
@@ -85,7 +85,7 @@ export interface EventRow {
   type: EventType;
 
   value: string;              // comment text or "1"
-  pageUrl?: string;
+  pageUrl: string;
 
   userEmail: string;
 
@@ -94,6 +94,7 @@ export interface EventRow {
 
   deleted: boolean;
 }
+
 
 export interface EventWithUser extends EventRow {
   userName?: string;
@@ -224,8 +225,8 @@ export type StatsResponse = ApiOk<{
   };
 }>;
 
-export type EventsListResponse = ApiOk<{
-  events: EventRow[] | EventWithUser[];
+export type EventsListResponse<T extends boolean = false> = ApiOk<{
+  events: (T extends true ? EventWithUser : EventRow)[];
 }>;
 
 /* =========================
