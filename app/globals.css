@@ -100,10 +100,10 @@
   .btn-sm {@apply px-3 py-1.5 text-sm;}
   .btn-md {@apply px-4 py-2 text-sm;}
   .btn-lg {@apply px-5 py-2.5 text-base;}
-  .btn-primary {@apply btn bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus-visible:ring-blue-400;}
-  .btn-secondary {@apply btn bg-gray-100 text-slate-900 hover:bg-gray-200 focus-visible:ring-gray-400 dark:bg-gray-800 dark:text-slate-100 dark:hover:bg-gray-700 dark:focus-visible:ring-gray-600;}
-  .btn-ghost {@apply btn bg-transparent text-slate-900 hover:bg-gray-100 dark:text-slate-100 dark:hover:bg-gray-700;}
-  .btn-danger {@apply btn bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600 dark:bg-red-500 dark:hover:bg-red-600 dark:focus-visible:ring-red-400;}
+  .btn-primary {@apply bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus-visible:ring-blue-400;}
+  .btn-secondary {@apply bg-gray-100 text-slate-900 hover:bg-gray-200 focus-visible:ring-gray-400 dark:bg-gray-800 dark:text-slate-100 dark:hover:bg-gray-700 dark:focus-visible:ring-gray-600;}
+  .btn-ghost {@apply bg-transparent text-slate-900 hover:bg-gray-100 dark:text-slate-100 dark:hover:bg-gray-700;}
+  .btn-danger {@apply bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600 dark:bg-red-500 dark:hover:bg-red-600 dark:focus-visible:ring-red-400;}
   .btn-loading {@apply relative text-transparent pointer-events-none;}
   .btn-loading::after { content:""; @apply absolute h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent; }
 }
