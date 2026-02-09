@@ -1,14 +1,15 @@
-// components/MainLayout.tsx
 "use client";
 
 import Link from "next/link";
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import CategoryDropdown from "./CategoryDropdown";
-import Providers from "@/providers/AuthProvider";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { data: session, status } = useSession();
+
+  const user = session?.user;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -16,7 +17,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       <header className="bg-white dark:bg-slate-950 shadow-md">
         <div className="container-app flex items-center justify-between h-16">
           {/* Brand */}
-          <Link href="/" className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-500">
+          <Link
+            href="/"
+            className="font-bold text-2xl bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-500"
+          >
             Simon Wokabi Codes
           </Link>
 
@@ -25,12 +29,17 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
             <CategoryDropdown />
           </nav>
 
-          {/* Auth Section */}
+          {/* Auth + Mobile toggle */}
           <div className="flex items-center space-x-4">
-            {user ? (
-              <Link href="/profile" className="flex items-center gap-2 text-sm font-medium hover:text-blue-600">
+            {status === "loading" ? (
+              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse" />
+            ) : user ? (
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 text-sm font-medium hover:text-blue-600"
+              >
                 <img
-                  src={user.photo || "/default-avatar.png"}
+                  src={user.image || "/default-avatar.png"}
                   alt={user.name || "Profile"}
                   className="w-8 h-8 rounded-full"
                 />
@@ -42,20 +51,20 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
               </Link>
             )}
 
-            {/* Mobile toggle */}
             <button
               className="md:hidden btn btn-ghost btn-sm"
-              onClick={() => setMobileMenuOpen(prev => !prev)}
+              onClick={() => setMobileMenuOpen(p => !p)}
               aria-label="Toggle Menu"
+              aria-expanded={mobileMenuOpen}
             >
-              ☰
+              {mobileMenuOpen ? "✕" : "☰"}
             </button>
           </div>
         </div>
 
-        {/* Mobile menu panel */}
+        {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white dark:bg-slate-950 border-t border-gray-200 dark:border-gray-700 shadow-lg animate-slide-in">
+          <div className="md:hidden bg-white dark:bg-slate-950 border-t border-gray-200 dark:border-gray-700 shadow-lg">
             <div className="px-4 py-3 space-y-2">
               <CategoryDropdown />
             </div>
@@ -63,10 +72,8 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         )}
       </header>
 
-      {/* Main content */}
       <main className="flex-1">{children}</main>
 
-      {/* Footer */}
       <footer className="bg-gray-50 dark:bg-slate-900 text-center py-4 text-sm text-gray-500 dark:text-gray-400">
         &copy; {new Date().getFullYear()} Simon Wokabi Codes
       </footer>
