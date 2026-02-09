@@ -14,7 +14,7 @@ const ToastContext = createContext({
   removeToast: (id: string) => {}
 });
 
-export function ToastProvider({ children }: { children: ReactNode }) {
+export function Toast({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const addToast = (toast: Toast) => {
