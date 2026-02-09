@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect, useRef } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 
 interface PopoverProps {
   isOpen: boolean;
@@ -15,8 +15,24 @@ export function Popover({
   anchorRef,
   children,
 }: PopoverProps) {
-  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const [style, setStyle] = useState<React.CSSProperties>({});
 
+  // Position popover
+  useEffect(() => {
+    if (!isOpen || !anchorRef.current) return;
+
+    const rect = anchorRef.current.getBoundingClientRect();
+
+    setStyle({
+      position: "absolute",
+      top: rect.bottom + window.scrollY + 8,
+      left: rect.left + window.scrollX,
+      zIndex: 50,
+    });
+  }, [isOpen, anchorRef]);
+
+  // Outside click
   useEffect(() => {
     if (!isOpen) return;
 
@@ -34,15 +50,13 @@ export function Popover({
     }
 
     document.addEventListener("mousedown", onMouseDown);
-    return () => {
-      document.removeEventListener("mousedown", onMouseDown);
-    };
+    return () => document.removeEventListener("mousedown", onMouseDown);
   }, [isOpen, onClose, anchorRef]);
 
   if (!isOpen) return null;
 
   return (
-    <div ref={popoverRef} className="popover-content">
+    <div ref={popoverRef} style={style}>
       {children}
     </div>
   );
