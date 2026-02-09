@@ -193,7 +193,7 @@ export interface GetUserProfileRequest {
 
 export type GetUserProfileResponse = ApiResponse<UserActivityProfile>;
 
-export type ItemsListResponse = ApiOk<{
+export type ItemsListResponse = ApiResponse<{
   page: number;
   limit: number;
   total: number;

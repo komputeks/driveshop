@@ -51,10 +51,26 @@ const CFG = {
     .replace(/[^a-z0-9-]/g, "")  // drop unsafe chars
     .replace(/-+/g, "-")         // collapse dashes
     .replace(/^-|-$/g, "");      // trim edges
-}
+  }
   function res(obj) {
     return ContentService
       .createTextOutput(JSON.stringify(obj))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  
+  
+  function ok_(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify({ ok: true, data }))
+    .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  function fail_(error, status) {
+    return ContentService
+      .createTextOutput(JSON.stringify({
+        ok: false,
+        error: String(error)
+      }))
       .setMimeType(ContentService.MimeType.JSON);
   }
   
