@@ -6,10 +6,10 @@ const GAS_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
 export async function GET(
   _req: Request,
-  { params }: { params: Promise<{ slug: string }> }
+  { params }: { params: { slug: string } }
 ) {
   try {
-    const { slug } = await params;
+    const { slug } = params;
 
     const res = await fetch(GAS_URL, {
       method: "POST",
