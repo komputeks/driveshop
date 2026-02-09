@@ -1,45 +1,33 @@
-// pages/api/categories.ts
-import type { NextApiRequest, NextApiResponse } from "next";
+// app/api/categories/route.ts
+import { NextResponse } from "next/server";
 
-interface Category {
-  name: string;
-  children?: string[];
-}
-
-interface ApiResponse {
-  ok: boolean;
-  categories?: Category[];
-  error?: string;
-}
-
-// Use your GAS endpoint from env
-const GAS_CATEGORIES_URL = `${process.env.NEXT_PUBLIC_API_BASE_URL}?action=getCategories`;
-
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse<ApiResponse>
-) {
-  if (req.method !== "GET") {
-    return res.status(405).json({ ok: false, error: "Method not allowed" });
-  }
-
+export async function GET() {
   try {
-    const response = await fetch(GAS_CATEGORIES_URL);
-    const data = await response.json();
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}?action=getCategoryTree`
+    );
+
+    const data = await res.json();
 
     if (!data.ok || !data.categories) {
-      return res.status(500).json({ ok: false, error: "Failed to fetch categories" });
+      return NextResponse.json(
+        { ok: false, error: "Failed to fetch categories" },
+        { status: 500 }
+      );
     }
 
-    // Transform GAS data into children array
-    const categories: Category[] = data.categories.map((cat: string) => ({
-      name: cat,
-      // For now we leave children empty; can fetch subcategories later if needed
-      children: []
+    // Transform into your CategoryTreeNode format
+    const categories = data.categories.map((name: string) => ({
+      name,
+      slug: name.toLowerCase().replace(/\s+/g, "-"),
+      children: [],
     }));
 
-    res.status(200).json({ ok: true, categories });
+    return NextResponse.json({ ok: true, categories });
   } catch (err: any) {
-    res.status(500).json({ ok: false, error: err.message || "Unknown error" });
+    return NextResponse.json(
+      { ok: false, error: err.message || "Unknown error" },
+      { status: 500 }
+    );
   }
 }
