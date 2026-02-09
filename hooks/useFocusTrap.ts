@@ -1,3 +1,4 @@
+// useFocusTrap.ts
 "use client";
 
 import { useEffect, RefObject } from "react";
@@ -12,7 +13,7 @@ const FOCUSABLE = [
 ].join(",");
 
 export function useFocusTrap(
-  ref: RefObject<HTMLElement>,
+  ref: RefObject<HTMLElement | null>, // allow null
   active: boolean,
   onEscape?: () => void
 ) {
