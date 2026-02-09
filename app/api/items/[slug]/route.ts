@@ -1,15 +1,15 @@
 // app/api/items/[slug]/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import type { ItemBySlugResponse } from "@/lib/types";
 
 const GAS_URL = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
 export async function GET(
-  _req: Request,
-  { params }: { params: { slug: string } }
+  _req: NextRequest,
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const { slug } = params;
+    const { slug } = await params;
 
     const res = await fetch(GAS_URL, {
       method: "POST",
