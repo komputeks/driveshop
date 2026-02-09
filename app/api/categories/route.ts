@@ -1,10 +1,9 @@
-// app/api/categories/route.ts
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}?action=getCategoryTree`
+      `${process.env.NEXT_PUBLIC_API_BASE_URL}?action=category-tree`
     );
 
     const data = await res.json();
@@ -16,11 +15,11 @@ export async function GET() {
       );
     }
 
-    // Transform into your CategoryTreeNode format
-    const categories = data.categories.map((name: string) => ({
-      name,
-      slug: name.toLowerCase().replace(/\s+/g, "-"),
-      children: [],
+    // Correctly map GAS response
+    const categories = data.categories.map((cat: any) => ({
+      name: cat.name,
+      slug: cat.slug,
+      children: cat.children || [],
     }));
 
     return NextResponse.json({ ok: true, categories });
