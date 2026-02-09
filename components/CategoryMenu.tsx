@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CategoryTreeNode } from "@/types";
+import { CategoryTreeNode } from "@/lib/types";
 
 export default function CategoryMenu() {
   const [categories, setCategories] = useState<CategoryTreeNode[]>([]);
