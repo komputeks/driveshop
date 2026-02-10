@@ -12,7 +12,6 @@ export function withApiErrorOverlay<T>(fn: () => Promise<T>) {
   try {
     return fn();
   } catch (err: any) {
-    // Build overlay payload
     const overlay = {
       time: new Date().toLocaleTimeString(),
       label: "API Error (Server)",
@@ -44,6 +43,7 @@ export async function apiFetch<T>(input: RequestInfo, init: FetchInit): Promise<
   try {
     const res = await fetch(input, init);
     const durationMs = Math.round(performance.now() - start);
+
     const json: ApiResponse<T> & { __overlay?: any } = await res.json();
 
     // If server sent __overlay, push it to overlay store
@@ -62,7 +62,7 @@ export async function apiFetch<T>(input: RequestInfo, init: FetchInit): Promise<
         label: "API Error",
         message: err.message,
         action,
-        payload: init.payload && safePayload(init.payload),
+        payload: init.payload ? safePayload(init.payload) : undefined,
         response: json ? safePayload(json) : undefined,
         durationMs,
       });
@@ -75,7 +75,7 @@ export async function apiFetch<T>(input: RequestInfo, init: FetchInit): Promise<
     } catch (err: any) {
       err.action = action;
       err.durationMs = durationMs;
-      err.payload = init.payload && safePayload(init.payload);
+      err.payload = init.payload ? safePayload(init.payload) : undefined;
       err.response = safePayload(json);
 
       errorStore.push({
@@ -101,7 +101,7 @@ export async function apiFetch<T>(input: RequestInfo, init: FetchInit): Promise<
       label: "API Error",
       message: err.message ?? String(err),
       action: err.action,
-      payload: init.payload && safePayload(init.payload),
+      payload: init.payload ? safePayload(init.payload) : undefined,
       response: err.response ? safePayload(err.response) : undefined,
       durationMs: err.durationMs,
       stack: err.stack,
@@ -129,33 +129,37 @@ export async function apiFetchServer<T>(url: string, init: FetchInit): Promise<A
     } catch (err: any) {
       err.action = action;
       err.durationMs = durationMs;
-      err.payload = init.payload && safePayload(init.payload);
+      err.payload = init.payload ? safePayload(init.payload) : undefined;
       err.response = safePayload(json);
 
       // Wrap for overlay forwarding
-      return { __overlay: { 
-        time: new Date().toLocaleTimeString(),
-        label: "API Error (Server)",
-        message: err.message,
-        action,
-        payload: err.payload,
-        response: err.response,
-        durationMs,
-      }} as any;
+      return {
+        __overlay: {
+          time: new Date().toLocaleTimeString(),
+          label: "API Error (Server)",
+          message: err.message,
+          action,
+          payload: err.payload,
+          response: err.response,
+          durationMs,
+        },
+      } as any;
     }
 
     return json;
   } catch (err: any) {
     // Wrap fetch/network errors for overlay forwarding
-    return { __overlay: { 
-      time: new Date().toLocaleTimeString(),
-      label: "API Error (Server)",
-      message: err.message ?? String(err),
-      action: err.action ?? action,
-      payload: init.payload && safePayload(init.payload),
-      response: err.response ? safePayload(err.response) : undefined,
-      durationMs: Date.now() - start,
-      stack: err.stack,
-    }} as any;
+    return {
+      __overlay: {
+        time: new Date().toLocaleTimeString(),
+        label: "API Error (Server)",
+        message: err.message ?? String(err),
+        action: err.action ?? action,
+        payload: init.payload ? safePayload(init.payload) : undefined,
+        response: err.response ? safePayload(err.response) : undefined,
+        durationMs: Date.now() - start,
+        stack: err.stack,
+      },
+    } as any;
   }
 }
