@@ -1,20 +1,18 @@
+// "use client"
 // @/lib/ErrorStore.ts
 "use client";
 
 import { useSyncExternalStore } from "react";
 import { ErrorStoreCore, ApiOverlayError } from "./ErrorStoreCore";
 
-/**
- * Single shared store instance
- */
 export const errorStore = new ErrorStoreCore();
 
 /**
- * Hook for client-side reactive UI (ErrorCatcher)
+ * Optional helper hook to use overlay errors in React components
  */
-export function useErrorStore() {
+export function useErrors(): ApiOverlayError[] {
   return useSyncExternalStore(
     errorStore.subscribe.bind(errorStore),
-    () => errorStore.getAll()
+    errorStore.getAll.bind(errorStore)
   );
 }
