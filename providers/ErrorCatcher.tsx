@@ -2,39 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { safePayload } from "@/lib/safePayload";
-
-type CapturedError = {
-  time: string;
-  label: string;
-  message: string;
-  route?: string;
-  action?: string;
-  durationMs?: number;
-  file?: string;
-  line?: number;
-  col?: number;
-  stack?: string;
-  payload?: string;
-  response?: string;
-};
+import { errorStore, ApiOverlayError } from "@/lib/ErrorStore";
 
 export function ErrorCatcher() {
-  const [errors, setErrors] = useState<CapturedError[]>([]);
+  const [errors, setErrors] = useState<ApiOverlayError[]>([]);
   const pathname = usePathname();
   const isDev = process.env.NODE_ENV === "development";
 
   useEffect(() => {
-    function pushError(err: CapturedError) {
-      setErrors(prev => [err, ...prev].slice(0, 25));
-    }
+    const unsubscribe = errorStore.subscribe(setErrors);
+    return () => unsubscribe();
+  }, []);
 
+  if (errors.length === 0) return null;
+
+  // ...keep the existing overlay JSX from before
+}
     // ---------------- JS runtime errors ----------------
     window.onerror = function (msg, url, line, col, error) {
-      console.error("[JS Error]", { msg, url, line, col, error });
-
-      const e: any = error;
-
       pushError({
         time: new Date().toLocaleTimeString(),
         label: "JS Error",
@@ -43,35 +28,34 @@ export function ErrorCatcher() {
         file: url,
         line,
         col,
-        stack: isDev ? e?.stack : undefined,
-        action: e?.action,
-        durationMs: e?.durationMs,
-        payload: e?.payload && safePayload(e.payload),
-        response: e?.response && safePayload(e.response),
+        stack: isDev ? error?.stack : undefined,
+        action: (error as any)?.action,
+        payload: (error as any)?.payload && safePayload((error as any).payload),
+        response: (error as any)?.response && safePayload((error as any).response),
+        durationMs: (error as any)?.durationMs,
       });
 
-      return false;
+      console.error("[JS Error]", error);
+      return false; // allow default handling
     };
 
     // ---------------- Promise rejections ----------------
     window.onunhandledrejection = function (event) {
-      console.error("[Unhandled Promise Rejection]", event.reason);
-
-      const reason: any = event.reason;
+      const reason = event.reason;
 
       pushError({
         time: new Date().toLocaleTimeString(),
         label: "Promise Rejection",
-        message:
-          reason instanceof Error ? reason.message : String(reason),
+        message: reason instanceof Error ? reason.message : String(reason),
         route: pathname,
-        stack:
-          isDev && reason instanceof Error ? reason.stack : undefined,
+        stack: isDev && reason instanceof Error ? reason.stack : undefined,
         action: reason?.action,
-        durationMs: reason?.durationMs,
         payload: reason?.payload && safePayload(reason.payload),
         response: reason?.response && safePayload(reason.response),
+        durationMs: reason?.durationMs,
       });
+
+      console.error("[Unhandled Promise Rejection]", reason);
     };
 
     return () => {
@@ -82,14 +66,12 @@ export function ErrorCatcher() {
 
   if (errors.length === 0) return null;
 
-  const latest = errors[0];
-
   function copyError(err: CapturedError) {
     const text = `
 Time: ${err.time}
-Route: ${err.route ?? "—"}
+Route: ${err.route}
 Action: ${err.action ?? "—"}
-Duration: ${err.durationMs != null ? `${err.durationMs} ms` : "—"}
+Duration: ${err.durationMs ?? "—"}ms
 
 Message:
 ${err.message}
@@ -113,7 +95,7 @@ ${err.stack ?? "—"}
         position: "fixed",
         bottom: 12,
         right: 12,
-        width: 460,
+        width: 480,
         maxHeight: "65vh",
         overflowY: "auto",
         background: "#0b0b0b",
@@ -139,16 +121,16 @@ ${err.stack ?? "—"}
         <strong>Error Overlay</strong>
         <div style={{ display: "flex", gap: 8 }}>
           <button
-            onClick={() => copyError(latest)}
-            className="text-xs underline text-blue-400"
+            onClick={() => copyError(errors[0])}
+            style={btnStyle}
           >
-            Copy error
+            Copy latest error
           </button>
           <button
             onClick={() => setErrors([])}
             style={btnStyle}
           >
-            clear overlay
+            Clear overlay
           </button>
         </div>
       </div>
@@ -163,7 +145,7 @@ ${err.stack ?? "—"}
           }}
         >
           <div style={{ color: "#9ca3af", marginBottom: 4 }}>
-            [{e.time}] {e.label}
+            [{e.time}] {e.label} {e.durationMs != null && `(${e.durationMs}ms)`}
           </div>
 
           {e.route && (
@@ -171,16 +153,9 @@ ${err.stack ?? "—"}
               route: {e.route}
             </div>
           )}
-
           {e.action && (
-            <div style={{ color: "#34d399" }}>
+            <div style={{ color: "#fbbf24" }}>
               action: {e.action}
-            </div>
-          )}
-
-          {e.durationMs != null && (
-            <div style={{ color: "#facc15" }}>
-              ⏱ {e.durationMs} ms
             </div>
           )}
 
@@ -188,49 +163,20 @@ ${err.stack ?? "—"}
             {e.message}
           </div>
 
-          {e.file && (
-            <div style={{ marginTop: 4 }}>
-              <a
-                href={isDev ? e.file : undefined}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  color: "#34d399",
-                  textDecoration: "underline",
-                  pointerEvents: isDev ? "auto" : "none",
-                }}
-              >
-                {e.file}
-                {e.line != null && `:${e.line}`}
-                {e.col != null && `:${e.col}`}
-              </a>
-            </div>
-          )}
-
           {e.payload && (
-            <pre style={{ marginTop: 6, color: "#93c5fd" }}>
-              Payload:
-              {"\n"}
+            <pre style={{ color: "#38bdf8", marginTop: 4 }}>
               {e.payload}
             </pre>
           )}
 
           {e.response && (
-            <pre style={{ marginTop: 6, color: "#fca5a5" }}>
-              Response:
-              {"\n"}
+            <pre style={{ color: "#f472b6", marginTop: 4 }}>
               {e.response}
             </pre>
           )}
 
           {e.stack && (
-            <pre
-              style={{
-                marginTop: 6,
-                color: "#fca5a5",
-                whiteSpace: "pre-wrap",
-              }}
-            >
+            <pre style={{ marginTop: 6, color: "#fca5a5", whiteSpace: "pre-wrap" }}>
               {e.stack}
             </pre>
           )}
