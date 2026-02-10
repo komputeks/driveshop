@@ -1,13 +1,15 @@
 // @/lib/typedFetch.ts
 import { ApiResponse, ApiOk, assertOk } from "@/lib/types";
 import { safePayload } from "@/lib/safePayload";
-import { pushError } from "./ErrorStore";
+import { errorStore } from "@/lib/ErrorStore";
 
-export async function apiFetch<T>(
-  input: RequestInfo,
-  init?: RequestInit & { action?: string; payload?: unknown }
-): Promise<ApiOk<T>> {
-  const action = init?.action;
+type FetchInit = RequestInit & { action: string; payload?: unknown };
+
+/* =========================
+   CLIENT-SIDE FETCH
+========================= */
+export async function apiFetch<T>(input: RequestInfo, init: FetchInit): Promise<ApiOk<T>> {
+  const action = init.action;
   const start = performance.now();
 
   try {
@@ -21,13 +23,12 @@ export async function apiFetch<T>(
       err.durationMs = durationMs;
       err.response = text;
 
-      // Push to overlay
-      pushError({
+      errorStore.push({
         time: new Date().toLocaleTimeString(),
         label: "API Error",
         message: err.message,
         action,
-        payload: init?.payload && safePayload(init.payload),
+        payload: init.payload && safePayload(init.payload),
         response: text ? safePayload(text) : undefined,
         durationMs,
       });
@@ -36,16 +37,15 @@ export async function apiFetch<T>(
     }
 
     const json = (await res.json()) as ApiResponse<T>;
-
     try {
       assertOk(json);
     } catch (err: any) {
       err.action = action;
       err.durationMs = durationMs;
-      err.payload = init?.payload && safePayload(init.payload);
+      err.payload = init.payload && safePayload(init.payload);
       err.response = safePayload(json);
 
-      pushError({
+      errorStore.push({
         time: new Date().toLocaleTimeString(),
         label: "API Error",
         message: err.message,
@@ -63,13 +63,12 @@ export async function apiFetch<T>(
     err.action ??= action;
     err.durationMs ??= Math.round(performance.now() - start);
 
-    // Push any unexpected fetch errors
-    pushError({
+    errorStore.push({
       time: new Date().toLocaleTimeString(),
       label: "API Error",
       message: err.message ?? String(err),
       action: err.action,
-      payload: init?.payload && safePayload(init.payload),
+      payload: init.payload && safePayload(init.payload),
       response: err.response ? safePayload(err.response) : undefined,
       durationMs: err.durationMs,
       stack: err.stack,
@@ -80,47 +79,70 @@ export async function apiFetch<T>(
 }
 
 /* =========================
-   RAW GET
+   SERVER-SIDE FETCH
 ========================= */
-// @/lib/typedFetch.ts
-export async function apiGet<T>(
-  url: string,
-  action?: string
-): Promise<T> {
-  const start = performance.now();
+export async function apiFetchServer<T>(url: string, init: FetchInit): Promise<ApiOk<T>> {
+  const action = init.action;
+  const start = Date.now();
 
   try {
-    const res = await fetch(url, { cache: "no-store" });
-    const durationMs = Math.round(performance.now() - start);
+    const res = await fetch(url, init);
+    const durationMs = Date.now() - start;
 
     if (!res.ok) {
+      const text = await res.text();
       const err: any = new Error(`HTTP ${res.status}`);
       err.action = action;
       err.durationMs = durationMs;
+      err.response = text;
 
-      // Push to overlay
-      pushError({
+      // Server-side: still push structured error, but overlay can read it when response sent to client
+      errorStore.push({
         time: new Date().toLocaleTimeString(),
-        label: "API Error",
+        label: "API Error (Server)",
         message: err.message,
         action,
-        response: await res.text(),
+        payload: init.payload && safePayload(init.payload),
+        response: text ? safePayload(text) : undefined,
         durationMs,
       });
 
       throw err;
     }
 
-    return res.json();
+    const json = (await res.json()) as ApiResponse<T>;
+    try {
+      assertOk(json);
+    } catch (err: any) {
+      err.action = action;
+      err.durationMs = durationMs;
+      err.payload = init.payload && safePayload(init.payload);
+      err.response = safePayload(json);
+
+      errorStore.push({
+        time: new Date().toLocaleTimeString(),
+        label: "API Error (Server)",
+        message: err.message,
+        action,
+        payload: err.payload,
+        response: err.response,
+        durationMs,
+      });
+
+      throw err;
+    }
+
+    return json;
   } catch (err: any) {
     err.action ??= action;
-    err.durationMs ??= Math.round(performance.now() - start);
+    err.durationMs ??= Date.now() - start;
 
-    pushError({
+    errorStore.push({
       time: new Date().toLocaleTimeString(),
-      label: "API Error",
+      label: "API Error (Server)",
       message: err.message ?? String(err),
-      action,
+      action: err.action,
+      payload: init.payload && safePayload(init.payload),
       response: err.response ? safePayload(err.response) : undefined,
       durationMs: err.durationMs,
       stack: err.stack,

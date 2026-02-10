@@ -1,5 +1,7 @@
 "use client";
 
+// @/providers/ErrorCatcher
+
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { errorStore, ApiOverlayError } from "@/lib/ErrorStore";

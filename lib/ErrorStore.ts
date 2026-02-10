@@ -1,5 +1,6 @@
 // @/lib/ErrorStore.ts
-import { writable } from "react";
+import { useSyncExternalStore } from "react";
+import { safePayload } from "./safePayload";
 
 export type ApiOverlayError = {
   time: string;
@@ -16,8 +17,23 @@ export type ApiOverlayError = {
   col?: number;
 };
 
-export const errorStore = writable<ApiOverlayError[]>([]);
+// Tiny React-friendly store
+type Listener = (errors: ApiOverlayError[]) => void;
 
-export function pushError(err: ApiOverlayError) {
-  errorStore.update(prev => [err, ...prev].slice(0, 25));
+class ErrorStore {
+  private errors: ApiOverlayError[] = [];
+  private listeners = new Set<Listener>();
+
+  push(error: ApiOverlayError) {
+    this.errors = [error, ...this.errors].slice(0, 25);
+    this.listeners.forEach((l) => l(this.errors));
+  }
+
+  subscribe(listener: Listener) {
+    this.listeners.add(listener);
+    listener(this.errors); // initial
+    return () => this.listeners.delete(listener);
+  }
 }
+
+export const errorStore = new ErrorStore();
