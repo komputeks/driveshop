@@ -2,10 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type {
-  CategoryTree,
-  CategoryTreeResponse,
-} from "@/lib/types";
+import type { CategoryTree, CategoryTreeResponse } from "@/lib/types";
 
 export default function CategoryDropdown() {
   const [categories, setCategories] = useState<CategoryTree>([]);
@@ -16,12 +13,9 @@ export default function CategoryDropdown() {
     fetch("/api/category-tree", { cache: "no-store" })
       .then(res => res.json())
       .then((data: CategoryTreeResponse) => {
-        if (data.ok) {
-          setCategories(data.data.categories);
-        } else {
-          console.error("CategoryTree error:", data.error);
-          setCategories([]);
-        }
+        // CategoryTreeResponse === ApiOk<...>
+        // so this is the ONLY valid path
+        setCategories(data.data.categories);
       })
       .catch(err => {
         console.error("CategoryTree fetch failed:", err);
@@ -43,7 +37,7 @@ export default function CategoryDropdown() {
         Categories
       </button>
 
-      {/* Desktop menu */}
+      {/* Desktop */}
       <div className="hidden md:block">
         <ul className="flex space-x-4">
           {loading ? (
