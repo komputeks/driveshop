@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { errorStore, ApiOverlayError } from "@/lib/ErrorStore";
+import { safePayload } from "@/lib/safePayload";
 
 export function ErrorCatcher() {
   const [errors, setErrors] = useState<ApiOverlayError[]>([]);
@@ -10,17 +11,12 @@ export function ErrorCatcher() {
   const isDev = process.env.NODE_ENV === "development";
 
   useEffect(() => {
+    // Subscribe to error store
     const unsubscribe = errorStore.subscribe(setErrors);
-    return () => unsubscribe();
-  }, []);
 
-  if (errors.length === 0) return null;
-
-  // ...keep the existing overlay JSX from before
-}
     // ---------------- JS runtime errors ----------------
-    window.onerror = function (msg, url, line, col, error) {
-      pushError({
+    const onError = (msg: any, url: string, line: number, col: number, error: any) => {
+      errorStore.push({
         time: new Date().toLocaleTimeString(),
         label: "JS Error",
         message: String(msg),
@@ -29,21 +25,21 @@ export function ErrorCatcher() {
         line,
         col,
         stack: isDev ? error?.stack : undefined,
-        action: (error as any)?.action,
-        payload: (error as any)?.payload && safePayload((error as any).payload),
-        response: (error as any)?.response && safePayload((error as any).response),
-        durationMs: (error as any)?.durationMs,
+        action: error?.action,
+        payload: error?.payload && safePayload(error.payload),
+        response: error?.response && safePayload(error.response),
+        durationMs: error?.durationMs,
       });
 
       console.error("[JS Error]", error);
-      return false; // allow default handling
+      return false;
     };
 
     // ---------------- Promise rejections ----------------
-    window.onunhandledrejection = function (event) {
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
       const reason = event.reason;
 
-      pushError({
+      errorStore.push({
         time: new Date().toLocaleTimeString(),
         label: "Promise Rejection",
         message: reason instanceof Error ? reason.message : String(reason),
@@ -58,16 +54,21 @@ export function ErrorCatcher() {
       console.error("[Unhandled Promise Rejection]", reason);
     };
 
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onUnhandledRejection);
+
+    // Cleanup
     return () => {
-      window.onerror = null;
-      window.onunhandledrejection = null;
+      unsubscribe();
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onUnhandledRejection);
     };
   }, [pathname, isDev]);
 
   if (errors.length === 0) return null;
 
-  function copyError(err: CapturedError) {
-    const text = `
+function copyError(err: ApiOverlayError) {
+const text = `
 Time: ${err.time}
 Route: ${err.route}
 Action: ${err.action ?? "—"}
