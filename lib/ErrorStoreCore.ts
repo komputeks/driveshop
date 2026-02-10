@@ -1,4 +1,5 @@
 // @/lib/ErrorStoreCore.ts
+
 export type ApiOverlayError = {
   time: string;
   label: string;
@@ -22,16 +23,16 @@ export class ErrorStoreCore {
 
   push(error: ApiOverlayError) {
     this.errors = [error, ...this.errors].slice(0, 25);
-    this.listeners.forEach((listener) => listener(this.errors));
+    this.listeners.forEach((l) => l(this.errors));
   }
 
   subscribe(listener: Listener) {
     this.listeners.add(listener);
-    listener(this.errors); // immediate initial call
+    listener(this.errors);
     return () => this.listeners.delete(listener);
   }
 
-  getAll() {
-    return [...this.errors];
+  getSnapshot() {
+    return this.errors;
   }
 }
