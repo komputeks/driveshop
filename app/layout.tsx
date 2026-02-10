@@ -3,7 +3,7 @@ import MainLayout from "@/components/MainLayout";
 import Providers from "@/providers/AuthProvider";
 import "@/app/globals.css";
 import type { Metadata } from "next";
-import { ErrorCatcher } from "@/app/providers/ErrorCatcher";
+import { ErrorCatcher } from "@/providers/ErrorCatcher";
 
 export const metadata: Metadata = {
   title: "Simon Wokabi Codes",
