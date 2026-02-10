@@ -1,4 +1,4 @@
-// app/api/categories/route.ts
+// app/api/category-tree/route.ts
 import { NextResponse } from "next/server";
 import type { CategoryTreeResponse } from "@/lib/types";
 
@@ -16,7 +16,7 @@ export async function GET() {
     const json = (await res.json()) as CategoryTreeResponse;
     return NextResponse.json(json);
   } catch (err: any) {
-    console.error("GET /api/categories", err);
+    console.error("GET /api/category-tree", err);
     return NextResponse.json(
       { ok: false, error: err.message ?? "Internal error" },
       { status: 500 }

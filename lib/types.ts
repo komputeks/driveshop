@@ -252,3 +252,15 @@ export interface ItemPageParams {
 export interface ItemPageProps {
   params: ItemPageParams;
 }
+
+/* =========================
+   API ASSERTIONS
+========================= */
+
+export function assertOk<T>(res: ApiResponse<T>): asserts res is ApiOk<T> {
+  if (!res.ok) {
+    const err = new Error(res.error);
+    (err as any).response = res; // 👈 attach full response
+    throw err;
+  }
+}
