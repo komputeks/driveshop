@@ -1,5 +1,4 @@
 import { ItemWithSlug } from "@/lib/types";
-import { slugify } from "./slug";
 
 
 export function slugify(value: string): string {
