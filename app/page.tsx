@@ -23,19 +23,18 @@ export default async function HomePage() {
   });
   
   console.log(res);
-  
     
   if ("__overlay" in res) {
     return null;
   }
 
 const items = res.data.items;
-  
 
   return (
-    <pre>{JSON.stringify(items, null, 2)}</pre>
-    <ItemsGrid items={res.data.items} />
-  
+    <>
+      <pre>{JSON.stringify(items, null, 2)}</pre>
+      <ItemsGrid items={items} />
+    </>
   );
 }
 
