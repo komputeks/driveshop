@@ -20,8 +20,6 @@ export default async function HomePage() {
     }),
   }),
   
-  console.log(res);
-    
   if ("__overlay" in res) {
     return null;
   }
