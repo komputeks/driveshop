@@ -12,60 +12,80 @@ export function ErrorCatcher() {
   const pathname = usePathname();
   const isDev = process.env.NODE_ENV === "development";
 
+
   useEffect(() => {
-    // Subscribe to error store
-    const unsubscribe = errorStore.subscribe(setErrors);
+  const unsubscribe = errorStore.subscribe(setErrors);
 
-    // ---------------- JS runtime errors ----------------
-    const onError = (msg: any, url: string, line: number, col: number, error: any) => {
-      errorStore.push({
-        time: new Date().toLocaleTimeString(),
-        label: "JS Error",
-        message: String(msg),
-        route: pathname,
-        file: url,
-        line,
-        col,
-        stack: isDev ? error?.stack : undefined,
-        action: error?.action,
-        payload: error?.payload && safePayload(error.payload),
-        response: error?.response && safePayload(error.response),
-        durationMs: error?.durationMs,
-      });
+  // ---------------- JS runtime errors ----------------
+  const onError = (event: ErrorEvent) => {
+    errorStore.push({
+      time: new Date().toLocaleTimeString(),
+      label: "JS Error",
+      message: event.message,
+      route: pathname,
+      file: event.filename,
+      line: event.lineno,
+      col: event.colno,
+      stack: isDev ? event.error?.stack : undefined,
+      action: (event.error as any)?.action,
+      payload:
+        (event.error as any)?.payload &&
+        safePayload((event.error as any).payload),
+      response:
+        (event.error as any)?.response &&
+        safePayload((event.error as any).response),
+      durationMs: (event.error as any)?.durationMs,
+    });
 
-      console.error("[JS Error]", error);
-      return false;
-    };
+    console.error("[JS Error]", event.error);
+  };
 
-    // ---------------- Promise rejections ----------------
-    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
-      const reason = event.reason;
+  // ---------------- Promise rejections ----------------
+  const onUnhandledRejection = (
+    event: PromiseRejectionEvent
+  ) => {
+    const reason = event.reason;
 
-      errorStore.push({
-        time: new Date().toLocaleTimeString(),
-        label: "Promise Rejection",
-        message: reason instanceof Error ? reason.message : String(reason),
-        route: pathname,
-        stack: isDev && reason instanceof Error ? reason.stack : undefined,
-        action: reason?.action,
-        payload: reason?.payload && safePayload(reason.payload),
-        response: reason?.response && safePayload(reason.response),
-        durationMs: reason?.durationMs,
-      });
+    errorStore.push({
+      time: new Date().toLocaleTimeString(),
+      label: "Promise Rejection",
+      message:
+        reason instanceof Error
+          ? reason.message
+          : String(reason),
+      route: pathname,
+      stack:
+        isDev && reason instanceof Error
+          ? reason.stack
+          : undefined,
+      action: (reason as any)?.action,
+      payload:
+        (reason as any)?.payload &&
+        safePayload((reason as any).payload),
+      response:
+        (reason as any)?.response &&
+        safePayload((reason as any).response),
+      durationMs: (reason as any)?.durationMs,
+    });
 
-      console.error("[Unhandled Promise Rejection]", reason);
-    };
+    console.error("[Unhandled Promise Rejection]", reason);
+  };
 
-    window.addEventListener("error", onError);
-    window.addEventListener("unhandledrejection", onUnhandledRejection);
+  window.addEventListener("error", onError);
+  window.addEventListener(
+    "unhandledrejection",
+    onUnhandledRejection
+  );
 
-    // Cleanup
-    return () => {
-      unsubscribe();
-      window.removeEventListener("error", onError);
-      window.removeEventListener("unhandledrejection", onUnhandledRejection);
-    };
-  }, [pathname, isDev]);
+  return () => {
+    unsubscribe();
+    window.removeEventListener("error", onError);
+    window.removeEventListener(
+      "unhandledrejection",
+      onUnhandledRejection
+    );
+  };
+}, [pathname, isDev]);
 
   if (errors.length === 0) return null;
 
