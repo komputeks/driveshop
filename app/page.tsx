@@ -1,6 +1,6 @@
 // app/page.tsx
 
-import { ItemsGrid } from "@/components/ItemsGrid";
+import { ItemsGrid } from "@/components/itemsGrid";
 import { apiFetchServer } from "@/lib/typedFetch";
 import type { ItemsListResponse } from "@/lib/types";
 
