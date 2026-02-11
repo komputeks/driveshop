@@ -1,18 +1,18 @@
-import { ItemWithSlug } from "@/lib/types";
+// @/lib/slug.ts
 
+import type { Item } from "@/lib/types";
 
-export function slugify(value: string): string {
-  return value
+function slugify(str: string) {
+  return str
     .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-");
 }
 
-export function buildItemSlug(item: {
-  name: string;
-  cat1: string;
-  cat2: string;
-}) {
+export function buildItemSlug(item: Item) {
+  if (!item.cat2) {
+    throw new Error(`Item ${item.id} is missing cat2`);
+  }
+
   return `/${slugify(item.cat1)}/${slugify(item.cat2)}/${slugify(item.name)}`;
 }
