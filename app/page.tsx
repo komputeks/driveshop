@@ -2,7 +2,8 @@
 
 import { ItemsGrid } from "@/components/itemsGrid";
 import { apiFetchServer } from "@/lib/typedFetch";
-import type { Item } from "@/lib/types";
+import type { Item, ItemsListData } from "@/lib/types";
+
 
 export default async function HomePage() {
   const url = process.env.NEXT_PUBLIC_API_BASE_URL!;

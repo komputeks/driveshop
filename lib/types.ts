@@ -55,6 +55,15 @@ export interface ItemWithSlug extends Item {
   slug: string;
 }
 
+
+export type ItemsListData = {
+  page: number;
+  limit: number;
+  total: number;
+  hasMore: boolean;
+  items: Item[];
+};
+
 /* =========================
    CATEGORIES
 ========================= */
