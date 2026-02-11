@@ -1676,7 +1676,7 @@ function doPost(e) {
         return json_(handleEventsGet_(body));
 
       case "items.list":
-        return json_(handleItemsList_(body));
+        return (handleItemsList_(body));
 
       case "login":
         return apiLogin(body);
