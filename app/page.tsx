@@ -13,15 +13,12 @@ export default async function HomePage() {
     headers: {
       "Content-Type": "application/json",
     },
-    action: "items.list",
     body: JSON.stringify({
       action: "items.list",
-      payload: {
-        page: 1,
-        limit: 40,
-      },
+      page: 1,
+      limit: 40,
     }),
-  });
+  }),
   
   console.log(res);
     
